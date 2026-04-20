@@ -1,0 +1,279 @@
+package service
+
+import (
+	"fmt"
+	"log"
+	"strings"
+	"net/http"
+	"encoding/json"
+	"time"
+
+	"github.com/gato-gateway/internal/model"
+	"github.com/gato-gateway/internal/repository"
+	intpix "github.com/gato-gateway/internal/integration/pix"
+)
+
+const TaxaFixaPIX   = 0.99
+const TaxaCartaoPorc = 0.03
+const TaxaCartaoFixa = 0.50
+
+// PixClientAdapter adapta o integration/pix.Client para o service layer
+type PixClientAdapter struct {
+	client *intpix.Client
+}
+
+func NewPixClientAdapter(apiKey, baseURL string) *PixClientAdapter {
+	return &PixClientAdapter{client: intpix.NewClient(apiKey, baseURL)}
+}
+
+func (a *PixClientAdapter) CreateCustomer(name, email, cpf string) (string, error) {
+	return a.client.CreateCustomer(name, email, cpf)
+}
+
+func (a *PixClientAdapter) CreatePixCharge(customerID string, valor float64, desc string) (string, error) {
+	return a.client.CreatePixCharge(customerID, valor, desc)
+}
+
+func (a *PixClientAdapter) GetPixQRCode(chargeID string) (*intpix.PixQRCode, error) {
+	return a.client.GetPixQRCode(chargeID)
+}
+
+// PIXResult é o resultado de uma cobrança PIX criada com sucesso
+type PIXResult struct {
+	ChargeID  string
+	QRCode    string
+	CopaCola  string
+	Expiracao string
+	Valor     float64
+	Liquido   float64
+	Taxa      float64
+}
+
+// PIXService orquestra a lógica de cobrança PIX
+type PIXService struct {
+	pix    *PixClientAdapter
+	txRepo *repository.TransactionRepository
+}
+
+func NewPIXService(pix *PixClientAdapter, txRepo *repository.TransactionRepository) *PIXService {
+	return &PIXService{pix: pix, txRepo: txRepo}
+}
+
+func (s *PIXService) CreateCharge(intentID int, valor float64, itemName string) (*PIXResult, error) {
+	taxa   := TaxaFixaPIX
+	liquido := valor - taxa
+
+	customerID, err := s.pix.CreateCustomer("Cliente A2Pay Gateway", "cliente@a2pay.com", "24971563792")
+	if err != nil {
+		return nil, fmt.Errorf("criar cliente Asaas: %w", err)
+	}
+
+	chargeID, err := s.pix.CreatePixCharge(customerID, valor, itemName)
+	if err != nil {
+		return nil, fmt.Errorf("criar cobrança PIX: %w", err)
+	}
+
+	s.txRepo.UpdateToAguardandoPIX(intentID, taxa, liquido, chargeID)
+	log.Printf("[PIX] Cobrança criada: %s | R$ %.2f", chargeID, valor)
+
+	result := &PIXResult{ChargeID: chargeID, Valor: valor, Taxa: taxa, Liquido: liquido}
+	if qr, err := s.pix.GetPixQRCode(chargeID); err == nil && qr != nil {
+		result.QRCode    = qr.EncodedImage
+		result.CopaCola  = qr.Payload
+		result.Expiracao = qr.ExpirationDate
+	}
+	return result, nil
+}
+
+// ExternalPixRequest é o payload recebido via API Key (POST /api/v1/pix)
+type ExternalPixRequest struct {
+	Valor         float64 `json:"valor"`
+	Descricao     string  `json:"descricao"`
+	CustomerName  string  `json:"customer_name"`
+	CustomerEmail string  `json:"customer_email"`
+	CustomerCPF   string  `json:"customer_cpf"`
+}
+
+func (s *PIXService) ExternalCharge(merchantID int, req ExternalPixRequest) (int64, *PIXResult, error) {
+	if req.Descricao     == "" { req.Descricao     = "Pagamento via A2Pay" }
+	if req.CustomerName  == "" { req.CustomerName  = "Cliente" }
+	if req.CustomerEmail == "" { req.CustomerEmail = "cliente@a2pay.com" }
+	if req.CustomerCPF   == "" { req.CustomerCPF   = "24971563792" }
+
+	taxa    := TaxaFixaPIX
+	liquido := req.Valor - taxa
+
+	intentID, err := s.txRepo.Create(merchantID, req.Descricao, req.Valor, liquido, taxa)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	customerID, err := s.pix.CreateCustomer(req.CustomerName, req.CustomerEmail, req.CustomerCPF)
+	if err != nil {
+		return intentID, nil, fmt.Errorf("criar cliente Asaas: %w", err)
+	}
+
+	chargeID, err := s.pix.CreatePixCharge(customerID, req.Valor, req.Descricao)
+	if err != nil {
+		return intentID, nil, fmt.Errorf("criar cobrança PIX: %w", err)
+	}
+
+	s.txRepo.SetChargeID(intentID, chargeID)
+
+	result := &PIXResult{ChargeID: chargeID, Valor: req.Valor, Taxa: taxa, Liquido: liquido}
+	if qr, err := s.pix.GetPixQRCode(chargeID); err == nil && qr != nil {
+		result.QRCode    = qr.EncodedImage
+		result.CopaCola  = qr.Payload
+		result.Expiracao = qr.ExpirationDate
+	}
+	return intentID, result, nil
+}
+
+// FraudService executa as 4 regras antifraude
+type FraudService struct {
+	txRepo  *repository.TransactionRepository
+	walRepo *repository.WalletRepository
+}
+
+func NewFraudService(txRepo *repository.TransactionRepository, walRepo *repository.WalletRepository) *FraudService {
+	return &FraudService{txRepo: txRepo, walRepo: walRepo}
+}
+
+func checkGeoIP(ip string) string {
+	if ip == "" || ip == "::1" || strings.HasPrefix(ip, "127.") ||
+		strings.HasPrefix(ip, "192.168.") || strings.HasPrefix(ip, "10.") {
+		return "BR"
+	}
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Get("http://ip-api.com/json/" + ip + "?fields=countryCode,proxy,hosting")
+	if err != nil {
+		return ""
+	}
+	defer resp.Body.Close()
+	var r struct {
+		CountryCode string `json:"countryCode"`
+		Proxy       bool   `json:"proxy"`
+		Hosting     bool   `json:"hosting"`
+	}
+	json.NewDecoder(resp.Body).Decode(&r)
+	if r.Proxy || r.Hosting {
+		return "PROXY"
+	}
+	return r.CountryCode
+}
+
+func (f *FraudService) Check(merchantID, intentID int, valor float64, ip string) model.FraudResult {
+	result := model.FraudResult{}
+
+	if n := f.walRepo.CountBlockedByIP(ip); n >= 3 {
+		result.Score += 60
+		result.Reasons = append(result.Reasons, fmt.Sprintf("IP com %d bloqueios recentes", n))
+	} else if n >= 1 {
+		result.Score += 25
+		result.Reasons = append(result.Reasons, fmt.Sprintf("IP com histórico de fraudes: %s", ip))
+	}
+
+	if tx := f.txRepo.CountRecentByMerchant(merchantID); tx >= 10 {
+		result.Score += 50
+		result.Reasons = append(result.Reasons, fmt.Sprintf("Volume anômalo: %d tx em 5 min", tx))
+	} else if tx >= 5 {
+		result.Score += 20
+		result.Reasons = append(result.Reasons, fmt.Sprintf("Volume elevado: %d tx em 5 min", tx))
+	}
+
+	if valor > 5000 {
+		result.Score += 20
+		result.Reasons = append(result.Reasons, fmt.Sprintf("Alto valor: R$ %.2f", valor))
+	}
+	if avg, total := f.txRepo.GetAvgValue(merchantID); total >= 3 && avg > 0 {
+		if r := valor / avg; r > 10 {
+			result.Score += 40
+			result.Reasons = append(result.Reasons, fmt.Sprintf("Valor %.0fx acima da média (R$ %.2f)", r, avg))
+		} else if r > 5 {
+			result.Score += 20
+			result.Reasons = append(result.Reasons, fmt.Sprintf("Valor %.0fx acima da média (R$ %.2f)", r, avg))
+		}
+	}
+
+	switch checkGeoIP(ip) {
+	case "PROXY":
+		result.Score += 50
+		result.Reasons = append(result.Reasons, "IP proxy/VPN detectado")
+	case "BR", "":
+	default:
+		result.Score += 40
+		result.Reasons = append(result.Reasons, fmt.Sprintf("Geolocalização fora do Brasil: %s", checkGeoIP(ip)))
+	}
+
+	result.Bloqueado = result.Score >= 60
+	reasons := strings.Join(result.Reasons, " | ")
+	f.walRepo.InsertFraudLog(merchantID, intentID, ip, result.Score, reasons, result.Bloqueado)
+
+	if result.Bloqueado {
+		log.Printf("[ANTIFRAUDE] 🚨 BLOQUEADO merchant=%d score=%d ip=%s | %s", merchantID, result.Score, ip, reasons)
+	} else if result.Score > 0 {
+		log.Printf("[ANTIFRAUDE] ⚠️  score=%d merchant=%d ip=%s | %s", result.Score, merchantID, ip, reasons)
+	}
+	return result
+}
+
+// PaymentService orquestra o fluxo de pagamento
+type PaymentService struct {
+	txRepo  *repository.TransactionRepository
+	pix     *PIXService
+	wallet  *WalletService
+	fraud   *FraudService
+}
+
+func NewPaymentService(txRepo *repository.TransactionRepository, pix *PIXService, wallet *WalletService, fraud *FraudService) *PaymentService {
+	return &PaymentService{txRepo: txRepo, pix: pix, wallet: wallet, fraud: fraud}
+}
+
+func (s *PaymentService) CreateIntent(merchantID int, itemName string, valor float64) (int64, error) {
+	if valor <= TaxaFixaPIX {
+		return 0, fmt.Errorf("valor mínimo: R$ %.2f", TaxaFixaPIX+0.01)
+	}
+	return s.txRepo.Create(merchantID, itemName, valor, valor-TaxaFixaPIX, TaxaFixaPIX)
+}
+
+func (s *PaymentService) ProcessPIX(intentID int, clientIP string) (*PIXResult, error) {
+	valor, merchantID, err := s.txRepo.GetByID(intentID)
+	if err != nil {
+		return nil, fmt.Errorf("intent %d não encontrado", intentID)
+	}
+	fraud := s.fraud.Check(merchantID, intentID, valor, clientIP)
+	if fraud.Bloqueado {
+		return nil, &FraudError{Score: fraud.Score, Reasons: fraud.Reasons}
+	}
+	return s.pix.CreateCharge(intentID, valor, s.txRepo.GetItemName(intentID))
+}
+
+func (s *PaymentService) ProcessCard(intentID int, token string, clientIP string) (*CardResult, error) {
+	valor, merchantID, err := s.txRepo.GetByID(intentID)
+	if err != nil {
+		return nil, fmt.Errorf("intent %d não encontrado", intentID)
+	}
+	fraud := s.fraud.Check(merchantID, intentID, valor, clientIP)
+	if fraud.Bloqueado {
+		return nil, &FraudError{Score: fraud.Score, Reasons: fraud.Reasons}
+	}
+	realCard, err := s.wallet.Resolve(token)
+	if err != nil {
+		return nil, err
+	}
+	if !mockCardApproval(valor, realCard) {
+		return nil, fmt.Errorf("cartão recusado pela rede")
+	}
+	taxa    := (valor * TaxaCartaoPorc) + TaxaCartaoFixa
+	liquido := valor - taxa
+	if err := s.txRepo.UpdateToPago(intentID, "cartao", taxa, liquido); err != nil {
+		return nil, err
+	}
+	return &CardResult{Taxa: taxa, Liquido: liquido}, nil
+}
+
+func mockCardApproval(valor float64, _ string) bool { return valor > 0 && valor < 50000 }
+
+type CardResult  struct { Taxa, Liquido float64 }
+type FraudError  struct { Score int; Reasons []string }
+func (e *FraudError) Error() string { return fmt.Sprintf("antifraude bloqueou (score=%d)", e.Score) }

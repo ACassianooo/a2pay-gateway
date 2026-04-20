@@ -1,0 +1,30 @@
+# Binários do Go
+backend/cmd/api/api
+backend/main
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Banco de dados Local (Agora usamos Supabase)
+backend/gateway.db
+backend/gateway.db-journal
+
+# Node Dependencies
+**/node_modules
+**/dist
+**/.next
+**/build
+
+# Variáveis de Ambiente (SEGURANÇA!)
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Logs e Cache
+*.log
+.DS_Store
+.vscode/
+.idea/
+backend/scratch/
