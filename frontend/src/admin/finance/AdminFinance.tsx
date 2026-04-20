@@ -1,17 +1,18 @@
-import React from 'react';
 import type { DashboardData } from '../types';
 import { SectionHeader, MetricCard, Card, fmt } from '../AdminComponents';
-import { Banknote, DollarSign, Activity, TrendingUp, AlertTriangle, RefreshCw, Lock, Unlock } from 'lucide-react';
+import { Banknote, DollarSign, Activity, TrendingUp, AlertTriangle } from 'lucide-react';
 
 export function AdminFinance({ data }: { data: DashboardData }) {
+  const lucroTotal = data?.lucro_total || 0;
+
   return (
     <div>
       <SectionHeader icon={<Banknote size={22} />} title="Visão Interna (Empresa)" sub="Acompanhe receita total, lucro por período e controle de saldos." />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-        <MetricCard icon={<DollarSign size={15} />} label="Receita Total Retida (Taxas)" value={fmt(data.lucro_total * 1.5 || 0)} sub="Bruto gerado pela Gateway" color="#8942FC" />
-        <MetricCard icon={<Activity size={15} />} label="Custo da Adquirente/BaaS" value={fmt(data.lucro_total * 0.5 || 0)} sub="Custos de repasse" color="#f59e0b" />
-        <MetricCard icon={<TrendingUp size={15} />} label="Lucro Líquido do Período" value={fmt(data.lucro_total || 0)} sub="Saldo Livre" color="#22c55e" />
+        <MetricCard icon={<DollarSign size={15} />} label="Receita Total Retida (Taxas)" value={fmt(lucroTotal * 1.5)} sub="Bruto gerado pela Gateway" color="#8942FC" />
+        <MetricCard icon={<Activity size={15} />} label="Custo da Adquirente/BaaS" value={fmt(lucroTotal * 0.5)} sub="Custos de repasse" color="#f59e0b" />
+        <MetricCard icon={<TrendingUp size={15} />} label="Lucro Líquido do Período" value={fmt(lucroTotal)} sub="Saldo Livre" color="#22c55e" />
       </div>
 
       <Card style={{ border: '1px solid rgba(239,68,68,0.4)', maxWidth: 600 }}>

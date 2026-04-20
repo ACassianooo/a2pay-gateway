@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { DashboardData, EmpresaInfo } from '../types';
-import { SectionHeader, MetricCard, Card, fmt, StatusBadge } from '../AdminComponents';
-import { Search, User, CheckCircle2, Lock, AlertTriangle, Activity, DollarSign, FileText, ShieldAlert } from 'lucide-react';
+import { SectionHeader, MetricCard, Card, fmt } from '../AdminComponents';
+import { User, Lock, AlertTriangle, Activity, DollarSign, ShieldAlert } from 'lucide-react';
 
 import { API_BASE_URL } from '../../api';
 

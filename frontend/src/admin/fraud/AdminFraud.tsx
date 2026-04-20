@@ -1,4 +1,3 @@
-import React from 'react';
 import type { DashboardData } from '../types';
 import { SectionHeader, Card } from '../AdminComponents';
 import { ShieldAlert, Activity, Globe, AlertTriangle } from 'lucide-react';

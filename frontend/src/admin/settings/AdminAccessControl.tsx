@@ -1,4 +1,3 @@
-import React from 'react';
 import type { DashboardData } from '../types';
 import { SectionHeader, Card } from '../AdminComponents';
 import { Lock, ShieldAlert, FileText, Banknote } from 'lucide-react';

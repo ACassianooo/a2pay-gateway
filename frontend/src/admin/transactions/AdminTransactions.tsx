@@ -1,7 +1,6 @@
-import React from 'react';
 import type { DashboardData } from '../types';
 import { SectionHeader, Card, fmt, StatusBadge } from '../AdminComponents';
-import { List, Zap, XCircle, RotateCcw, Download, Lock } from 'lucide-react';
+import { List, Zap } from 'lucide-react';
 
 export function AdminTransactions({ data }: { data: DashboardData }) {
   return (

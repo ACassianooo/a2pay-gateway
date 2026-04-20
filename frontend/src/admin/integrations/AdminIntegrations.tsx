@@ -1,4 +1,3 @@
-import React from 'react';
 import type { DashboardData } from '../types';
 import { SectionHeader, Card } from '../AdminComponents';
 import { Terminal, Activity, Zap, PlayCircle } from 'lucide-react';
