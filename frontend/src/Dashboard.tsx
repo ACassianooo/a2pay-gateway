@@ -172,8 +172,8 @@ function OverviewTab({ data }: { data: DashboardData }) {
               padding: '0.6rem 1.2rem', 
               borderRadius: '10px', 
               border: period === p ? 'none' : '1px solid #e2e8f0', 
-              background: period === p ? '#86efac' : '#fff', 
-              color: period === p ? '#166534' : '#64748b', 
+              background: period === p ? '#c084fc' : '#fff', 
+              color: period === p ? '#4c1d95' : '#64748b', 
               fontSize: '0.85rem', 
               fontWeight: 700, 
               cursor: 'pointer', 
@@ -291,7 +291,7 @@ function ClientesTab() {
             style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '0.8rem 1rem 0.8rem 2.8rem', color: '#111827', outline: 'none', fontSize: '0.9rem' }} 
           />
         </div>
-        <button style={{ background: '#86efac', color: '#166534', border: 'none', borderRadius: 12, padding: '0.8rem 1.8rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+        <button style={{ background: '#c084fc', color: '#4c1d95', border: 'none', borderRadius: 12, padding: '0.8rem 1.8rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
            <Plus size={18} strokeWidth={3} /> Cadastrar cliente
         </button>
       </div>
@@ -377,7 +377,7 @@ function SaquesTab({ data }: { data: DashboardData }) {
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.2rem' }}>
                  <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#111827', letterSpacing: '-0.02em' }}>{fmt(saldo)}</div>
-                 <button onClick={() => setSaqueModal(true)} style={{ background: '#86efac', color: '#166534', border: 'none', borderRadius: 12, padding: '0.7rem 1.4rem', fontWeight: 800, fontSize: '0.88rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                 <button onClick={() => setSaqueModal(true)} style={{ background: '#c084fc', color: '#4c1d95', border: 'none', borderRadius: 12, padding: '0.7rem 1.4rem', fontWeight: 800, fontSize: '0.88rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                     Sacar <ChevronRight size={18} strokeWidth={3} />
                  </button>
               </div>
@@ -388,7 +388,7 @@ function SaquesTab({ data }: { data: DashboardData }) {
                     <Info size={12} />
                  </div>
                  <div style={{ width: '100%', height: 7, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
-                    <div style={{ width: '0%', height: '100%', background: '#86efac' }} />
+                    <div style={{ width: '0%', height: '100%', background: '#c084fc' }} />
                  </div>
               </div>
            </Card>
