@@ -7,7 +7,7 @@ import {
   ShieldCheck, Users, History, Lock, ShoppingBag, Clock, XCircle, Copy, Globe,
   AlertTriangle, Upload, Settings, Banknote, QrCode, Wallet, Plus, Info, ArrowRight,
   Ticket, Repeat, FileText, Link as LinkIcon, Undo2, BookOpen, Key, Radio, Puzzle, Layers, SlidersHorizontal,
-  Pencil, LayoutGrid, ListFilter, Image as ImageIcon, MoreHorizontal, ArrowLeft, Folder
+  Pencil, LayoutGrid, ListFilter, Image as ImageIcon, MoreHorizontal, ArrowLeft, Folder, Store
 } from 'lucide-react';
 import { MasterApp } from './admin/MasterApp';
 import { API_BASE_URL } from './api';
@@ -1463,7 +1463,7 @@ export default function Dashboard() {
 
     const getGroupIcon = (group: string) => {
       switch(group) {
-        case 'SUA LOJA': return <ShoppingBag size={18} />;
+        case 'SUA LOJA': return <Store size={18} />;
         case 'INTEGRAÇÃO': return <SlidersHorizontal size={18} />;
         case 'GESTÃO': return <Shield size={18} />;
         case 'FINANCEIRO': return <Banknote size={18} />;
