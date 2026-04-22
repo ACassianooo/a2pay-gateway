@@ -7,7 +7,7 @@ import {
   ShieldCheck, Users, History, Lock, ShoppingBag, Clock, XCircle, Copy, Globe,
   AlertTriangle, Upload, Settings, Banknote, QrCode, Wallet, Plus, Info, ArrowRight,
   Ticket, Repeat, FileText, Link as LinkIcon, Undo2, BookOpen, Key, Radio, Puzzle, Layers, SlidersHorizontal,
-  Pencil, LayoutGrid, ListFilter, Image as ImageIcon, MoreHorizontal
+  Pencil, LayoutGrid, ListFilter, Image as ImageIcon, MoreHorizontal, ArrowLeft
 } from 'lucide-react';
 import { MasterApp } from './admin/MasterApp';
 import { API_BASE_URL } from './api';
@@ -264,12 +264,13 @@ function ProdutosTab() {
   const [currentSubTab, setCurrentSubTab] = useState('todos');
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [editingProduct, setEditingProduct] = useState<any>(null);
 
   const products = [
-    { id: 1, name: 'Hugo e Guilherme — Open-bar: 1x 12/...', sub: 'Inclui taxa de serviço', price: 220.00, color: '#8942FC' },
-    { id: 2, name: 'Hugo e Guilherme — Open-bar: 1x 12/...', sub: 'Inclui taxa de serviço', price: 220.00, color: '#a3a219' },
-    { id: 3, name: 'Hugo e Guilherme — Open-bar: 1x 12/...', sub: 'Inclui taxa de serviço', price: 220.00, color: '#ef4444' },
-    { id: 4, name: 'Hugo e Guilherme — Open-bar: 1x 12/...', sub: 'Inclui taxa de serviço', price: 220.00, color: '#84cc16' },
+    { id: 'prod_ZK5SFdeCh1fWzUKGN5TL5yka', name: 'Hugo e Guilherme — Open-bar: 1x 12/...', sub: 'Inclui taxa de serviço', price: 220.00, color: '#8942FC' },
+    { id: 'prod_827364559102837465', name: 'Hugo e Guilherme — Open-bar: 1x 12/...', sub: 'Inclui taxa de serviço', price: 220.00, color: '#a3a219' },
+    { id: 'prod_192837465564738291', name: 'Hugo e Guilherme — Open-bar: 1x 12/...', sub: 'Inclui taxa de serviço', price: 220.00, color: '#ef4444' },
+    { id: 'prod_654321098765432109', name: 'Hugo e Guilherme — Open-bar: 1x 12/...', sub: 'Inclui taxa de serviço', price: 220.00, color: '#84cc16' },
   ];
 
   const subTabs = [
@@ -281,8 +282,86 @@ function ProdutosTab() {
     { id: 'tabelas', label: 'Tabelas de preços' },
   ];
 
+  if (editingProduct) {
+    return (
+      <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+        <button 
+          onClick={() => setEditingProduct(null)}
+          style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', fontWeight: 600, fontSize: '0.9rem' }}>
+          <ArrowLeft size={18} /> Voltar para lista
+        </button>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#111827', margin: 0 }}>Detalhes do produto</h1>
+          <button style={{ background: '#fff', border: '1px solid #8942FC', color: '#8942FC', borderRadius: 10, padding: '0.6rem 1.8rem', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem' }}>
+            Editar
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
+          {/* Left Column: Info */}
+          <Card style={{ padding: '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
+              <div style={{ background: '#f8fafc', width: 32, height: 32, borderRadius: 8, display: 'grid', placeItems: 'center', border: '1px solid #e2e8f0' }}>
+                <Pencil size={16} color="#64748b" />
+              </div>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111827', margin: 0 }}>Informações básicas</h2>
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#64748b', marginBottom: '0.5rem' }}>ID do produto: <span style={{ fontWeight: 500, color: '#94a3b8', marginLeft: 4 }}>{editingProduct.id}</span></label>
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Nome do produto</label>
+              <input 
+                defaultValue={editingProduct.name}
+                style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '0.8rem 1rem', fontSize: '0.95rem', color: '#111827' }} 
+              />
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Preço</label>
+              <input 
+                defaultValue={`R$ ${editingProduct.price.toFixed(2).replace('.', ',')}`}
+                style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '0.8rem 1rem', fontSize: '0.95rem', color: '#64748b' }} 
+              />
+              <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.5rem' }}>O preço não pode ser alterado após a criação do produto</p>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Descrição</label>
+              <textarea 
+                defaultValue={editingProduct.sub}
+                style={{ width: '100%', minHeight: '150px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '0.8rem 1rem', fontSize: '0.95rem', color: '#111827', resize: 'vertical' }} 
+              />
+            </div>
+          </Card>
+
+          {/* Right Column: Image */}
+          <Card style={{ padding: '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
+              <ImageIcon size={20} color="#64748b" />
+              <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#111827', margin: 0 }}>Imagem do produto</h2>
+            </div>
+
+            <div style={{ width: '100%', aspectRatio: '1/1', background: `${editingProduct.color}08`, borderRadius: 12, border: `1px solid ${editingProduct.color}15`, display: 'grid', placeItems: 'center' }}>
+              <ImageIcon size={64} color={editingProduct.color} strokeWidth={1} />
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div>
+    <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#111827', margin: 0 }}>Catálogo de produtos</h1>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -369,7 +448,7 @@ function ProdutosTab() {
         gap: '1.5rem' 
       }}>
         {products.map(p => (
-          <Card key={p.id} style={{ padding: 0, overflow: 'hidden', border: '1px solid #f1f5f9', transition: 'all 0.2s', cursor: 'pointer' }}>
+          <Card key={p.id} onClick={() => setEditingProduct(p)} style={{ padding: 0, overflow: 'hidden', border: '1px solid #f1f5f9', transition: 'all 0.2s', cursor: 'pointer' }}>
             <div style={{ height: '160px', background: `${p.color}10`, display: 'grid', placeItems: 'center', position: 'relative' }}>
               <ImageIcon size={48} color={p.color} strokeWidth={1} />
               <div style={{ position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'grid', placeItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
@@ -381,7 +460,9 @@ function ProdutosTab() {
               <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '1rem' }}>{p.sub}</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontSize: '1rem', fontWeight: 800, color: '#111827' }}>R$ {p.price.toFixed(2).replace('.', ',')}</div>
-                <button style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setEditingProduct(p); }}
+                  style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
                   <Pencil size={16} />
                 </button>
               </div>
