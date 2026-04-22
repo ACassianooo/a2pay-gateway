@@ -1,18 +1,27 @@
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  LayoutDashboard, DollarSign, CreditCard, ShieldAlert,
-  Key, TrendingUp, AlertTriangle, CheckCircle2, Clock,
-  XCircle, Copy, Check, RefreshCw, Eye, EyeOff, Code,
-  Download, Filter, ArrowUpRight, Zap, Activity,
-  Building, ChevronRight, Search, Ban, Globe,
-  User, Settings, Upload, Bell, Webhook, BookOpen, Terminal,
-  Users, Lock, Unlock, FileText, PieChart, TrendingDown, ArrowUp,
-  List, RotateCcw, Banknote, History,
-  LogOut, HelpCircle, ChevronDown, Monitor, Shield
+import { 
+  LayoutDashboard, DollarSign, CreditCard, ShieldAlert, Terminal, User, Zap, Activity, HelpCircle, LogOut, 
+  ChevronRight, Bell, Monitor, Search, Filter, Download, CheckCircle2, Building, ChevronDown, 
+  Code, Shield, List, ArrowUpRight, Ban, TrendingUp, Eye, EyeOff, Check, RefreshCw, 
+  ShieldCheck, Users, History, Lock, ShoppingBag, Clock, XCircle, Copy, Globe,
+  AlertTriangle, Upload, Settings, Banknote, QrCode, Wallet, Plus, Info, ArrowRight
 } from 'lucide-react';
 import { MasterApp } from './admin/MasterApp';
 import { API_BASE_URL } from './api';
+
+// Import Admin Tabs
+import { AdminOverview } from './admin/dashboard/AdminOverview';
+import { AdminUsers } from './admin/users/AdminUsers';
+import { AdminTransactions } from './admin/transactions/AdminTransactions';
+import { AdminWithdrawals } from './admin/withdrawals/AdminWithdrawals';
+import { AdminFinance } from './admin/finance/AdminFinance';
+import { AdminFraud } from './admin/fraud/AdminFraud';
+import { AdminReports } from './admin/reports/AdminReports';
+import { AdminIntegrations } from './admin/integrations/AdminIntegrations';
+import { AdminAudit } from './admin/audit/AdminAudit';
+import { AdminAccessControl } from './admin/settings/AdminAccessControl';
+import DemoStore from './DemoStore';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Transaction {
@@ -24,11 +33,19 @@ interface Transaction {
   metodo_pagamento: string;
   created_at: string;
 }
+interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  cpf: string;
+  created_at: string;
+}
 interface EmpresaInfo { nome: string; volume_girado: number; taxas_cobradas: number; }
 interface DashboardData {
   role: string;
   saldo_lojista?: number;
   transacoes?: Transaction[];
+  clientes?: Customer[];
   lucro_total?: number;
   empresas?: EmpresaInfo[];
   is_sandbox?: boolean;
@@ -42,7 +59,10 @@ interface APIKeyData {
   created_at: string; 
 }
 
-type Tab = 'overview' | 'financeiro' | 'pagamentos' | 'antifraude' | 'desenvolvedor' | 'conta';
+type Tab = 
+  | 'overview' | 'financeiro' | 'pagamentos' | 'clientes' | 'antifraude' | 'desenvolvedor' | 'conta'
+  | 'admin-overview' | 'admin-users' | 'admin-transactions' | 'admin-finance' | 'admin-withdrawals' 
+  | 'admin-fraud' | 'admin-audit' | 'admin-integrations' | 'admin-demo' | 'admin-reports' | 'admin-access';
 
 const API = API_BASE_URL;
 const token = () => localStorage.getItem('token') || '';
@@ -51,7 +71,7 @@ const fmtDate = (d: string) => new Date(d).toLocaleString('pt-BR', { day: '2-dig
 
 // ── Status Badge ──────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { color: string; bg: string; icon: JSX.Element; label: string }> = {
+  const map: Record<string, { color: string; bg: string; icon: React.ReactElement; label: string }> = {
     pago:           { color: '#22c55e', bg: 'rgba(34,197,94,0.1)',   icon: <CheckCircle2 size={11} />, label: 'Pago' },
     aguardando_pix: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', icon: <Clock size={11} />,        label: 'Aguardando' },
     pendente:       { color: '#94a3b8', bg: 'rgba(148,163,184,0.1)',icon: <Clock size={11} />,         label: 'Pendente' },
@@ -81,23 +101,23 @@ function Sparkline({ data, color = '#8942FC' }: { data: number[]; color?: string
 }
 
 // ── Metric Card ───────────────────────────────────────────────────────────────
-function MetricCard({ icon, label, value, sub, color = '#8942FC', spark }: {
-  icon: JSX.Element; label: string; value: string; sub?: string; color?: string; spark?: number[];
+function MetricCard({ label, value, icon, sub, color }: {
+  label: string; value: string; icon?: React.ReactElement; sub?: string; color?: string;
 }) {
   return (
-    <div style={{ background: '#ffffff', border: '1px solid #f1f5f9', borderRadius: '12px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', transition: 'all .2s', cursor: 'default', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-        <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>{label}</div>
-        {spark && <Sparkline data={spark} color={color} />}
+    <div style={{ background: '#ffffff', border: '1px solid #f1f5f9', borderRadius: '16px', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.2rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', flex: 1 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ color: '#94a3b8', fontSize: '0.82rem', fontWeight: 600 }}>{label}</div>
+        {icon && <div style={{ color: color || '#94a3b8' }}>{icon}</div>}
       </div>
-      <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#111827', letterSpacing: '-0.025em' }}>{value}</div>
-      {sub && <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>{sub}</div>}
+      <div style={{ fontSize: '1.85rem', fontWeight: 700, color: '#111827', letterSpacing: '-0.02em' }}>{value}</div>
+      {sub && <div style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500 }}>{sub}</div>}
     </div>
   );
 }
 
 // ── Section header ────────────────────────────────────────────────────────────
-function SectionHeader({ icon, title, sub }: { icon: JSX.Element; title: string; sub?: string }) {
+function SectionHeader({ icon, title, sub }: { icon: React.ReactElement; title: string; sub?: string }) {
   return (
     <div style={{ marginBottom: '1.8rem' }}>
       <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#111827', fontSize: '1.3rem', fontWeight: 800, marginBottom: '0.3rem' }}>
@@ -124,86 +144,184 @@ function OverviewTab({ data }: { data: DashboardData }) {
   const [period, setPeriod] = useState('Hoje');
   const txs = data.transacoes || [];
   const pagas = txs.filter(t => t.status === 'pago');
-  const pendentes = txs.filter(t => t.status === 'aguardando_pix' || t.status === 'pendente');
-  const saldo = data.saldo_lojista || 0;
   const volume = pagas.reduce((s, t) => s + t.valor_total, 0);
-  const taxas = pagas.reduce((s, t) => s + (t.valor_total - t.valor_liquido), 0);
-  const saldoPendente = pendentes.reduce((s, t) => s + t.valor_liquido, 0);
+  const ticketMedio = pagas.length > 0 ? volume / pagas.length : 0;
 
-  // Sparkline: volume últimos 7 "dias" simulado por posição das transações
-  const sparks = Array.from({ length: 7 }, (_, i) => {
-    const slice = txs.filter((_, j) => j % 7 === i && txs[j]?.status === 'pago');
-    return slice.reduce((s, t) => s + t.valor_total, 0) || Math.random() * 200;
+  const periods = ['Hoje', 'Esse mês', 'Últimos 30 dias', 'Últimos 90 dias', 'Todo o período', 'Personalizado'];
+
+  const metodos = [
+    { name: 'Cartão de crédito', key: 'card', color: '#f97316', icon: <CreditCard size={15} /> },
+    { name: 'Pix', key: 'pix', color: '#a855f7', icon: <Zap size={15} /> },
+    { name: 'Pix QR Code', key: 'pix_qr_code', color: '#14b8a6', icon: <QrCode size={15} /> },
+  ];
+
+  const stats = metodos.map(m => {
+    const val = pagas.filter(t => (t.metodo_pagamento || 'pix') === m.key).reduce((s, t) => s + t.valor_total, 0);
+    return { ...m, value: val };
   });
 
-  const recent = txs.slice(0, 5);
-  const periods = ['Hoje', 'Esse mês', 'Últimos 30 dias', 'Últimos 90 dias', 'Todo o período', 'Personalizado'];
+  const totalVolume = stats.reduce((s, m) => s + m.value, 0);
 
   return (
     <div>
       {/* Filtros de Período */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
         {periods.map(p => (
           <button key={p} onClick={() => setPeriod(p)}
-            style={{ padding: '0.5rem 0.85rem', borderRadius: '8px', border: '1px solid #e2e8f0', background: period === p ? '#8942FC' : '#fff', color: period === p ? '#fff' : '#64748b', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', transition: 'all .2s', whiteSpace: 'nowrap' }}>
+            style={{ 
+              padding: '0.6rem 1.2rem', 
+              borderRadius: '10px', 
+              border: period === p ? 'none' : '1px solid #e2e8f0', 
+              background: period === p ? '#86efac' : '#fff', 
+              color: period === p ? '#166534' : '#64748b', 
+              fontSize: '0.85rem', 
+              fontWeight: 700, 
+              cursor: 'pointer', 
+              transition: 'all .2s', 
+              whiteSpace: 'nowrap' 
+            }}>
             {p}
           </button>
         ))}
       </div>
 
       {/* KPI Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
-        <MetricCard icon={<DollarSign size={15} />} label="Total em vendas" value={fmt(volume)} sub="Em relação ao período anterior" color="#8942FC" spark={sparks} />
-        <MetricCard icon={<List size={15} />} label="Total de transações" value={String(pagas.length)} sub="Transações processadas" color="#8942FC" />
-        <MetricCard icon={<Activity size={15} />} label="Ticket Médio" value={fmt(pagas.length > 0 ? volume / pagas.length : 0)} sub="Valor médio por venda" color="#8942FC" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '1.5rem' }}>
+        <MetricCard label="Total em vendas" value={fmt(volume)} />
+        <MetricCard label="Total de transações" value={String(pagas.length)} />
+        <MetricCard label="Ticket Médio" value={fmt(ticketMedio)} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-        {/* Transações recentes */}
-        <Card>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
-            <h3 style={{ color: '#111827', fontWeight: 700, fontSize: '0.95rem' }}>Transações Recentes</h3>
-            <span style={{ color: '#8942FC', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Ver todas →</span>
+      {/* Métodos de Pagamento */}
+      <Card style={{ padding: '1.8rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#f8fafc', display: 'grid', placeItems: 'center', border: '1px solid #f1f5f9' }}>
+            <Wallet size={18} color="#64748b" />
           </div>
-          {recent.length === 0 && <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>Nenhuma transação.</p>}
-          {recent.map(t => (
-            <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid #f3f4f6' }}>
+          <h3 style={{ color: '#111827', fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.01em' }}>Métodos de pagamentos</h3>
+        </div>
+
+        {/* Barra de Progresso Geral */}
+        <div style={{ width: '100%', height: '36px', background: '#f1f5f9', borderRadius: '10px', overflow: 'hidden', marginBottom: '2rem', position: 'relative' }}>
+          {totalVolume > 0 ? (
+            <div style={{ display: 'flex', width: '100%', height: '100%' }}>
+              {stats.map((m, i) => (
+                <div key={i} style={{ 
+                  width: `${(m.value / totalVolume) * 100}%`, 
+                  height: '100%', 
+                  background: m.color, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  color: '#fff',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  transition: 'width .5s cubic-bezier(0.4, 0, 0.2, 1)'
+                }}>
+                  {((m.value / totalVolume) * 100) > 10 && `${Math.round((m.value / totalVolume) * 100)}%`}
+                </div>
+              ))}
+            </div>
+          ) : (
+             <div style={{ width: '100%', height: '100%', background: '#e2e8f0' }} />
+          )}
+        </div>
+
+        {/* Lista de Métodos */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+          {stats.sort((a,b) => b.value - a.value).map(m => (
+            <div key={m.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 0', borderTop: '1px solid #f8fafc' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f9fafb', display: 'grid', placeItems: 'center', color: '#8942FC' }}>
-                  {t.metodo_pagamento === 'pix' ? <Zap size={16} /> : <CreditCard size={16} />}
-                </div>
-                <div>
-                  <div style={{ color: '#111827', fontSize: '0.88rem', fontWeight: 600 }}>{t.item_name || 'Pagamento'}</div>
-                  <div style={{ color: '#6b7280', fontSize: '0.75rem' }}>#{t.id} · {fmtDate(t.created_at)}</div>
-                </div>
+                <div style={{ color: m.color }}>{m.icon}</div>
+                <span style={{ color: '#111827', fontSize: '0.9rem', fontWeight: 700 }}>{m.name}</span>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ color: '#22c55e', fontWeight: 700, fontSize: '0.9rem' }}>{fmt(t.valor_liquido)}</div>
-                <StatusBadge status={t.status} />
-              </div>
+              <span style={{ color: '#111827', fontSize: '0.95rem', fontWeight: 700 }}>{fmt(m.value)}</span>
             </div>
           ))}
-        </Card>
-
-        {/* Alertas */}
-        <Card>
-          <h3 style={{ color: '#111827', fontWeight: 700, fontSize: '0.95rem', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <AlertTriangle size={16} color="#f59e0b" /> Alertas
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-            {pendentes.length > 0 && (
-              <div style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 10, padding: '0.8rem' }}>
-                <div style={{ color: '#d97706', fontWeight: 700, fontSize: '0.82rem' }}>⚡ {pendentes.length} PIX aguardando</div>
-                <div style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '0.2rem' }}>Confirme no painel financeiro</div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.2rem 0', borderTop: '1px solid #f1f5f9', marginTop: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#16a34a', display: 'grid', placeItems: 'center' }}>
+                 <Check size={14} color="#fff" strokeWidth={3} />
               </div>
-            )}
-            <div style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 10, padding: '0.8rem' }}>
-              <div style={{ color: '#15803d', fontWeight: 700, fontSize: '0.82rem' }}>✅ Antifraude ativo</div>
-              <div style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '0.2rem' }}>4 regras monitorando</div>
+              <span style={{ color: '#111827', fontSize: '0.95rem', fontWeight: 800 }}>Total</span>
             </div>
+            <span style={{ color: '#111827', fontSize: '1.1rem', fontWeight: 900 }}>{fmt(totalVolume)}</span>
           </div>
-        </Card>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TAB: CLIENTES
+// ══════════════════════════════════════════════════════════════════════════════
+function ClientesTab() {
+  const [clientes, setClientes] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    fetch(`${API}/api/merchants/customers`, {
+      headers: { 'Authorization': `Bearer ${token()}` }
+    })
+    .then(r => r.json())
+    .then(d => { setClientes(d || []); setLoading(false); })
+    .catch(() => setLoading(false));
+  }, []);
+
+  const filtered = (clientes || []).filter(c => 
+    (c.name || '').toLowerCase().includes(search.toLowerCase()) || 
+    (c.email || '').toLowerCase().includes(search.toLowerCase()) ||
+    (c.id || '').toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div>
+      <SectionHeader icon={<Users size={22} />} title="Clientes" sub="Gerenciamento de compradores e histórico de relacionamento." />
+      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div style={{ position: 'relative', width: '320px' }}>
+          <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+          <input 
+            value={search} 
+            onChange={e => setSearch(e.target.value)} 
+            placeholder="Pesquisar por ID, e-mail, nome..." 
+            style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '0.8rem 1rem 0.8rem 2.8rem', color: '#111827', outline: 'none', fontSize: '0.9rem' }} 
+          />
+        </div>
+        <button style={{ background: '#86efac', color: '#166534', border: 'none', borderRadius: 12, padding: '0.8rem 1.8rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+           <Plus size={18} strokeWidth={3} /> Cadastrar cliente
+        </button>
       </div>
+
+      <Card style={{ padding: 0, overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <thead>
+            <tr style={{ background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
+              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>ID</th>
+              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>Nome</th>
+              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>E-mail</th>
+              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>Data de Criação</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={4} style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem' }}>Carregando clientes...</td></tr>
+            ) : filtered.length === 0 ? (
+              <tr><td colSpan={4} style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem' }}>Nenhum cliente encontrado.</td></tr>
+            ) : filtered.map(c => (
+              <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                <td style={{ padding: '1.2rem 1.5rem', color: '#94a3b8', fontSize: '0.82rem' }}>{c.id}</td>
+                <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.88rem', fontWeight: 700 }}>{c.name}</td>
+                <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.88rem' }}>{c.email}</td>
+                <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>{fmtDate(c.created_at)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
     </div>
   );
 }
@@ -211,162 +329,212 @@ function OverviewTab({ data }: { data: DashboardData }) {
 // ══════════════════════════════════════════════════════════════════════════════
 // TAB: FINANCEIRO
 // ══════════════════════════════════════════════════════════════════════════════
-function FinanceiroTab({ data }: { data: DashboardData }) {
-  const txs = data.transacoes || [];
-  const pagas = txs.filter(t => t.status === 'pago');
-  const saldo = data.saldo_lojista || 0;
-  const saldoBloqueado = txs.filter(t => t.status === 'aguardando_pix').reduce((s, t) => s + t.valor_liquido, 0);
-  const [filterStatus, setFilterStatus] = useState('todos');
-  const [searchTerm, setSearchTerm] = useState('');
+function SaquesTab({ data }: { data: DashboardData }) {
+  const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('todos');
   const [saqueModal, setSaqueModal] = useState(false);
-  const [saqueValor, setSaqueValor] = useState('');
-  const [saqueChave, setSaqueChave] = useState('');
-  const [saqueOK, setSaqueOK] = useState(false);
 
-  const filtered = txs.filter(t => {
-    const matchStatus = filterStatus === 'todos' || t.status === filterStatus;
-    const matchSearch = !searchTerm || t.item_name.toLowerCase().includes(searchTerm.toLowerCase()) || String(t.id).includes(searchTerm);
+  const saldo = data.saldo_lojista || 0;
+
+  const fetchWithdrawals = () => {
+    fetch(`${API}/api/merchants/withdrawals`, {
+      headers: { 'Authorization': `Bearer ${token()}` }
+    })
+    .then(r => r.json())
+    .then(d => { setWithdrawals(d || []); setLoading(false); })
+    .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchWithdrawals();
+  }, []);
+
+  const filtered = (withdrawals || []).filter(w => {
+    const matchStatus = statusFilter === 'todos' || w.status === statusFilter;
+    const matchSearch = !search || String(w.id).includes(search) || String(w.amount).includes(search);
     return matchStatus && matchSearch;
   });
 
-  const exportCSV = () => {
-    const header = 'ID,Item,Valor Total,Valor Líquido,Taxa,Status,Método,Data';
-    const rows = txs.map(t => `${t.id},"${t.item_name}",${t.valor_total},${t.valor_liquido},${(t.valor_total - t.valor_liquido).toFixed(2)},${t.status},${t.metodo_pagamento},${t.created_at}`);
-    const csv = [header, ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'extrato-a2pay.csv'; a.click();
+  return (
+     <div>
+        <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#111827', marginBottom: '2.5rem', letterSpacing: '-0.02em' }}>Saques</h2>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.25rem', marginBottom: '2.5rem' }}>
+           <SaqueMiniCard label="Disponível para antecipar (D+2)" value={0} actionLabel="Antecipar" icon={<Zap size={14} />} />
+           <SaqueMiniCard label="Antecipação em processamento" value={0} actionLabel="Ver status" icon={<Clock size={14} />} />
+           <SaqueMiniCard label="Valor bloqueado em disputas" value={0} actionLabel="Ver disputas" icon={<Lock size={14} />} />
+           
+           <Card style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1px solid #f1f5f9', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>
+                    <div style={{ width: 26, height: 26, borderRadius: 8, background: '#f8fafc', display: 'grid', placeItems: 'center', border: '1px solid #f1f5f9' }}><Banknote size={15} /></div>
+                    Disponível para saque
+                 </div>
+                 <Info size={14} color="#94a3b8" />
+              </div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.2rem' }}>
+                 <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#111827', letterSpacing: '-0.02em' }}>{fmt(saldo)}</div>
+                 <button onClick={() => setSaqueModal(true)} style={{ background: '#86efac', color: '#166534', border: 'none', borderRadius: 12, padding: '0.7rem 1.4rem', fontWeight: 800, fontSize: '0.88rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                    Sacar <ChevronRight size={18} strokeWidth={3} />
+                 </button>
+              </div>
+
+              <div style={{ marginTop: '1.2rem' }}>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.5rem', fontWeight: 600 }}>
+                    <span>Limite diário de saques: R$ 0,00 / R$ 5.000,00</span>
+                    <Info size={12} />
+                 </div>
+                 <div style={{ width: '100%', height: 7, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
+                    <div style={{ width: '0%', height: '100%', background: '#86efac' }} />
+                 </div>
+              </div>
+           </Card>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', gap: '1rem' }}>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flex: 1 }}>
+                <div style={{ position: 'relative', width: '340px' }}>
+                    <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Pesquisar por ID, valor" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '0.75rem 1rem 0.75rem 2.8rem', color: '#111827', fontSize: '0.9rem', outline: 'none' }} />
+                </div>
+                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '0.75rem 1.2rem', color: '#64748b', fontSize: '0.9rem', fontWeight: 600, outline: 'none', cursor: 'pointer', minWidth: '160px' }}>
+                    <option value="todos">Status</option>
+                    <option value="pending">Pendente</option>
+                    <option value="paid">Pago</option>
+                </select>
+            </div>
+            <button style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '0.75rem 1.5rem', color: '#374151', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                <Upload size={18} /> Exportar
+            </button>
+        </div>
+
+        <Card style={{ padding: 0, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
+                        <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>ID de pagamento</th>
+                        <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>Valor</th>
+                        <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>Status</th>
+                        <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>Criação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {loading ? (
+                         <tr><td colSpan={4} style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem' }}>Carregando histórico...</td></tr>
+                    ) : filtered.length === 0 ? (
+                        <tr><td colSpan={4} style={{ padding: '5rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.95rem' }}>Nenhum dado encontrado</td></tr>
+                    ) : filtered.map(w => (
+                        <tr key={w.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '1.2rem 1.5rem', color: '#94a3b8', fontSize: '0.85rem' }}>#{w.id}</td>
+                            <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.9rem', fontWeight: 800 }}>{fmt(w.amount)}</td>
+                            <td style={{ padding: '1.2rem 1.5rem' }}><StatusBadge status={w.status} /></td>
+                            <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>{fmtDate(w.created_at)}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </Card>
+
+        {saqueModal && <SaqueModal onClose={() => setSaqueModal(false)} saldo={saldo} onSucess={() => { fetchWithdrawals(); }} />}
+     </div>
+  );
+}
+
+function SaqueMiniCard({ label, value, actionLabel, icon }: any) {
+    return (
+        <Card style={{ padding: '1.5rem', border: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: '1rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#64748b', fontSize: '0.8rem', fontWeight: 700 }}>
+                    {icon} {label}
+                </div>
+                <Info size={14} color="#94a3b8" />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', letterSpacing: '-0.02em' }}>{fmt(value)}</div>
+                <button style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '0.5rem 1rem', color: '#374151', fontSize: '0.8rem', fontWeight: 800, cursor: 'pointer', transition: 'all .2s' }}>
+                    {actionLabel}
+                </button>
+            </div>
+        </Card>
+    );
+}
+
+function SaqueModal({ onClose, saldo, onSucess }: { onClose: () => void; saldo: number; onSucess: () => void }) {
+  const [valor, setValor] = useState('');
+  const [chave, setChave] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [ok, setOk] = useState(false);
+
+  const handleSaque = () => {
+    setLoading(true);
+    fetch(`${API}/api/merchants/withdraw`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token()}` },
+      body: JSON.stringify({ amount: parseFloat(valor), pix_key: chave })
+    })
+    .then(r => r.ok ? r.json() : r.json().then(e => { throw e; }))
+    .then(() => { setOk(true); onSucess(); })
+    .catch(e => alert(e.error || 'Erro ao processar saque'))
+    .finally(() => setLoading(false));
   };
 
   return (
-    <div>
-      <SectionHeader icon={<DollarSign size={22} />} title="Financeiro" sub="Gerencie seu saldo, saque e extrato completo." />
-
-      {/* Saldo Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
-        <MetricCard icon={<DollarSign size={15} />} label="Saldo Disponível" value={fmt(saldo)} sub="Disponível para saque" color="#22c55e" />
-        <MetricCard icon={<Ban size={15} />} label="Saldo Bloqueado" value={fmt(saldoBloqueado)} sub="Aguardando confirmação PIX" color="#f59e0b" />
-        <MetricCard icon={<TrendingUp size={15} />} label="Total Recebido" value={fmt(pagas.reduce((s, t) => s + t.valor_liquido, 0))} sub={`${pagas.length} transações pagas`} color="#8942FC" />
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-        {/* Solicitar Saque */}
-        <Card>
-          <h3 style={{ color: '#111827', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
-            <ArrowUpRight size={18} color="#8942FC" /> Solicitar Saque (PIX)
-          </h3>
-          {saqueOK ? (
-            <div style={{ textAlign: 'center', padding: '2rem' }}>
-              <CheckCircle2 size={48} color="#22c55e" style={{ marginBottom: '1rem' }} />
-              <div style={{ color: '#22c55e', fontWeight: 700, fontSize: '1.1rem' }}>Solicitação enviada!</div>
-              <div style={{ color: '#6b7280', fontSize: '0.85rem', marginTop: '0.5rem' }}>Processado em até 1 dia útil.</div>
-              <button onClick={() => { setSaqueOK(false); setSaqueValor(''); setSaqueChave(''); }} style={{ marginTop: '1.5rem', background: '#8942FC', color: '#fff', border: 'none', borderRadius: 8, padding: '0.6rem 1.5rem', fontWeight: 700, cursor: 'pointer' }}>
-                Novo Saque
-              </button>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', display: 'grid', placeItems: 'center', zIndex: 1000 }}>
+      <div style={{ background: '#fff', borderRadius: 20, width: '450px', padding: '2rem', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+        {ok ? (
+          <div style={{ textAlign: 'center', padding: '1rem' }}>
+            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#f0fdf4', color: '#22c55e', display: 'grid', placeItems: 'center', margin: '0 auto 1.5rem' }}>
+              <Check size={32} strokeWidth={3} />
             </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111827', marginBottom: '0.5rem' }}>Saque Solicitado!</h3>
+            <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '2rem' }}>Seu pedido está em processamento e será pago em instantes.</p>
+            <button onClick={onClose} style={{ width: '100%', background: '#111827', color: '#fff', border: 'none', borderRadius: 12, padding: '0.8rem', fontWeight: 700, cursor: 'pointer' }}>Fechar</button>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#111827' }}>Solicitar Saque</h3>
+              <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><XCircle size={24} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
               <div>
-                <label style={{ display: 'block', color: '#6b7280', fontSize: '0.82rem', marginBottom: '0.4rem', fontWeight: 600 }}>VALOR (R$)</label>
-                <input value={saqueValor} onChange={e => setSaqueValor(e.target.value)} type="number" placeholder="Ex: 100,00" style={{ width: '100%', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.7rem 1rem', color: '#111827', fontSize: '0.95rem', outline: 'none' }} />
+                <label style={{ display: 'block', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.5rem' }}>Valor do Saque</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontWeight: 700, color: '#94a3b8' }}>R$</span>
+                  <input type="number" value={valor} onChange={e => setValor(e.target.value)} placeholder="0,00" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '0.8rem 1rem 0.8rem 2.5rem', fontSize: '1.1rem', fontWeight: 800, outline: 'none' }} />
+                </div>
               </div>
               <div>
-                <label style={{ display: 'block', color: '#6b7280', fontSize: '0.82rem', marginBottom: '0.4rem', fontWeight: 600 }}>CHAVE PIX</label>
-                <input value={saqueChave} onChange={e => setSaqueChave(e.target.value)} placeholder="CPF, email ou chave aleatória" style={{ width: '100%', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.7rem 1rem', color: '#111827', fontSize: '0.95rem', outline: 'none' }} />
+                <label style={{ display: 'block', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.5rem' }}>Chave PIX de Destino</label>
+                <input value={chave} onChange={e => setChave(e.target.value)} placeholder="E-mail, CPF ou Chave Aleatória" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '0.8rem 1rem', fontSize: '0.95rem', fontWeight: 600, outline: 'none' }} />
               </div>
-              <div style={{ background: 'rgba(137,66,252,0.05)', borderRadius: 8, padding: '0.7rem 1rem', fontSize: '0.82rem', color: '#8942FC', border: '1px solid rgba(137,66,252,0.1)' }}>
-                Saldo disponível: <strong>{fmt(saldo)}</strong> · Taxa de saque: grátis
+              <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: 12, border: '1px solid #f1f5f9' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                  <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Saldo disponível</span>
+                  <span style={{ color: '#111827', fontWeight: 800 }}>{fmt(saldo)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#64748b', fontSize: '0.85rem' }}>Taxa de transferência</span>
+                  <span style={{ color: '#22c55e', fontWeight: 800 }}>Grátis</span>
+                </div>
               </div>
               <button
-                disabled={!saqueValor || !saqueChave || parseFloat(saqueValor) > saldo}
-                onClick={() => setSaqueOK(true)}
-                style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 10, padding: '0.8rem', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem', opacity: (!saqueValor || !saqueChave || parseFloat(saqueValor) > saldo) ? 0.5 : 1, transition: 'all .2s' }}>
-                Solicitar Saque
+                disabled={loading || !valor || !chave || parseFloat(valor) > saldo || parseFloat(valor) <= 0}
+                onClick={handleSaque}
+                style={{ width: '100%', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 12, padding: '1rem', fontWeight: 800, fontSize: '1rem', cursor: 'pointer', opacity: (loading || !valor || !chave || parseFloat(valor) > saldo || parseFloat(valor) <= 0) ? 0.5 : 1, transition: 'all .2s' }}>
+                {loading ? 'Processando...' : 'Confirmar Saque'}
               </button>
             </div>
-          )}
-        </Card>
-
-        {/* Histórico de Saques */}
-        <Card>
-          <h3 style={{ color: '#111827', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
-            <Activity size={18} color="#8942FC" /> Histórico de Saques
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-            {[
-              { valor: 250.00, status: 'pago', data: '14/04', chave: '***@email.com' },
-              { valor: 100.00, status: 'pago', data: '10/04', chave: 'cpf: ***456' },
-              { valor: 500.00, status: 'pendente', data: 'Hoje', chave: 'chave aleatória' },
-            ].map((s, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.7rem', background: '#f9fafb', borderRadius: 8, border: '1px solid #e5e7eb' }}>
-                <div>
-                  <div style={{ color: '#111827', fontWeight: 700, fontSize: '0.88rem' }}>{fmt(s.valor)}</div>
-                  <div style={{ color: '#6b7280', fontSize: '0.75rem' }}>{s.data} · {s.chave}</div>
-                </div>
-                <StatusBadge status={s.status} />
-              </div>
-            ))}
-            <p style={{ color: '#6b7280', fontSize: '0.75rem', textAlign: 'center', marginTop: '0.5rem' }}>Dados demonstrativos</p>
-          </div>
-        </Card>
+          </>
+        )}
       </div>
-
-      {/* Extrato */}
-      <Card>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '0.8rem' }}>
-          <h3 style={{ color: '#111827', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Filter size={16} color="#8942FC" /> Extrato Completo
-          </h3>
-          <div style={{ display: 'flex', gap: '0.7rem', flexWrap: 'wrap' }}>
-            <div style={{ position: 'relative' }}>
-              <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }} />
-              <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar..." style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.5rem 0.8rem 0.5rem 2rem', color: '#111827', fontSize: '0.85rem', outline: 'none', width: 160 }} />
-            </div>
-            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.5rem 0.8rem', color: '#111827', fontSize: '0.85rem', outline: 'none', cursor: 'pointer' }}>
-              <option value="todos">Todos</option>
-              <option value="pago">Pagos</option>
-              <option value="aguardando_pix">Aguardando</option>
-              <option value="pendente">Pendente</option>
-            </select>
-            <button onClick={exportCSV} style={{ background: 'transparent', border: '1px solid #22242c', borderRadius: 8, padding: '0.5rem 0.9rem', color: '#6b7280', fontSize: '0.82rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Download size={14} /> CSV
-            </button>
-          </div>
-        </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                {['ID', 'Item', 'Total', 'Líquido', 'Taxa', 'Método', 'Status', 'Data'].map(h => (
-                  <th key={h} style={{ padding: '0.7rem 1rem', textAlign: 'left', color: '#94a3b8', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(t => (
-                <tr key={t.id} style={{ borderBottom: '1px solid #f8fafc' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                  <td style={{ padding: '0.8rem 1rem', color: '#6b7280' }}>#{t.id}</td>
-                  <td style={{ padding: '0.8rem 1rem', color: '#111827', fontWeight: 600, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.item_name}</td>
-                  <td style={{ padding: '0.8rem 1rem', color: '#111827' }}>{fmt(t.valor_total)}</td>
-                  <td style={{ padding: '0.8rem 1rem', color: '#22c55e', fontWeight: 700 }}>{fmt(t.valor_liquido)}</td>
-                  <td style={{ padding: '0.8rem 1rem', color: '#f59e0b' }}>{fmt(t.valor_total - t.valor_liquido)}</td>
-                  <td style={{ padding: '0.8rem 1rem' }}><span style={{ background: '#f3f4f6', padding: '0.2rem 0.6rem', borderRadius: 6, fontSize: '0.72rem', color: '#8942FC', textTransform: 'uppercase', fontWeight: 700, border: '1px solid #e5e7eb' }}>{t.metodo_pagamento || 'N/A'}</span></td>
-                  <td style={{ padding: '0.8rem 1rem' }}><StatusBadge status={t.status} /></td>
-                  <td style={{ padding: '0.8rem 1rem', color: '#6b7280', whiteSpace: 'nowrap' }}>{fmtDate(t.created_at)}</td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: '#6b7280' }}>Nenhuma transação encontrada.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
     </div>
   );
 }
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TAB: PAGAMENTOS
@@ -1004,9 +1172,19 @@ export default function Dashboard() {
       });
   };
 
+  // Determina se é admin/master para inicializar a tab correta
+  const isMaster = data ? (data.role === 'master' || data.role === 'admin') : false;
+
   useEffect(() => {
     fetchData(isSandbox);
   }, [navigate]);
+
+  // Inicializa a tab ativa para admin (DEVE ficar antes dos early returns)
+  useEffect(() => {
+    if (isMaster && (activeTab === 'overview' || activeTab === 'financeiro')) {
+      setActiveTab('admin-overview');
+    }
+  }, [isMaster, data?.role]);
 
   const toggleEnv = () => {
     const newVal = !isSandbox;
@@ -1032,7 +1210,7 @@ export default function Dashboard() {
     </div>
   );
 
-  if (data.role === 'master') return <MasterApp data={data} />;
+  // isMaster já foi calculado antes dos early returns
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -1040,14 +1218,34 @@ export default function Dashboard() {
     navigate('/login');
   };
 
-  const tabs: { id: Tab; icon: JSX.Element; label: string; group?: string }[] = [
+  const merchantTabs: { id: Tab; icon: React.ReactElement; label: string; group?: string }[] = [
     { id: 'overview',    icon: <LayoutDashboard size={18} />, label: 'Dashboard', group: 'PRINCIPAL' },
-    { id: 'financeiro',  icon: <DollarSign size={18} />,      label: 'Financeiro', group: 'SUA LOJA' },
+    { id: 'clientes',    icon: <Users size={18} />,           label: 'Clientes', group: 'PRINCIPAL' },
+    { id: 'financeiro',  icon: <Banknote size={18} />,        label: 'Saques', group: 'SUA LOJA' },
     { id: 'pagamentos',  icon: <CreditCard size={18} />,      label: 'Pagamentos', group: 'SUA LOJA' },
     { id: 'antifraude',  icon: <ShieldAlert size={18} />,     label: 'Antifraude', group: 'SUA LOJA' },
     { id: 'desenvolvedor', icon: <Terminal size={18} />,      label: 'Integração', group: 'DEVELOPER' },
     { id: 'conta',       icon: <User size={18} />,            label: 'Configurações', group: 'DEVELOPER' },
   ];
+
+  const adminTabs: { id: Tab; icon: React.ReactElement; label: string; group?: string }[] = [
+    { id: 'admin-overview',     icon: <LayoutDashboard size={18} />, label: 'Visão Global', group: 'GESTÃO' },
+    { id: 'admin-users',        icon: <Users size={18} />,           label: 'Comunidade', group: 'GESTÃO' },
+    { id: 'admin-transactions',  icon: <List size={18} />,            label: 'Transações CORE', group: 'GESTÃO' },
+    { id: 'admin-finance',      icon: <Banknote size={18} />,        label: 'Financeiro', group: 'FINANCEIRO' },
+    { id: 'admin-withdrawals',  icon: <Download size={18} />,        label: 'Saques Cashouts', group: 'FINANCEIRO' },
+    { id: 'admin-fraud',        icon: <ShieldAlert size={18} />,     label: 'Segurança Risco', group: 'SEGURANÇA' },
+    { id: 'admin-audit',        icon: <History size={18} />,         label: 'Logs Auditoria', group: 'SEGURANÇA' },
+    { id: 'admin-integrations', icon: <Zap size={18} />,             label: 'Integrações', group: 'SISTEMA' },
+    { id: 'admin-demo',         icon: <ShoppingBag size={18} />,     label: 'Simular Loja', group: 'SISTEMA' },
+    { id: 'admin-reports',      icon: <TrendingUp size={18} />,      label: 'Relatórios', group: 'SISTEMA' },
+    { id: 'admin-access',       icon: <Lock size={18} />,            label: 'Governança', group: 'SISTEMA' },
+  ];
+
+  const currentTabs = isMaster ? adminTabs : merchantTabs;
+  const groups = isMaster ? ['GESTÃO', 'FINANCEIRO', 'SEGURANÇA', 'SISTEMA'] : ['PRINCIPAL', 'SUA LOJA', 'DEVELOPER'];
+
+  // (useEffect de admin tab movido para antes dos early returns)
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: 'Inter, system-ui, sans-serif' }}>
@@ -1067,19 +1265,19 @@ export default function Dashboard() {
         <div style={{ margin: '0 1rem 2rem', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
             <div style={{ width: 24, height: 24, borderRadius: 6, background: '#f3f4f6', display: 'grid', placeItems: 'center' }}>
-              <Building size={14} color="#6b7280" />
+              {isMaster ? <Shield size={14} color="#8942FC" /> : <Building size={14} color="#6b7280" />}
             </div>
-            <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#374151' }}>Minha Loja</span>
+            <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#374151' }}>{isMaster ? 'Admin Panel' : 'Minha Loja'}</span>
           </div>
           <ChevronDown size={16} color="#94a3b8" />
         </div>
 
         {/* Navigation Groups */}
         <div style={{ flex: 1, padding: '0 0.75rem', overflowY: 'auto' }}>
-          {['PRINCIPAL', 'SUA LOJA', 'DEVELOPER'].map(group => (
+          {groups.map(group => (
             <div key={group} style={{ marginBottom: '1.5rem' }}>
               <div style={{ padding: '0 0.75rem', fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{group}</div>
-              {tabs.filter(t => t.group === group).map(tab => (
+              {currentTabs.filter(t => t.group === group).map(tab => (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                   style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.7rem 0.75rem', borderRadius: '10px', border: 'none', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 600, transition: 'all .2s', marginBottom: '2px',
                     background: activeTab === tab.id ? 'rgba(137,66,252,0.08)' : 'transparent',
@@ -1116,11 +1314,11 @@ export default function Dashboard() {
           {/* User Profile */}
           <div style={{ marginTop: '0.5rem', padding: '0.75rem', borderRadius: '12px', background: '#f9fafb', display: 'flex', alignItems: 'center', gap: '0.75rem', border: '1px solid #f3f4f6' }}>
             <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#8942FC', color: '#fff', fontSize: '0.8rem', fontWeight: 800, display: 'grid', placeItems: 'center' }}>
-              {data.role === 'admin' ? 'AD' : 'LJ'}
+              {isMaster ? 'MA' : (data.role === 'admin' ? 'AD' : 'LJ')}
             </div>
             <div style={{ flex: 1, overflow: 'hidden' }}>
-              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Lojista A2Pay</div>
-              <div style={{ fontSize: '0.7rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{data.role === 'admin' ? 'Administrador' : 'Merchant'}</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{isMaster ? 'Master User' : 'Lojista A2Pay'}</div>
+              <div style={{ fontSize: '0.7rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{isMaster ? 'Sistema Master' : (data.role === 'admin' ? 'Administrador' : 'Merchant')}</div>
             </div>
             <button onClick={handleLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
               <LogOut size={16} />
@@ -1134,11 +1332,9 @@ export default function Dashboard() {
         
         {/* TOP HEADER */}
         <header style={{ height: '73px', background: '#ffffff', borderBottom: '1px solid #e5e7eb', padding: '0 2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 90 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', fontSize: '0.9rem', fontWeight: 500 }}>
-            <Monitor size={16} />
-            <span style={{ color: '#94a3b8' }}>Dashboard</span>
-            <ChevronRight size={14} />
-            <span style={{ color: '#111827', fontWeight: 600 }}>{tabs.find(t => t.id === activeTab)?.label}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', color: '#111827', fontSize: '1.1rem', fontWeight: 800 }}>
+            <LayoutDashboard size={20} color="#6b7280" />
+            <span>Dashboard</span>
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
@@ -1158,12 +1354,27 @@ export default function Dashboard() {
 
         {/* PAGE CONTENT */}
         <div style={{ padding: '2rem 2.5rem', maxWidth: '1400px' }}>
+          {/* Merchant Tabs */}
           {activeTab === 'overview'   && <OverviewTab data={data} />}
-          {activeTab === 'financeiro' && <FinanceiroTab data={data} />}
+          {activeTab === 'clientes'   && <ClientesTab />}
+          {activeTab === 'financeiro' && <SaquesTab data={data} />}
           {activeTab === 'pagamentos' && <PagamentosTab data={data} />}
           {activeTab === 'antifraude' && <AntifraudeTab data={data} />}
           {activeTab === 'desenvolvedor' && <DesenvolvedorTab />}
           {activeTab === 'conta'      && <ContaTab />}
+
+          {/* Admin Tabs */}
+          {activeTab === 'admin-overview'     && <AdminOverview data={data} />}
+          {activeTab === 'admin-users'        && <AdminUsers data={data} />}
+          {activeTab === 'admin-transactions' && <AdminTransactions data={data} />}
+          {activeTab === 'admin-finance'      && <AdminFinance data={data} />}
+          {activeTab === 'admin-withdrawals'  && <AdminWithdrawals data={data} />}
+          {activeTab === 'admin-fraud'        && <AdminFraud data={data} />}
+          {activeTab === 'admin-audit'        && <AdminAudit data={data} />}
+          {activeTab === 'admin-integrations' && <AdminIntegrations data={data} />}
+          {activeTab === 'admin-demo'         && <DemoStore />}
+          {activeTab === 'admin-reports'      && <AdminReports data={data} />}
+          {activeTab === 'admin-access'       && <AdminAccessControl data={data} />}
         </div>
       </main>
     </div>

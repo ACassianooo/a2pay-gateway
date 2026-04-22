@@ -1,3 +1,4 @@
+import React from 'react';
 import { BrowserRouter, Routes, Route, Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Shield, LogOut } from 'lucide-react';
 import Dashboard from './Dashboard';
@@ -8,7 +9,7 @@ import Register from './Register';
 import Landing from './Landing';
 import Docs from './Docs';
 
-function ProtectedRoute({ children }: { children: JSX.Element }) {
+function ProtectedRoute({ children }: { children: React.ReactElement }) {
   const token = localStorage.getItem('token');
   if (!token) return <Navigate to="/login" replace />;
   return children;

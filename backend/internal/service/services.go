@@ -54,10 +54,11 @@ type PIXService struct {
 	clientLive *PixClientAdapter
 	clientTest *PixClientAdapter
 	txRepo     *repository.TransactionRepository
+	custRepo   *repository.CustomerRepository
 }
 
-func NewPIXService(live, test *PixClientAdapter, txRepo *repository.TransactionRepository) *PIXService {
-	return &PIXService{clientLive: live, clientTest: test, txRepo: txRepo}
+func NewPIXService(live, test *PixClientAdapter, txRepo *repository.TransactionRepository, custRepo *repository.CustomerRepository) *PIXService {
+	return &PIXService{clientLive: live, clientTest: test, txRepo: txRepo, custRepo: custRepo}
 }
 
 func (s *PIXService) CreateCharge(intentID int, valor float64, itemName string, isSandbox bool) (*PIXResult, error) {
@@ -78,6 +79,16 @@ func (s *PIXService) CreateCharge(intentID int, valor float64, itemName string, 
 	if err != nil {
 		return nil, fmt.Errorf("criar cobrança PIX: %w", err)
 	}
+
+	// Busca o merchantID para salvar o cliente corretamente
+	_, mID, _, _ := s.txRepo.GetByID(intentID)
+	s.custRepo.Create(model.Customer{
+		ID:         customerID,
+		MerchantID: mID,
+		Name:       "Cliente A2Pay Gateway",
+		Email:      "cliente@a2pay.com",
+		CPF:        "24971563792",
+	})
 
 	s.txRepo.UpdateToAguardandoPIX(intentID, taxa, liquido, chargeID)
 	log.Printf("[PIX] Cobrança criada (%s): %s | R$ %.2f", map[bool]string{true: "TEST", false: "LIVE"}[isSandbox], chargeID, valor)
@@ -136,6 +147,15 @@ func (s *PIXService) ExternalCharge(merchantID int, req ExternalPixRequest, isSa
 	if err != nil {
 		return intentID, nil, fmt.Errorf("criar cobrança PIX: %w", err)
 	}
+
+	// Salva no nosso banco para a aba "Clientes"
+	s.custRepo.Create(model.Customer{
+		ID:         customerID,
+		MerchantID: merchantID,
+		Name:       req.CustomerName,
+		Email:      req.CustomerEmail,
+		CPF:        req.CustomerCPF,
+	})
 
 	s.txRepo.SetChargeID(intentID, chargeID)
 

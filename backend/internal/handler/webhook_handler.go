@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -9,27 +10,33 @@ import (
 )
 
 // WebhookHandler recebe eventos assíncronos do Asaas
-// O Asaas envia uma requisição POST quando o status de um pagamento muda
 type WebhookHandler struct {
-	txRepo *repository.TransactionRepository
-	secret string // ASAAS_WEBHOOK_SECRET para validar autenticidade
+	txRepo  *repository.TransactionRepository
+	walRepo *repository.WalletRepository
+	db      *sql.DB
+	secret  string // ASAAS_WEBHOOK_SECRET para validar autenticidade
 }
 
-func NewWebhookHandler(txRepo *repository.TransactionRepository, secret string) *WebhookHandler {
-	return &WebhookHandler{txRepo: txRepo, secret: secret}
+func NewWebhookHandler(txRepo *repository.TransactionRepository, walRepo *repository.WalletRepository, db *sql.DB, secret string) *WebhookHandler {
+	return &WebhookHandler{
+		txRepo:  txRepo,
+		walRepo: walRepo,
+		db:      db,
+		secret:  secret,
+	}
 }
 
 // AsaasEvent é o payload enviado pelo Asaas via webhook
 type AsaasEvent struct {
 	Event   string `json:"event"`
 	Payment struct {
-		ID     string `json:"id"`
-		Status string `json:"status"`
+		ID     string  `json:"id"`
+		Status string  `json:"status"`
+		Value  float64 `json:"value"`
 	} `json:"payment"`
 }
 
 // Handle — POST /webhooks/asaas
-// Confirma automaticamente pagamentos PIX quando o Asaas notifica "PAYMENT_RECEIVED"
 func (h *WebhookHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	// Validar token de segurança do webhook
 	if h.secret != "" {
@@ -51,22 +58,57 @@ func (h *WebhookHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	switch event.Event {
 	case "PAYMENT_RECEIVED", "PAYMENT_CONFIRMED":
-		if err := h.txRepo.ConfirmPIX(event.Payment.ID); err != nil {
-			log.Printf("[WEBHOOK] Erro ao confirmar PIX %s: %v", event.Payment.ID, err)
+		// 1. Buscar detalhes da transação no nosso banco
+		merchantID, liquido, _, status, err := h.txRepo.GetInfoByChargeID(event.Payment.ID)
+		if err != nil {
+			log.Printf("[WEBHOOK] Transação %s não encontrada no gateway", event.Payment.ID)
+			w.WriteHeader(http.StatusOK) // Evita que o Asaas reenvie se não temos a transação
+			return
+		}
+
+		// Idempotência: se já estiver pago, ignorar
+		if status == "pago" {
+			log.Printf("[WEBHOOK] Transação %s já processada anteriormente", event.Payment.ID)
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		// 2. Iniciar Transação Atômica para Proteger o Dinheiro
+		tx, err := h.db.Begin()
+		if err != nil {
+			log.Printf("[WEBHOOK] Erro ao iniciar transação SQL: %v", err)
 			http.Error(w, "erro interno", http.StatusInternalServerError)
 			return
 		}
-		log.Printf("[WEBHOOK] ✅ PIX confirmado: %s", event.Payment.ID)
+		defer tx.Rollback()
+
+		// 3. Atualizar status para pago
+		if _, err := tx.Exec("UPDATE transactions SET status='pago' WHERE asaas_charge_id=$1", event.Payment.ID); err != nil {
+			log.Printf("[WEBHOOK] Erro ao atualizar status: %v", err)
+			return
+		}
+
+		// 4. Creditar na Wallet e registrar no Ledger
+		desc := "Pagamento via PIX"
+		if err := h.walRepo.CreditWallet(tx, merchantID, liquido, "pay_"+event.Payment.ID, desc); err != nil {
+			log.Printf("[WEBHOOK] Erro ao creditar wallet: %v", err)
+			return
+		}
+
+		// 5. Commit final
+		if err := tx.Commit(); err != nil {
+			log.Printf("[WEBHOOK] Erro ao commitar transação: %v", err)
+			return
+		}
+
+		log.Printf("[WEBHOOK] ✅ PIX confirmado e saldo creditado na wallet: %s (R$ %.2f)", event.Payment.ID, liquido)
 
 	case "TRANSFER_CONFIRMATION":
-		// Este é o evento de "Validação de Saque" que você vê no seu print.
-		// Retornar 200 OK aqui diz ao Asaas: "Sim, eu autorizo este saque".
 		log.Printf("[WEBHOOK] 💸 Solicitação de saque recebida e APROVADA.")
 
 	default:
 		log.Printf("[WEBHOOK] Evento ignorado: %s", event.Event)
 	}
 
-	// Asaas espera 200 OK para não reenviar o evento
 	w.WriteHeader(http.StatusOK)
 }

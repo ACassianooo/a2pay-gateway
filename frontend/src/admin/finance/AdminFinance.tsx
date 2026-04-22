@@ -1,6 +1,7 @@
+import React from 'react';
 import type { DashboardData } from '../types';
 import { SectionHeader, MetricCard, Card, fmt } from '../AdminComponents';
-import { Banknote, DollarSign, Activity, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Banknote, DollarSign, Activity, TrendingUp, AlertTriangle, RefreshCw, Lock, Unlock } from 'lucide-react';
 
 export function AdminFinance({ data }: { data: DashboardData }) {
   const lucroTotal = data?.lucro_total || 0;

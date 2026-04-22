@@ -18,3 +18,32 @@ type FraudResult struct {
 	Bloqueado bool
 	Reasons   []string
 }
+
+// Wallet representa o saldo consolidado do lojista
+type Wallet struct {
+	MerchantID int     `json:"merchant_id"`
+	Balance    float64 `json:"balance"`
+	UpdatedAt  string  `json:"updated_at"`
+}
+
+// Withdrawal representa uma solicitação de saque
+type Withdrawal struct {
+	ID         int     `json:"id"`
+	MerchantID int     `json:"merchant_id"`
+	Amount     float64 `json:"amount"`
+	PixKey     string  `json:"pix_key"`
+	Status     string  `json:"status"`
+	CreatedAt  string  `json:"created_at"`
+	UpdatedAt  string  `json:"updated_at"`
+}
+
+// LedgerEntry representa um registro no livro de auditoria
+type LedgerEntry struct {
+	ID          int     `json:"id"`
+	MerchantID  int     `json:"merchant_id"`
+	Type        string  `json:"type"`
+	Amount      float64 `json:"amount"`
+	Reference   string  `json:"reference"`
+	Description string  `json:"description"`
+	CreatedAt   string  `json:"created_at"`
+}

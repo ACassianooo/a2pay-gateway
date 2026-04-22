@@ -10,10 +10,11 @@ import (
 type DashboardHandler struct {
 	userRepo *repository.UserRepository
 	txRepo   *repository.TransactionRepository
+	walRepo  *repository.WalletRepository
 }
 
-func NewDashboardHandler(userRepo *repository.UserRepository, txRepo *repository.TransactionRepository) *DashboardHandler {
-	return &DashboardHandler{userRepo: userRepo, txRepo: txRepo}
+func NewDashboardHandler(userRepo *repository.UserRepository, txRepo *repository.TransactionRepository, walRepo *repository.WalletRepository) *DashboardHandler {
+	return &DashboardHandler{userRepo: userRepo, txRepo: txRepo, walRepo: walRepo}
 }
 
 // Dashboard — GET /api/pagamentos
@@ -21,14 +22,14 @@ func (h *DashboardHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 	user := GetUserFromContext(r)
 	isTest := r.Header.Get("x-a2pay-env") == "test"
 
-	if user.Role == "master" {
+	if user.Role == "master" || user.Role == "admin" {
 		lucro, empresas, err := h.userRepo.GetMasterStats()
 		if err != nil {
 			respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
 		respondJSON(w, http.StatusOK, map[string]interface{}{
-			"role":        "master",
+			"role":        user.Role,
 			"lucro_total": lucro,
 			"empresas":    empresas,
 			"is_sandbox":  isTest,
@@ -36,13 +37,17 @@ func (h *DashboardHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	txs, saldo, err := h.txRepo.GetByMerchant(user.MerchantID, isTest)
+	txs, _, err := h.txRepo.GetByMerchant(user.MerchantID, isTest)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
+
+	// Saldo real vindo da wallet protegida
+	saldo, _ := h.walRepo.GetBalance(user.MerchantID)
+
 	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"role":          "lojista",
+		"role":          user.Role,
 		"saldo_lojista": saldo,
 		"transacoes":    txs,
 		"is_sandbox":    isTest,

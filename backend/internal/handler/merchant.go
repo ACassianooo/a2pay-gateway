@@ -1,22 +1,26 @@
 package handler
 
 import (
-	"net/http"
+	"database/sql"
 	"encoding/json"
+	"log"
+	"net/http"
 
+	"github.com/gato-gateway/internal/model"
 	"github.com/gato-gateway/internal/repository"
 	"github.com/gato-gateway/internal/service"
 )
 
-// MerchantHandler gerencia API Keys e exclusão de conta (LGPD)
+// MerchantHandler gerencia API Keys, exclusão de conta (LGPD) e saques
 type MerchantHandler struct {
 	userRepo *repository.UserRepository
-	txRepo   *repository.TransactionRepository
+	walRepo  *repository.WalletRepository
+	db       *sql.DB
 	crypto   *service.CryptoService
 }
 
-func NewMerchantHandler(userRepo *repository.UserRepository, crypto *service.CryptoService) *MerchantHandler {
-	return &MerchantHandler{userRepo: userRepo, crypto: crypto}
+func NewMerchantHandler(userRepo *repository.UserRepository, walRepo *repository.WalletRepository, db *sql.DB, crypto *service.CryptoService) *MerchantHandler {
+	return &MerchantHandler{userRepo: userRepo, walRepo: walRepo, db: db, crypto: crypto}
 }
 
 // GetAPIKey — GET /api/merchants/apikey
@@ -93,4 +97,70 @@ func (h *MerchantHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) 
 	respondJSON(w, http.StatusOK, map[string]string{
 		"message": "Conta e dados removidos permanentemente (LGPD Art. 18).",
 	})
+}
+
+// Withdraw — POST /api/merchants/withdraw
+func (h *MerchantHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromContext(r)
+	var req struct {
+		Amount float64 `json:"amount"`
+		PixKey string  `json:"pix_key"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "JSON inválido"})
+		return
+	}
+
+	if req.Amount <= 0 {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "Valor deve ser maior que zero"})
+		return
+	}
+
+	// 1. Iniciar transação para garantir débito e criação de registro atômicos
+	tx, err := h.db.Begin()
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro interno ao iniciar transação"})
+		return
+	}
+	defer tx.Rollback()
+
+	// 2. Debitar da wallet (já valida saldo e faz lock FOR UPDATE)
+	if err := h.walRepo.DebitWallet(tx, user.MerchantID, req.Amount, "withdraw_request", "Saque solicitado via Dashboard"); err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+
+	// 3. Criar registro de saque
+	withdrawID, err := h.walRepo.CreateWithdrawal(user.MerchantID, req.Amount, req.PixKey)
+	if err != nil {
+		log.Printf("[WITHDRAW] Erro ao criar registro de saque: %v", err)
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao salvar solicitação"})
+		return
+	}
+
+	// 4. Commit
+	if err := tx.Commit(); err != nil {
+		log.Printf("[WITHDRAW] Erro ao commitar saque: %v", err)
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao finalizar saque"})
+		return
+	}
+
+	respondJSON(w, http.StatusCreated, map[string]interface{}{
+		"id":      withdrawID,
+		"message": "Saque solicitado com sucesso. O valor foi reservado.",
+	})
+}
+
+// GetWithdrawals — GET /api/merchants/withdrawals
+func (h *MerchantHandler) GetWithdrawals(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromContext(r)
+	list, err := h.walRepo.GetWithdrawals(user.MerchantID)
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	if list == nil {
+		list = []model.Withdrawal{}
+	}
+	respondJSON(w, http.StatusOK, list)
 }

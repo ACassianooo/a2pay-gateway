@@ -34,6 +34,7 @@ func New(cfg *config.Config, db *database.DB) *Server {
 	txRepo   := repository.NewTransactionRepository(db.Conn)
 	walRepo  := repository.NewWalletRepository(db.Conn)
 	adminRepo := repository.NewAdminRepository(db.Conn)
+	custRepo := repository.NewCustomerRepository(db.Conn)
 
 	// ── Serviços ─────────────────────────────────────────────────────────
 	cryptoSvc := service.MustNewCryptoService(fmt.Sprintf("%x", cfg.AESKey))
@@ -43,17 +44,18 @@ func New(cfg *config.Config, db *database.DB) *Server {
 
 	walletSvc := service.NewWalletService()
 	fraudSvc := service.NewFraudService(txRepo, walRepo)
-	pixSvc := service.NewPIXService(pixLive, pixTest, txRepo)
+	pixSvc := service.NewPIXService(pixLive, pixTest, txRepo, custRepo)
 	paymentSvc := service.NewPaymentService(txRepo, pixSvc, walletSvc, fraudSvc)
 
 	// ── Handlers ─────────────────────────────────────────────────────────
 	authH := handler.NewAuthHandler(userRepo, cryptoSvc, cfg.JWTSecret)
 	payH := handler.NewPaymentHandler(paymentSvc, pixSvc, walletSvc, pixLive, pixTest)
-	dashH     := handler.NewDashboardHandler(userRepo, txRepo)
-	merchantH := handler.NewMerchantHandler(userRepo, cryptoSvc)
-	healthH   := handler.NewHealthHandler(db)
-	webhookH  := handler.NewWebhookHandler(txRepo, cfg.WebhookSecret)
-	adminH    := handler.NewAdminHandler(adminRepo)
+	dashH := handler.NewDashboardHandler(userRepo, txRepo, walRepo)
+	merchantH := handler.NewMerchantHandler(userRepo, walRepo, db.Conn, cryptoSvc)
+	healthH := handler.NewHealthHandler(db)
+	webhookH := handler.NewWebhookHandler(txRepo, walRepo, db.Conn, cfg.WebhookSecret)
+	adminH := handler.NewAdminHandler(adminRepo)
+	custH := handler.NewCustomerHandler(custRepo)
 
 	// ── Router ───────────────────────────────────────────────────────────
 	r := chi.NewRouter()
@@ -96,6 +98,11 @@ func New(cfg *config.Config, db *database.DB) *Server {
 			r.Get("/merchants/apikey", merchantH.GetAPIKey)
 			r.Post("/merchants/apikey/rotate", merchantH.RotateAPIKey)
 			r.Delete("/merchants/account", merchantH.DeleteAccount)
+
+			// Novas rotas de saque e auditoria financeira
+			r.Post("/merchants/withdraw", merchantH.Withdraw)
+			r.Get("/merchants/withdrawals", merchantH.GetWithdrawals)
+			r.Get("/merchants/customers", custH.GetCustomers)
 		})
 
 		// Rotas exclusivas do Master Dashboard

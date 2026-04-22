@@ -123,3 +123,11 @@ func (r *TransactionRepository) GetAvgValue(merchantID int) (float64, int) {
 	).Scan(&avg, &total)
 	return avg.Float64, total
 }
+
+func (r *TransactionRepository) GetInfoByChargeID(chargeID string) (merchantID int, liquido float64, isTest bool, status string, err error) {
+	err = r.db.QueryRow(`
+		SELECT merchant_id, valor_liquido, is_test, status 
+		FROM transactions WHERE asaas_charge_id = $1`, chargeID).
+		Scan(&merchantID, &liquido, &isTest, &status)
+	return
+}

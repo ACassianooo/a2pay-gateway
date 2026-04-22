@@ -19,3 +19,13 @@ type UserContext struct {
 	APICapabilities string // ex: "pix" ou "pix,card"
 	IsSandbox       bool
 }
+
+// Customer representa um comprador na loja do merchant
+type Customer struct {
+	ID         string `json:"id"`
+	MerchantID int    `json:"merchant_id"`
+	Name       string `json:"name"`
+	Email      string `json:"email"`
+	CPF        string `json:"cpf"`
+	CreatedAt  string `json:"created_at"`
+}
