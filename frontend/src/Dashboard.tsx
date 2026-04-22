@@ -1145,6 +1145,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [isSandbox, setIsSandbox] = useState(() => localStorage.getItem('a2pay_env') === 'test');
+  const [expandedGroups, setExpandedGroups] = useState<string[]>(['PRINCIPAL', 'SUA LOJA', 'INTEGRAÇÃO', 'CONTA', 'GESTÃO', 'FINANCEIRO', 'SEGURANÇA', 'SISTEMA']);
+  const toggleGroup = (group: string) => {
+    setExpandedGroups(prev => prev.includes(group) ? prev.filter(g => g !== group) : [...prev, group]);
+  };
+
   const navigate = useNavigate();
 
   const fetchData = (env: boolean) => {
@@ -1213,10 +1218,7 @@ export default function Dashboard() {
 
   // isMaster já foi calculado antes dos early returns
 
-  const [expandedGroups, setExpandedGroups] = useState<string[]>(['PRINCIPAL', 'SUA LOJA', 'INTEGRAÇÃO', 'CONTA', 'GESTÃO', 'FINANCEIRO', 'SEGURANÇA', 'SISTEMA']);
-  const toggleGroup = (group: string) => {
-    setExpandedGroups(prev => prev.includes(group) ? prev.filter(g => g !== group) : [...prev, group]);
-  };
+
 
   const handleLogout = () => {
     localStorage.removeItem('token');
