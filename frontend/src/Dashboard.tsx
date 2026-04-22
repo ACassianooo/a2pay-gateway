@@ -1478,15 +1478,15 @@ export default function Dashboard() {
         {currentTabObj.group && currentTabObj.group !== 'PRINCIPAL' && (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#64748b' }}>
-               {getGroupIcon(currentTabObj.group)}
-               <span style={{ textTransform: 'capitalize' }}>{currentTabObj.group.toLowerCase()}</span>
+               {React.cloneElement(getGroupIcon(currentTabObj.group) as React.ReactElement, { strokeWidth: 2.5 })}
+               <span>{currentTabObj.group === 'SUA LOJA' ? 'Sua Loja' : currentTabObj.group.charAt(0) + currentTabObj.group.slice(1).toLowerCase()}</span>
             </div>
             <span style={{ color: '#e2e8f0', fontWeight: 400, fontSize: '1.2rem' }}>/</span>
           </>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#111827' }}>
-          {React.cloneElement(currentTabObj.icon as React.ReactElement, { size: 18 })}
-          <span>{currentTabObj.label}</span>
+          {React.cloneElement(currentTabObj.icon as React.ReactElement, { size: 18, strokeWidth: 2.5 })}
+          <span style={{ fontWeight: 700 }}>{currentTabObj.label}</span>
         </div>
       </div>
     );
