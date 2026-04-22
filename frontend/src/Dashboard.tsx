@@ -1223,7 +1223,6 @@ export default function Dashboard() {
     { id: 'clientes',    icon: <Users size={18} />,           label: 'Clientes', group: 'PRINCIPAL' },
     { id: 'financeiro',  icon: <Banknote size={18} />,        label: 'Saques', group: 'SUA LOJA' },
     { id: 'pagamentos',  icon: <CreditCard size={18} />,      label: 'Pagamentos', group: 'SUA LOJA' },
-    { id: 'antifraude',  icon: <ShieldAlert size={18} />,     label: 'Antifraude', group: 'SUA LOJA' },
     { id: 'desenvolvedor', icon: <Terminal size={18} />,      label: 'Integração', group: 'DEVELOPER' },
     { id: 'conta',       icon: <User size={18} />,            label: 'Configurações', group: 'DEVELOPER' },
   ];
