@@ -6,7 +6,8 @@ import {
   Code, Shield, List, ArrowUpRight, Ban, TrendingUp, Eye, EyeOff, Check, RefreshCw, 
   ShieldCheck, Users, History, Lock, ShoppingBag, Clock, XCircle, Copy, Globe,
   AlertTriangle, Upload, Settings, Banknote, QrCode, Wallet, Plus, Info, ArrowRight,
-  Ticket, Repeat, FileText, Link as LinkIcon, Undo2, BookOpen, Key, Radio, Puzzle, Layers, SlidersHorizontal
+  Ticket, Repeat, FileText, Link as LinkIcon, Undo2, BookOpen, Key, Radio, Puzzle, Layers, SlidersHorizontal,
+  Pencil, LayoutGrid, ListFilter, Image as ImageIcon, MoreHorizontal
 } from 'lucide-react';
 import { MasterApp } from './admin/MasterApp';
 import { API_BASE_URL } from './api';
@@ -257,6 +258,141 @@ function OverviewTab({ data }: { data: DashboardData }) {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TAB: CLIENTES
+
+// ══════════════════════════════════════════════════════════════════════════════
+function ProdutosTab() {
+  const [currentSubTab, setCurrentSubTab] = useState('todos');
+  const [search, setSearch] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+  const products = [
+    { id: 1, name: 'Hugo e Guilherme — Open-bar: 1x 12/...', sub: 'Inclui taxa de serviço', price: 220.00, color: '#8942FC' },
+    { id: 2, name: 'Hugo e Guilherme — Open-bar: 1x 12/...', sub: 'Inclui taxa de serviço', price: 220.00, color: '#a3a219' },
+    { id: 3, name: 'Hugo e Guilherme — Open-bar: 1x 12/...', sub: 'Inclui taxa de serviço', price: 220.00, color: '#ef4444' },
+    { id: 4, name: 'Hugo e Guilherme — Open-bar: 1x 12/...', sub: 'Inclui taxa de serviço', price: 220.00, color: '#84cc16' },
+  ];
+
+  const subTabs = [
+    { id: 'todos', label: 'Todos os produtos' },
+    { id: 'recursos', label: 'Recursos' },
+    { id: 'cupons', label: 'Cupons' },
+    { id: 'tarifas', label: 'Tarifas de envio' },
+    { id: 'aliquotas', label: 'Alíquotas' },
+    { id: 'tabelas', label: 'Tabelas de preços' },
+  ];
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#111827', margin: 0 }}>Catálogo de produtos</h1>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+           <button style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.88rem', fontWeight: 600, color: '#64748b', cursor: 'pointer' }}>
+              <Activity size={16} /> Analisar
+           </button>
+           <button style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 10, padding: '0.6rem 1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer' }}>
+              <Plus size={18} /> Criar produto <span style={{ background: 'rgba(255,255,255,0.2)', padding: '0 4px', borderRadius: 4, fontSize: '0.65rem', marginLeft: 4 }}>N</span>
+           </button>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '2rem', borderBottom: '1px solid #e2e8f0', marginBottom: '2rem' }}>
+        {subTabs.map(tab => (
+          <div 
+            key={tab.id}
+            onClick={() => setCurrentSubTab(tab.id)}
+            style={{ 
+              paddingBottom: '1rem', 
+              fontSize: '0.9rem', 
+              fontWeight: 600, 
+              color: currentSubTab === tab.id ? '#8942FC' : '#64748b', 
+              borderBottom: currentSubTab === tab.id ? '2px solid #8942FC' : '2px solid transparent',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            {tab.label}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1.5rem' }}>
+          <div style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Todos</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827' }}>{products.length}</div>
+        </div>
+        <div style={{ background: '#fff', border: '2px solid #8942FC', borderRadius: 12, padding: '1.5rem' }}>
+          <div style={{ color: '#8942FC', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Ativo</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#8942FC' }}>{products.length}</div>
+        </div>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1.5rem' }}>
+          <div style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Arquivados</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827' }}>0</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <div style={{ position: 'relative', width: '280px' }}>
+            <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+            <input 
+              placeholder="Pesquisar..." 
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '0.6rem 1rem 0.6rem 2.5rem', fontSize: '0.88rem' }}
+            />
+          </div>
+          <button style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#64748b', cursor: 'pointer' }}>
+            <ListFilter size={16} /> Status: Ativo
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', background: '#f1f5f9', padding: '3px', borderRadius: 8 }}>
+            <button 
+              onClick={() => setViewMode('grid')}
+              style={{ background: viewMode === 'grid' ? '#fff' : 'transparent', border: 'none', borderRadius: 6, padding: '0.4rem', cursor: 'pointer', boxShadow: viewMode === 'grid' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
+              <LayoutGrid size={18} color={viewMode === 'grid' ? '#8942FC' : '#64748b'} />
+            </button>
+            <button 
+              onClick={() => setViewMode('list')}
+              style={{ background: viewMode === 'list' ? '#fff' : 'transparent', border: 'none', borderRadius: 6, padding: '0.4rem', cursor: 'pointer', boxShadow: viewMode === 'list' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
+              <List size={18} color={viewMode === 'list' ? '#8942FC' : '#64748b'} />
+            </button>
+          </div>
+          <button style={{ background: '#c084fc', color: '#4c1d95', border: 'none', borderRadius: 10, padding: '0.6rem 1.2rem', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>+ Novo</button>
+        </div>
+      </div>
+
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+        gap: '1.5rem' 
+      }}>
+        {products.map(p => (
+          <Card key={p.id} style={{ padding: 0, overflow: 'hidden', border: '1px solid #f1f5f9', transition: 'all 0.2s', cursor: 'pointer' }}>
+            <div style={{ height: '160px', background: `${p.color}10`, display: 'grid', placeItems: 'center', position: 'relative' }}>
+              <ImageIcon size={48} color={p.color} strokeWidth={1} />
+              <div style={{ position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'grid', placeItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                <MoreHorizontal size={18} color="#64748b" />
+              </div>
+            </div>
+            <div style={{ padding: '1.25rem' }}>
+              <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#111827', marginBottom: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+              <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '1rem' }}>{p.sub}</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#111827' }}>R$ {p.price.toFixed(2).replace('.', ',')}</div>
+                <button style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                  <Pencil size={16} />
+                </button>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 function ClientesTab() {
   const [clientes, setClientes] = useState<Customer[]>([]);
@@ -1418,6 +1554,7 @@ export default function Dashboard() {
         <div style={{ padding: '2rem 2.5rem', maxWidth: '1400px' }}>
           {/* Merchant Tabs */}
           {activeTab === 'overview'   && <OverviewTab data={data} />}
+          {activeTab === 'produtos'   && <ProdutosTab />}
           {activeTab === 'clientes'   && <ClientesTab />}
           {activeTab === 'financeiro' && <SaquesTab data={data} />}
           {activeTab === 'pagamentos' && <PagamentosTab data={data} />}
