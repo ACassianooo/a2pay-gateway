@@ -739,9 +739,9 @@ function CuponsTab() {
           <h1 style={{ fontSize: '2.2rem', fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.04em' }}>Cupons</h1>
           <button 
             onClick={() => setIsModalOpen(true)}
-            style={{ background: '#99f667', color: '#14532d', border: 'none', borderRadius: 12, padding: '0.85rem 1.8rem', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', boxShadow: '0 4px 14px rgba(153, 246, 103, 0.3)', transition: 'all 0.2s' }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(153, 246, 103, 0.4)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(153, 246, 103, 0.3)'; }}
+            style={{ background: '#c084fc', color: '#4c1d95', border: 'none', borderRadius: 12, padding: '0.85rem 1.8rem', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', boxShadow: '0 4px 14px rgba(192, 132, 252, 0.3)', transition: 'all 0.2s' }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(192, 132, 252, 0.4)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(192, 132, 252, 0.3)'; }}
           >
             <Plus size={20} strokeWidth={3} /> Criar cupom
           </button>
@@ -838,7 +838,7 @@ function CreateCouponModal({ onClose }: { onClose: () => void }) {
              </div>
 
              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                <button onClick={onClose} style={{ background: '#99f667', color: '#14532d', border: 'none', borderRadius: 12, padding: '1rem 3rem', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 14px rgba(153, 246, 103, 0.3)', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(153, 246, 103, 0.4)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(153, 246, 103, 0.3)'; }}>
+                <button onClick={onClose} style={{ background: '#c084fc', color: '#4c1d95', border: 'none', borderRadius: 12, padding: '1rem 3rem', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 14px rgba(192, 132, 252, 0.3)', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(192, 132, 252, 0.4)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(192, 132, 252, 0.3)'; }}>
                    Salvar
                 </button>
              </div>
