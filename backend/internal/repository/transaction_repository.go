@@ -17,12 +17,12 @@ func NewTransactionRepository(db *sql.DB) *TransactionRepository {
 	return &TransactionRepository{db: db}
 }
 
-func (r *TransactionRepository) Create(merchantID int, itemName string, valorTotal, liquido, taxa float64) (int64, error) {
+func (r *TransactionRepository) Create(merchantID int, itemName string, valorTotal, liquido, taxa float64, isTest bool) (int64, error) {
 	var id int64
 	err := r.db.QueryRow(
-		`INSERT INTO transactions(merchant_id, item_name, valor_total, valor_liquido, taxa, status, metodo_pagamento, asaas_charge_id, created_at)
-		 VALUES($1, $2, $3, $4, $5, 'pendente', 'N/A', '', $6) RETURNING id`,
-		merchantID, itemName, valorTotal, liquido, taxa, time.Now().Format(time.RFC3339),
+		`INSERT INTO transactions(merchant_id, item_name, valor_total, valor_liquido, taxa, status, metodo_pagamento, asaas_charge_id, created_at, is_test)
+		 VALUES($1, $2, $3, $4, $5, 'pendente', 'N/A', '', $6, $7) RETURNING id`,
+		merchantID, itemName, valorTotal, liquido, taxa, time.Now().Format(time.RFC3339), isTest,
 	).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("TransactionRepository.Create: %w", err)
@@ -30,13 +30,14 @@ func (r *TransactionRepository) Create(merchantID int, itemName string, valorTot
 	return id, nil
 }
 
-func (r *TransactionRepository) GetByID(id int) (float64, int, error) {
+func (r *TransactionRepository) GetByID(id int) (float64, int, bool, error) {
 	var valor float64
 	var merchantID int
+	var isTest bool
 	err := r.db.QueryRow(
-		"SELECT valor_total, merchant_id FROM transactions WHERE id = $1", id,
-	).Scan(&valor, &merchantID)
-	return valor, merchantID, err
+		"SELECT valor_total, merchant_id, is_test FROM transactions WHERE id = $1", id,
+	).Scan(&valor, &merchantID, &isTest)
+	return valor, merchantID, isTest, err
 }
 
 func (r *TransactionRepository) GetItemName(id int) string {
@@ -73,11 +74,11 @@ func (r *TransactionRepository) ConfirmPIX(chargeID string) error {
 	return err
 }
 
-func (r *TransactionRepository) GetByMerchant(merchantID int) ([]model.Transaction, float64, error) {
+func (r *TransactionRepository) GetByMerchant(merchantID int, isTest bool) ([]model.Transaction, float64, error) {
 	rows, err := r.db.Query(
 		`SELECT id, merchant_id, item_name, valor_total, valor_liquido, status, metodo_pagamento, created_at
-		 FROM transactions WHERE merchant_id = $1 ORDER BY created_at DESC`,
-		merchantID,
+		 FROM transactions WHERE merchant_id = $1 AND is_test = $2 ORDER BY created_at DESC`,
+		merchantID, isTest,
 	)
 	if err != nil {
 		return nil, 0, err

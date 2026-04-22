@@ -17,4 +17,5 @@ type UserContext struct {
 	MerchantID      int
 	Role            string
 	APICapabilities string // ex: "pix" ou "pix,card"
+	IsSandbox       bool
 }

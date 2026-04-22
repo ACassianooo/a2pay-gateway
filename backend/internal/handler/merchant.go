@@ -2,10 +2,8 @@ package handler
 
 import (
 	"net/http"
-	"time"
 	"encoding/json"
 
-	"github.com/gato-gateway/internal/dto"
 	"github.com/gato-gateway/internal/repository"
 	"github.com/gato-gateway/internal/service"
 )
@@ -28,17 +26,18 @@ func (h *MerchantHandler) GetAPIKey(w http.ResponseWriter, r *http.Request) {
 		respondJSON(w, http.StatusForbidden, map[string]string{"error": "Master não possui API Key"})
 		return
 	}
-	key, caps, err := h.userRepo.GetAPIKey(user.MerchantID)
-	if err != nil || key == "" {
-		key = service.GenerateAPIKey()
-		caps = "pix,card" // Default 
-		h.userRepo.SetAPIKey(user.MerchantID, key, caps)
+	live, test, caps, err := h.userRepo.GetAPIKey(user.MerchantID)
+	if err != nil || live == "" {
+		live = service.GenerateAPIKey("a2p_live_")
+		test = service.GenerateAPIKey("a2p_test_")
+		caps = "pix,card"
+		h.userRepo.SetAPIKeys(user.MerchantID, live, test, caps)
 	}
-	respondJSON(w, http.StatusOK, dto.APIKeyResponse{
-		APIKey:       key,
-		Capabilities: caps,
-		CreatedAt:    time.Now().Format("02/01/2006"),
-		Endpoint:     "http://localhost:8080/api/v1/pix",
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"api_key":      live,
+		"api_key_test": test,
+		"capabilities": caps,
+		"endpoint":     "http://localhost:8080/api/v1/pix",
 	})
 }
 
@@ -49,29 +48,36 @@ func (h *MerchantHandler) RotateAPIKey(w http.ResponseWriter, r *http.Request) {
 		respondJSON(w, http.StatusForbidden, map[string]string{"error": "Master não possui API Key"})
 		return
 	}
-	
-	// Read requested capabilities
+
 	var req struct {
 		Capabilities string `json:"capabilities"`
+		Environment  string `json:"environment"` // "live" ou "test"
 	}
-	// Ignoramos o erro pois se não vier JSON, usaremos o default
 	if r.Body != nil {
 		json.NewDecoder(r.Body).Decode(&req)
 	}
-	
-	if req.Capabilities != "pix" && req.Capabilities != "pix,card" && req.Capabilities != "card" {
-		req.Capabilities = "pix,card" // Default se enviar bobeira
+
+	if req.Capabilities == "" {
+		req.Capabilities = "pix,card"
 	}
 
-	nova := service.GenerateAPIKey()
-	if err := h.userRepo.SetAPIKey(user.MerchantID, nova, req.Capabilities); err != nil {
+	live, test, _, _ := h.userRepo.GetAPIKey(user.MerchantID)
+
+	if req.Environment == "test" {
+		test = service.GenerateAPIKey("a2p_test_")
+	} else {
+		live = service.GenerateAPIKey("a2p_live_")
+	}
+
+	if err := h.userRepo.SetAPIKeys(user.MerchantID, live, test, req.Capabilities); err != nil {
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao rotacionar chave"})
 		return
 	}
 	respondJSON(w, http.StatusOK, map[string]string{
-		"api_key": nova,
+		"api_key":      live,
+		"api_key_test": test,
 		"capabilities": req.Capabilities,
-		"message": "Nova API Key gerada. Atualize suas integrações.",
+		"message":      "API Key atualizada com sucesso.",
 	})
 }
 

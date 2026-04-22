@@ -24,28 +24,55 @@ export default function Landing() {
         </div>
       </nav>
 
-      {/* HERO SECTION CLONE */}
-      <main className="pg-hero">
+      {/* HERO SECTION - NEW LIGHT DESIGN */}
+      <main className="pg-hero" style={{ background: '#fff', color: '#111' }}>
         <div className="pg-hero-content">
           
           <div className="pg-hero-text-col">
-            <span className="pg-badge">Lançamento!</span>
-            <h1>Pagamentos digitais para todo tipo de negócio</h1>
-            <p>
+            <span className="pg-badge" style={{ background: 'rgba(137,66,252,0.1)', color: '#8942FC' }}>Lançamento!</span>
+            <h1 style={{ color: '#111' }}>Pagamentos digitais para todo tipo de negócio</h1>
+            <p style={{ color: '#6b7280' }}>
               A2Pay é a tecnologia de ponta para quem vende online.
               De soluções prontas a APIs robustas, oferecemos tudo o que você
               precisa para escalar seu negócio com lucros imbatíveis.
             </p>
             <div className="pg-hero-actions">
-              <Link to="/register" className="pg-btn-white">Cadastre-se</Link>
+              <Link to="/register" className="pg-btn-solid" style={{ padding: '1rem 2.5rem', fontSize: '1.1rem' }}>Começar Agora</Link>
             </div>
           </div>
 
           <div className="pg-hero-image-col">
+            {/* Detalhe Roxo Decorativo (Background Art) */}
+            <div style={{
+              position: 'absolute',
+              top: '10%',
+              left: '10%',
+              width: '100%',
+              height: '100%',
+              background: 'linear-gradient(135deg, #8942FC 0%, #6366f1 100%)',
+              borderRadius: '3rem',
+              transform: 'rotate(-4deg)',
+              zIndex: 0,
+              opacity: 0.2,
+              filter: 'blur(30px)'
+            }} />
+            <div style={{
+              position: 'absolute',
+              bottom: '-5%',
+              right: '-5%',
+              width: '90%',
+              height: '90%',
+              background: 'linear-gradient(135deg, #8942FC 0%, #a78bfa 100%)',
+              borderRadius: '3rem',
+              transform: 'rotate(2deg)',
+              zIndex: 0,
+              opacity: 0.15
+            }} />
             <img 
               src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" 
               alt="Lojista embalando produtos e usando o computador"
               className="pg-hero-img"
+              style={{ position: 'relative', zIndex: 1 }}
             />
           </div>
 

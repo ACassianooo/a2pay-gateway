@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Shield, LogOut } from 'lucide-react';
 import Dashboard from './Dashboard';
 import Checkout from './Checkout';
@@ -40,7 +40,6 @@ function NavLinks() {
     <div className="navbar-links" style={{display: 'flex', alignItems: 'center', gap: '1.5rem'}}>
       <Link to="/dashboard">Dashboard</Link>
       <Link to="/docs" style={{color: 'var(--text-main)', textDecoration: 'none'}}>Docs</Link>
-      <Link to="/demo-store">Simular Loja</Link>
       <button onClick={handleLogout} style={{background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
         <LogOut size={18} /> Sair
       </button>
@@ -48,10 +47,13 @@ function NavLinks() {
   );
 }
 
-function App() {
+function AppContent() {
+  const location = useLocation();
+  const isDashboard = location.pathname.startsWith('/dashboard');
+
   return (
-    <BrowserRouter>
-      <div className="app-container">
+    <div className={isDashboard ? "dashboard-layout" : "app-container"}>
+      {!isDashboard && (
         <nav className="navbar">
           <Link to="/" className="navbar-brand">
             <Shield color="#8942FC" fill="#8942FC" size={28} />
@@ -59,23 +61,31 @@ function App() {
           </Link>
           <NavLinks />
         </nav>
-        
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/demo-store" element={<DemoStore />} />
-            <Route path="/checkout/:id" element={<Checkout />} />
-            <Route path="/docs" element={<Docs />} />
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
-          </Routes>
-        </main>
-      </div>
+      )}
+      
+      <main className={isDashboard ? "dashboard-main-content" : "main-content"}>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/demo-store" element={<DemoStore />} />
+          <Route path="/checkout/:id" element={<Checkout />} />
+          <Route path="/docs" element={<Docs />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </main>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
     </BrowserRouter>
   );
 }

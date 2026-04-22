@@ -40,13 +40,13 @@ curl -X POST https://api.a2pay.com.br/api/v1/pix \\
 }`;
 
   return (
-    <div style={{ display: 'flex', minHeight: 'calc(100vh - 64px)', background: '#0b0c10', color: '#c5c6c7' }}>
+    <div style={{ display: 'flex', minHeight: 'calc(100vh - 64px)', background: '#ffffff', color: '#111827' }}>
       {/* SIDEBAR */}
-      <aside style={{ width: '280px', borderRight: '1px solid #1a1c24', background: '#0b0c10', padding: '2rem 1.5rem', position: 'sticky', top: '64px', height: 'calc(100vh - 64px)', overflowY: 'auto' }}>
+      <aside style={{ width: '280px', borderRight: '1px solid #e5e7eb', background: '#f9fafb', padding: '2rem 1.5rem', position: 'sticky', top: '64px', height: 'calc(100vh - 64px)', overflowY: 'auto' }}>
         <div style={{ marginBottom: '2rem' }}>
-          <div style={{ color: '#8d939b', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem' }}>NAVEGAÇÃO</div>
+          <div style={{ color: '#6b7280', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem' }}>NAVEGAÇÃO</div>
           {sections.map(s => (
-            <a key={s.id} href={`#${s.id}`} style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.6rem 0.8rem', color: '#c5c6c7', textDecoration: 'none', borderRadius: '8px', marginBottom: '0.3rem', fontSize: '0.9rem', transition: 'all 0.2s' }}>
+            <a key={s.id} href={`#${s.id}`} style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.6rem 0.8rem', color: '#111827', textDecoration: 'none', borderRadius: '8px', marginBottom: '0.3rem', fontSize: '0.9rem', transition: 'all 0.2s', fontWeight: 500 }}>
               {s.icon} {s.title}
             </a>
           ))}
@@ -64,16 +64,16 @@ curl -X POST https://api.a2pay.com.br/api/v1/pix \\
         {/* INTRO */}
         <section id="intro" style={{ marginBottom: '4rem' }}>
           <div style={{ color: '#8942FC', fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.5rem' }}>Introdução</div>
-          <h1 style={{ fontSize: '2.5rem', color: '#fff', fontWeight: 800, marginBottom: '1.5rem', letterSpacing: '-0.02em' }}>API Reference A2Pay (v1)</h1>
-          <p style={{ fontSize: '1.1rem', lineHeight: '1.6', color: '#8d939b', marginBottom: '2rem' }}>
+          <h1 style={{ fontSize: '2.5rem', color: '#111827', fontWeight: 800, marginBottom: '1.5rem', letterSpacing: '-0.02em' }}>API Reference A2Pay (v1)</h1>
+          <p style={{ fontSize: '1.1rem', lineHeight: '1.6', color: '#4b5563', marginBottom: '2rem' }}>
             Bem-vindo à documentação oficial da A2Pay. Nossa API foi desenhada para ser simples, rápida e extremamente robusta, permitindo que você aceite PIX no seu checkout em menos de 5 minutos.
           </p>
 
-          <div style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '12px', padding: '1.5rem', display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+          <div style={{ background: '#fdfcfb', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '1.5rem', display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
             <Globe size={24} color="#f59e0b" style={{ flexShrink: 0 }} />
             <div>
-              <div style={{ color: '#f59e0b', fontWeight: 700, fontSize: '1rem', marginBottom: '0.4rem' }}>Endpoint de Produção</div>
-              <div style={{ fontFamily: 'monospace', fontSize: '0.9rem', color: '#ccc' }}>https://api.a2pay.com.br/api/v1</div>
+              <div style={{ color: '#d97706', fontWeight: 700, fontSize: '1rem', marginBottom: '0.4rem' }}>Endpoint de Produção</div>
+              <div style={{ fontFamily: 'monospace', fontSize: '0.9rem', color: '#111827' }}>https://api.a2pay.com.br/api/v1</div>
             </div>
           </div>
         </section>
@@ -131,16 +131,16 @@ curl -X POST https://api.a2pay.com.br/api/v1/pix \\
         </section>
 
         {/* WEBHOOKS */}
-        <section id="webhooks" style={{ marginBottom: '4rem', paddingTop: '2rem', borderTop: '1px solid #1a1c24' }}>
-          <h2 style={{ fontSize: '1.8rem', color: '#fff', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
+        <section id="webhooks" style={{ marginBottom: '4rem', paddingTop: '2rem', borderTop: '1px solid #e5e7eb' }}>
+          <h2 style={{ fontSize: '1.8rem', color: '#111827', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
             <Bell size={24} color="#8942FC" /> Webhooks
           </h2>
-          <p style={{ lineHeight: '1.6', marginBottom: '1.5rem' }}>
+          <p style={{ lineHeight: '1.6', marginBottom: '1.5rem', color: '#4b5563' }}>
             Receba notificações em tempo real sempre que um pagamento for confirmado. Configure sua URL de Webhook no painel administrativo.
           </p>
-          <div style={{ background: 'rgba(137,66,252,0.1)', borderLeft: '4px solid #8942FC', padding: '1.5rem', borderRadius: '4px' }}>
-            <div style={{ fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>Segurança de Webhook</div>
-            <p style={{ fontSize: '0.9rem', color: '#8d939b' }}>Sempre verifique a assinatura (HMAC) e o seu Webhook Secret para garantir que a notificação é legítima da A2Pay.</p>
+          <div style={{ background: 'rgba(137,66,252,0.05)', borderLeft: '4px solid #8942FC', padding: '1.5rem', borderRadius: '4px', border: '1px solid #e5e7eb', borderLeftWidth: '4px' }}>
+            <div style={{ fontWeight: 700, color: '#111827', marginBottom: '0.5rem' }}>Segurança de Webhook</div>
+            <p style={{ fontSize: '0.9rem', color: '#6b7280' }}>Sempre verifique a assinatura (HMAC) e o seu Webhook Secret para garantir que a notificação é legítima da A2Pay.</p>
           </div>
         </section>
 
@@ -151,12 +151,12 @@ curl -X POST https://api.a2pay.com.br/api/v1/pix \\
 
       {/* RIGHT SIDE TOC */}
       <aside style={{ width: '240px', padding: '2rem 1.5rem', position: 'sticky', top: '64px', height: 'calc(100vh - 64px)', fontSize: '0.85rem' }}>
-        <div style={{ color: '#fff', fontWeight: 700, marginBottom: '1rem' }}>NESTA PÁGINA</div>
+        <div style={{ color: '#111827', fontWeight: 700, marginBottom: '1rem' }}>NESTA PÁGINA</div>
         <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-          <li><a href="#intro" style={{ color: '#8d939b', textDecoration: 'none' }}>O que é a API?</a></li>
-          <li><a href="#auth" style={{ color: '#8d939b', textDecoration: 'none' }}>Chaves de API</a></li>
-          <li><a href="#pix" style={{ color: '#8d939b', textDecoration: 'none' }}>Criando Cobranças</a></li>
-          <li><a href="#webhooks" style={{ color: '#8d939b', textDecoration: 'none' }}>Configurando Webhooks</a></li>
+          <li><a href="#intro" style={{ color: '#6b7280', textDecoration: 'none', transition: 'color .2s' }}>O que é a API?</a></li>
+          <li><a href="#auth" style={{ color: '#6b7280', textDecoration: 'none', transition: 'color .2s' }}>Chaves de API</a></li>
+          <li><a href="#pix" style={{ color: '#6b7280', textDecoration: 'none', transition: 'color .2s' }}>Criando Cobranças</a></li>
+          <li><a href="#webhooks" style={{ color: '#6b7280', textDecoration: 'none', transition: 'color .2s' }}>Configurando Webhooks</a></li>
         </ul>
       </aside>
     </div>

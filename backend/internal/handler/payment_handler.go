@@ -17,32 +17,50 @@ import (
 
 // PaymentHandler — apenas HTTP: recebe, delega ao service, responde
 type PaymentHandler struct {
-	payment *service.PaymentService
-	pix     *service.PIXService
-	wallet  *service.WalletService
-	client  *service.PixClientAdapter
+	payment     *service.PaymentService
+	pix         *service.PIXService
+	wallet      *service.WalletService
+	clientLive  *service.PixClientAdapter
+	clientTest  *service.PixClientAdapter
 }
 
 func NewPaymentHandler(
 	payment *service.PaymentService,
 	pix *service.PIXService,
 	wallet *service.WalletService,
-	client *service.PixClientAdapter,
+	live *service.PixClientAdapter,
+	test *service.PixClientAdapter,
 ) *PaymentHandler {
-	return &PaymentHandler{payment: payment, pix: pix, wallet: wallet, client: client}
+	return &PaymentHandler{
+		payment:     payment,
+		pix:         pix,
+		wallet:      wallet,
+		clientLive:  live,
+		clientTest:  test,
+	}
 }
 
 // CreateIntent — POST /api/pagamentos/intent
 func (h *PaymentHandler) CreateIntent(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromContext(r) // Se for logado via Dashboard
+
 	var req dto.CreateIntentRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respondErr(w, apierrors.InvalidInput(err.Error()))
 		return
 	}
-	if req.MerchantID == 0 {
-		req.MerchantID = 2
+	
+	// Se não tiver usuário no context (ex: checkout público), o MerchantID vem do request
+	merchantID := req.MerchantID
+	isSandbox := false 
+
+	if user.MerchantID != 0 {
+		merchantID = user.MerchantID
+		// Assume do header x-a2pay-env se o lojista estiver no dashboard
+		isSandbox = r.Header.Get("x-a2pay-env") == "test"
 	}
-	id, err := h.payment.CreateIntent(req.MerchantID, req.ItemName, req.ValorTotal)
+
+	id, err := h.payment.CreateIntent(merchantID, req.ItemName, req.ValorTotal, isSandbox)
 	if err != nil {
 		respondErr(w, apierrors.InvalidInput(err.Error()))
 		return
@@ -107,7 +125,16 @@ func (h *PaymentHandler) GetPixQRCode(w http.ResponseWriter, r *http.Request) {
 		respondErr(w, apierrors.InvalidInput("charge_id obrigatório"))
 		return
 	}
-	qr, err := h.client.GetPixQRCode(chargeID)
+
+	// Precisamos saber se essa chargeID é de teste ou real. 
+	// Para o QR Code no checkout, tentamos na sandbox e depois na live, ou usamos flag do DB.
+	// Por simplicidade, tentamos na sandbox primeiro se falhar vai pra live,
+	// mas o ideal é passar o env na URL. Vamos tentar nas duas:
+	qr, err := h.clientTest.GetPixQRCode(chargeID)
+	if err != nil {
+		qr, err = h.clientLive.GetPixQRCode(chargeID)
+	}
+
 	if err != nil {
 		respondErr(w, apierrors.ExternalService("Asaas", err))
 		return
@@ -160,7 +187,7 @@ func (h *PaymentHandler) ExternalPixCharge(w http.ResponseWriter, r *http.Reques
 		CustomerCPF:   req.CustomerCPF,
 	}
 
-	intentID, result, err := h.pix.ExternalCharge(user.MerchantID, svcReq)
+	intentID, result, err := h.pix.ExternalCharge(user.MerchantID, svcReq, user.IsSandbox)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return

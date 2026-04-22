@@ -10,13 +10,15 @@ import (
 )
 
 type Config struct {
-	AsaasAPIKey   string
-	AsaasBaseURL  string
-	JWTSecret     []byte
-	AESKey        []byte
-	Port          string
-	WebhookSecret string
-	DatabaseURL   string
+	AsaasAPIKeyLive  string
+	AsaasAPIKeyTest  string
+	AsaasBaseURLReal string
+	AsaasBaseURLTest string
+	JWTSecret        []byte
+	AESKey           []byte
+	Port             string
+	WebhookSecret    string
+	DatabaseURL      string
 }
 
 func Load() (*Config, error) {
@@ -24,14 +26,24 @@ func Load() (*Config, error) {
 		log.Println("[CONFIG] .env não encontrado, usando variáveis do sistema")
 	}
 
-	asaasKey := os.Getenv("ASAAS_API_KEY")
-	if asaasKey == "" {
-		return nil, fmt.Errorf("ASAAS_API_KEY não configurada")
+	asaasLive := os.Getenv("ASAAS_API_KEY_LIVE")
+	if asaasLive == "" {
+		asaasLive = os.Getenv("ASAAS_API_KEY") // Retrocompatibilidade
 	}
 
-	baseURL := os.Getenv("ASAAS_BASE_URL")
-	if baseURL == "" {
-		baseURL = "https://sandbox.asaas.com/api/v3"
+	asaasTest := os.Getenv("ASAAS_API_KEY_TEST")
+	if asaasTest == "" {
+		asaasTest = asaasLive // Fallback se não configurado
+	}
+
+	realURL := os.Getenv("ASAAS_BASE_URL_REAL")
+	if realURL == "" {
+		realURL = "https://www.asaas.com/api/v3"
+	}
+
+	testURL := os.Getenv("ASAAS_BASE_URL_TEST")
+	if testURL == "" {
+		testURL = "https://sandbox.asaas.com/api/v3"
 	}
 
 	jwtSecret := os.Getenv("JWT_SECRET")
@@ -53,15 +65,17 @@ func Load() (*Config, error) {
 		port = "8080"
 	}
 
-	log.Printf("[CONFIG] Asaas: %s | Porta: %s | AES-256: ativado", baseURL, port)
+	log.Printf("[CONFIG] Ambiente Live: %s | Sandbox: %s | Porta: %s", realURL, testURL, port)
 
 	return &Config{
-		AsaasAPIKey:   asaasKey,
-		AsaasBaseURL:  baseURL,
-		JWTSecret:     []byte(jwtSecret),
-		AESKey:        aesKey,
-		Port:          port,
-		WebhookSecret: os.Getenv("ASAAS_WEBHOOK_SECRET"),
-		DatabaseURL:   os.Getenv("DATABASE_URL"),
+		AsaasAPIKeyLive:  asaasLive,
+		AsaasAPIKeyTest:  asaasTest,
+		AsaasBaseURLReal: realURL,
+		AsaasBaseURLTest: testURL,
+		JWTSecret:        []byte(jwtSecret),
+		AESKey:           aesKey,
+		Port:             port,
+		WebhookSecret:    os.Getenv("ASAAS_WEBHOOK_SECRET"),
+		DatabaseURL:      os.Getenv("DATABASE_URL"),
 	}, nil
 }

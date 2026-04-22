@@ -57,28 +57,28 @@ func RequireRole(requiredRole string) func(http.Handler) http.Handler {
 	}
 }
 
-// RequireAPIKey valida a chave gato_pk_... e injeta UserContext no contexto
+// RequireAPIKey valida a chave a2p_live_... ou a2p_test_... e injeta UserContext no contexto
 func RequireAPIKey(userRepo *repository.UserRepository) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			apiKey := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
-			if !strings.HasPrefix(apiKey, "gato_pk_") {
+			if !strings.HasPrefix(apiKey, "a2p_") {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusUnauthorized)
 				json.NewEncoder(w).Encode(map[string]string{
-					"error": "API Key inválida. Use: Authorization: Bearer gato_pk_...",
+					"error": "API Key inválida. Use o padrão a2p_live_... ou a2p_test_...",
 				})
 				return
 			}
-			merchantID, caps, err := userRepo.GetByAPIKey(apiKey)
+			merchantID, caps, isSandbox, err := userRepo.GetByAPIKey(apiKey)
 			if err != nil {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusUnauthorized)
-				json.NewEncoder(w).Encode(map[string]string{"error": "API Key não encontrada"})
+				json.NewEncoder(w).Encode(map[string]string{"error": "API Key não encontrada ou inativa"})
 				return
 			}
 			ctx := context.WithValue(r.Context(), "user", model.UserContext{
-				MerchantID: merchantID, Role: "lojista", APICapabilities: caps,
+				MerchantID: merchantID, Role: "lojista", APICapabilities: caps, IsSandbox: isSandbox,
 			})
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

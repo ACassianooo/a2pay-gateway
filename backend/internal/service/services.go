@@ -51,35 +51,41 @@ type PIXResult struct {
 
 // PIXService orquestra a lógica de cobrança PIX
 type PIXService struct {
-	pix    *PixClientAdapter
-	txRepo *repository.TransactionRepository
+	clientLive *PixClientAdapter
+	clientTest *PixClientAdapter
+	txRepo     *repository.TransactionRepository
 }
 
-func NewPIXService(pix *PixClientAdapter, txRepo *repository.TransactionRepository) *PIXService {
-	return &PIXService{pix: pix, txRepo: txRepo}
+func NewPIXService(live, test *PixClientAdapter, txRepo *repository.TransactionRepository) *PIXService {
+	return &PIXService{clientLive: live, clientTest: test, txRepo: txRepo}
 }
 
-func (s *PIXService) CreateCharge(intentID int, valor float64, itemName string) (*PIXResult, error) {
-	taxa   := TaxaFixaPIX
+func (s *PIXService) CreateCharge(intentID int, valor float64, itemName string, isSandbox bool) (*PIXResult, error) {
+	taxa := TaxaFixaPIX
 	liquido := valor - taxa
 
-	customerID, err := s.pix.CreateCustomer("Cliente A2Pay Gateway", "cliente@a2pay.com", "24971563792")
+	client := s.clientLive
+	if isSandbox {
+		client = s.clientTest
+	}
+
+	customerID, err := client.CreateCustomer("Cliente A2Pay Gateway", "cliente@a2pay.com", "24971563792")
 	if err != nil {
 		return nil, fmt.Errorf("criar cliente Asaas: %w", err)
 	}
 
-	chargeID, err := s.pix.CreatePixCharge(customerID, valor, itemName)
+	chargeID, err := client.CreatePixCharge(customerID, valor, itemName)
 	if err != nil {
 		return nil, fmt.Errorf("criar cobrança PIX: %w", err)
 	}
 
 	s.txRepo.UpdateToAguardandoPIX(intentID, taxa, liquido, chargeID)
-	log.Printf("[PIX] Cobrança criada: %s | R$ %.2f", chargeID, valor)
+	log.Printf("[PIX] Cobrança criada (%s): %s | R$ %.2f", map[bool]string{true: "TEST", false: "LIVE"}[isSandbox], chargeID, valor)
 
 	result := &PIXResult{ChargeID: chargeID, Valor: valor, Taxa: taxa, Liquido: liquido}
-	if qr, err := s.pix.GetPixQRCode(chargeID); err == nil && qr != nil {
-		result.QRCode    = qr.EncodedImage
-		result.CopaCola  = qr.Payload
+	if qr, err := client.GetPixQRCode(chargeID); err == nil && qr != nil {
+		result.QRCode = qr.EncodedImage
+		result.CopaCola = qr.Payload
 		result.Expiracao = qr.ExpirationDate
 	}
 	return result, nil
@@ -94,26 +100,39 @@ type ExternalPixRequest struct {
 	CustomerCPF   string  `json:"customer_cpf"`
 }
 
-func (s *PIXService) ExternalCharge(merchantID int, req ExternalPixRequest) (int64, *PIXResult, error) {
-	if req.Descricao     == "" { req.Descricao     = "Pagamento via A2Pay" }
-	if req.CustomerName  == "" { req.CustomerName  = "Cliente" }
-	if req.CustomerEmail == "" { req.CustomerEmail = "cliente@a2pay.com" }
-	if req.CustomerCPF   == "" { req.CustomerCPF   = "24971563792" }
+func (s *PIXService) ExternalCharge(merchantID int, req ExternalPixRequest, isSandbox bool) (int64, *PIXResult, error) {
+	if req.Descricao == "" {
+		req.Descricao = "Pagamento via A2Pay"
+	}
+	if req.CustomerName == "" {
+		req.CustomerName = "Cliente"
+	}
+	if req.CustomerEmail == "" {
+		req.CustomerEmail = "cliente@a2pay.com"
+	}
+	if req.CustomerCPF == "" {
+		req.CustomerCPF = "24971563792"
+	}
 
-	taxa    := TaxaFixaPIX
+	taxa := TaxaFixaPIX
 	liquido := req.Valor - taxa
 
-	intentID, err := s.txRepo.Create(merchantID, req.Descricao, req.Valor, liquido, taxa)
+	client := s.clientLive
+	if isSandbox {
+		client = s.clientTest
+	}
+
+	intentID, err := s.txRepo.Create(merchantID, req.Descricao, req.Valor, liquido, taxa, isSandbox)
 	if err != nil {
 		return 0, nil, err
 	}
 
-	customerID, err := s.pix.CreateCustomer(req.CustomerName, req.CustomerEmail, req.CustomerCPF)
+	customerID, err := client.CreateCustomer(req.CustomerName, req.CustomerEmail, req.CustomerCPF)
 	if err != nil {
 		return intentID, nil, fmt.Errorf("criar cliente Asaas: %w", err)
 	}
 
-	chargeID, err := s.pix.CreatePixCharge(customerID, req.Valor, req.Descricao)
+	chargeID, err := client.CreatePixCharge(customerID, req.Valor, req.Descricao)
 	if err != nil {
 		return intentID, nil, fmt.Errorf("criar cobrança PIX: %w", err)
 	}
@@ -121,9 +140,9 @@ func (s *PIXService) ExternalCharge(merchantID int, req ExternalPixRequest) (int
 	s.txRepo.SetChargeID(intentID, chargeID)
 
 	result := &PIXResult{ChargeID: chargeID, Valor: req.Valor, Taxa: taxa, Liquido: liquido}
-	if qr, err := s.pix.GetPixQRCode(chargeID); err == nil && qr != nil {
-		result.QRCode    = qr.EncodedImage
-		result.CopaCola  = qr.Payload
+	if qr, err := client.GetPixQRCode(chargeID); err == nil && qr != nil {
+		result.QRCode = qr.EncodedImage
+		result.CopaCola = qr.Payload
 		result.Expiracao = qr.ExpirationDate
 	}
 	return intentID, result, nil
@@ -229,15 +248,15 @@ func NewPaymentService(txRepo *repository.TransactionRepository, pix *PIXService
 	return &PaymentService{txRepo: txRepo, pix: pix, wallet: wallet, fraud: fraud}
 }
 
-func (s *PaymentService) CreateIntent(merchantID int, itemName string, valor float64) (int64, error) {
+func (s *PaymentService) CreateIntent(merchantID int, itemName string, valor float64, isSandbox bool) (int64, error) {
 	if valor <= TaxaFixaPIX {
 		return 0, fmt.Errorf("valor mínimo: R$ %.2f", TaxaFixaPIX+0.01)
 	}
-	return s.txRepo.Create(merchantID, itemName, valor, valor-TaxaFixaPIX, TaxaFixaPIX)
+	return s.txRepo.Create(merchantID, itemName, valor, valor-TaxaFixaPIX, TaxaFixaPIX, isSandbox)
 }
 
 func (s *PaymentService) ProcessPIX(intentID int, clientIP string) (*PIXResult, error) {
-	valor, merchantID, err := s.txRepo.GetByID(intentID)
+	valor, merchantID, isSandbox, err := s.txRepo.GetByID(intentID)
 	if err != nil {
 		return nil, fmt.Errorf("intent %d não encontrado", intentID)
 	}
@@ -245,11 +264,11 @@ func (s *PaymentService) ProcessPIX(intentID int, clientIP string) (*PIXResult, 
 	if fraud.Bloqueado {
 		return nil, &FraudError{Score: fraud.Score, Reasons: fraud.Reasons}
 	}
-	return s.pix.CreateCharge(intentID, valor, s.txRepo.GetItemName(intentID))
+	return s.pix.CreateCharge(intentID, valor, s.txRepo.GetItemName(intentID), isSandbox)
 }
 
 func (s *PaymentService) ProcessCard(intentID int, token string, clientIP string) (*CardResult, error) {
-	valor, merchantID, err := s.txRepo.GetByID(intentID)
+	valor, merchantID, _, err := s.txRepo.GetByID(intentID)
 	if err != nil {
 		return nil, fmt.Errorf("intent %d não encontrado", intentID)
 	}

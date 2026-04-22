@@ -12,7 +12,19 @@ func Logger(next http.Handler) http.Handler {
 		start := time.Now()
 		rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
 		next.ServeHTTP(rw, r)
-		log.Printf("[HTTP] %s %s → %d (%s)", r.Method, r.URL.Path, rw.status, time.Since(start))
+
+		duration := time.Since(start)
+		status := rw.status
+
+		// Log diferenciado para erros para facilitar monitoramento
+		icon := "✅"
+		if status >= 500 {
+			icon = "🚨"
+		} else if status >= 400 {
+			icon = "⚠️ "
+		}
+
+		log.Printf("%s [HTTP] %s %s → %d (%s)", icon, r.Method, r.URL.Path, status, duration)
 	})
 }
 

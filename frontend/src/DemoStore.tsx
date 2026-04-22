@@ -43,7 +43,7 @@ export default function DemoStore() {
   };
 
   return (
-    <div className="checkout-container" style={{maxWidth: '600px'}}>
+    <div className="checkout-container" style={{maxWidth: '600px', margin: '1rem auto'}}>
       <div className="checkout-header">
         <ShoppingBag size={48} color="#66fcf1" style={{marginBottom: '1rem'}} />
         <h2>Simulador de E-commerce Externo</h2>

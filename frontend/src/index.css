@@ -1,12 +1,14 @@
 :root {
-  --bg-color: #0b0c10;
-  --panel-bg: #1f2833;
-  --text-main: #c5c6c7;
-  --text-muted: #8d939b;
-  --accent: #66fcf1;
-  --accent-hover: #45a29e;
-  --border: #2a3441;
+  --bg-color: #ffffff;
+  --panel-bg: #f9fafb;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --accent: #8942FC;
+  --accent-hover: #7b32ea;
+  --border: #e5e7eb;
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 * {
@@ -108,7 +110,7 @@ body {
 .metric-value {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-main);
 }
 
 .metric-value.accent {
@@ -135,7 +137,7 @@ body {
 }
 
 .data-table th {
-  background-color: rgba(0,0,0,0.2);
+  background-color: #f3f4f6;
   color: var(--text-muted);
   font-weight: 600;
   font-size: 0.85rem;
@@ -171,10 +173,10 @@ body {
 .checkout-container {
   max-width: 500px;
   margin: 4rem auto;
-  background-color: var(--panel-bg);
+  background-color: #ffffff;
   border-radius: 16px;
   padding: 2.5rem;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.05);
   border: 1px solid var(--border);
 }
 
@@ -184,7 +186,7 @@ body {
 }
 
 .checkout-header h2 {
-  color: #fff;
+  color: var(--text-main);
   font-weight: 700;
   margin-bottom: 0.5rem;
 }
@@ -206,9 +208,9 @@ body {
 
 .form-control {
   width: 100%;
-  background-color: var(--bg-color);
+  background-color: #ffffff;
   border: 1px solid var(--border);
-  color: #fff;
+  color: var(--text-main);
   padding: 0.75rem 1rem;
   border-radius: 8px;
   font-family: inherit;
@@ -272,7 +274,7 @@ body {
   border-top: 1px dashed var(--border);
   font-weight: 700;
   font-size: 1.1rem;
-  color: #fff;
+  color: var(--text-main);
 }
 
 /* ====== PAGAR ME CLONE VIBEZ ====== */
@@ -384,9 +386,9 @@ body {
 
 /* Hero Section */
 .pg-hero {
-  background-color: #8942FC;
+  background-color: #ffffff;
   padding: 5rem 4rem 6rem;
-  color: #fff;
+  color: #111;
   min-height: calc(100vh - 80px);
   display: flex;
   align-items: center;
@@ -420,11 +422,11 @@ body {
 }
 
 .pg-hero-text-col h1 {
-  font-size: 4rem;
+  font-size: 3.5rem;
   font-weight: 800;
-  line-height: 1.05;
+  line-height: 1.1;
   margin-bottom: 1.5rem;
-  color: #fff;
+  color: #111;
   letter-spacing: -0.03em;
 }
 
@@ -452,8 +454,10 @@ body {
   transform: scale(1.05);
 }
 
+
 .pg-hero-image-col {
   width: 100%;
+  position: relative;
 }
 
 .pg-hero-img {
@@ -462,6 +466,21 @@ body {
   object-fit: cover;
   border-radius: 3rem;
   box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+
+/* Dashboard Layout */
+.dashboard-layout {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  display: flex;
+}
+
+.dashboard-main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 @media (max-width: 1024px) {

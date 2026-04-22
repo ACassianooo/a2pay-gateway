@@ -39,9 +39,9 @@ export default function Login() {
   return (
     <div className="checkout-container" style={{maxWidth: '400px', marginTop: '4rem'}}>
       <div style={{textAlign: 'center', marginBottom: '2rem'}}>
-        <Lock size={48} color="#66fcf1" style={{margin: '0 auto 1rem'}} />
-        <h2>Acesso ao Painel</h2>
-        <p style={{color: 'var(--text-muted)'}}>Entre para visualizar suas transações</p>
+        <Lock size={48} color="#8942FC" style={{margin: '0 auto 1rem'}} />
+        <h2 style={{ color: '#111827', fontWeight: 800 }}>Acesso ao Painel</h2>
+        <p style={{color: '#6b7280'}}>Entre para visualizar suas transações</p>
       </div>
 
       {error && <div style={{background: 'rgba(255,0,0,0.1)', color: '#ff6b6b', padding: '1rem', borderRadius: '8px', marginBottom: '1rem'}}>{error}</div>}

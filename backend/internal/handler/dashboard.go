@@ -19,6 +19,7 @@ func NewDashboardHandler(userRepo *repository.UserRepository, txRepo *repository
 // Dashboard — GET /api/pagamentos
 func (h *DashboardHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 	user := GetUserFromContext(r)
+	isTest := r.Header.Get("x-a2pay-env") == "test"
 
 	if user.Role == "master" {
 		lucro, empresas, err := h.userRepo.GetMasterStats()
@@ -30,11 +31,12 @@ func (h *DashboardHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 			"role":        "master",
 			"lucro_total": lucro,
 			"empresas":    empresas,
+			"is_sandbox":  isTest,
 		})
 		return
 	}
 
-	txs, saldo, err := h.txRepo.GetByMerchant(user.MerchantID)
+	txs, saldo, err := h.txRepo.GetByMerchant(user.MerchantID, isTest)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
@@ -43,5 +45,6 @@ func (h *DashboardHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		"role":          "lojista",
 		"saldo_lojista": saldo,
 		"transacoes":    txs,
+		"is_sandbox":    isTest,
 	})
 }

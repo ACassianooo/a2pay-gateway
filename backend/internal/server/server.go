@@ -36,16 +36,19 @@ func New(cfg *config.Config, db *database.DB) *Server {
 	adminRepo := repository.NewAdminRepository(db.Conn)
 
 	// ── Serviços ─────────────────────────────────────────────────────────
-	cryptoSvc  := service.MustNewCryptoService(fmt.Sprintf("%x", cfg.AESKey))
-	pixClient  := service.NewPixClientAdapter(cfg.AsaasAPIKey, cfg.AsaasBaseURL)
-	walletSvc  := service.NewWalletService()
-	fraudSvc   := service.NewFraudService(txRepo, walRepo)
-	pixSvc     := service.NewPIXService(pixClient, txRepo)
+	cryptoSvc := service.MustNewCryptoService(fmt.Sprintf("%x", cfg.AESKey))
+
+	pixLive := service.NewPixClientAdapter(cfg.AsaasAPIKeyLive, cfg.AsaasBaseURLReal)
+	pixTest := service.NewPixClientAdapter(cfg.AsaasAPIKeyTest, cfg.AsaasBaseURLTest)
+
+	walletSvc := service.NewWalletService()
+	fraudSvc := service.NewFraudService(txRepo, walRepo)
+	pixSvc := service.NewPIXService(pixLive, pixTest, txRepo)
 	paymentSvc := service.NewPaymentService(txRepo, pixSvc, walletSvc, fraudSvc)
 
 	// ── Handlers ─────────────────────────────────────────────────────────
-	authH     := handler.NewAuthHandler(userRepo, cryptoSvc, cfg.JWTSecret)
-	payH      := handler.NewPaymentHandler(paymentSvc, pixSvc, walletSvc, pixClient)
+	authH := handler.NewAuthHandler(userRepo, cryptoSvc, cfg.JWTSecret)
+	payH := handler.NewPaymentHandler(paymentSvc, pixSvc, walletSvc, pixLive, pixTest)
 	dashH     := handler.NewDashboardHandler(userRepo, txRepo)
 	merchantH := handler.NewMerchantHandler(userRepo, cryptoSvc)
 	healthH   := handler.NewHealthHandler(db)
@@ -57,9 +60,9 @@ func New(cfg *config.Config, db *database.DB) *Server {
 	r.Use(chiMiddleware.Recoverer)
 	r.Use(middleware.Logger)
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://*", "http://*"},
+		AllowedOrigins:   []string{"http://localhost:5173", "http://127.0.0.1:5173", "https://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "x-a2pay-env"},
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))

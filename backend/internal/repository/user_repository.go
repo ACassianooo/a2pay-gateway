@@ -19,12 +19,12 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-func (r *UserRepository) Create(name, emailEncrypted, passwordHash, baasID, apiKey string) (int64, error) {
+func (r *UserRepository) Create(name, emailEncrypted, passwordHash, baasID, apiKeyLive, apiKeyTest string) (int64, error) {
 	var id int64
 	err := r.db.QueryRow(
-		`INSERT INTO merchants(name, email, password_hash, baas_account_id, role, api_key, created_at)
-		 VALUES($1, $2, $3, $4, 'lojista', $5, $6) RETURNING id`,
-		name, emailEncrypted, passwordHash, baasID, apiKey, time.Now().Format(time.RFC3339),
+		`INSERT INTO merchants(name, email, password_hash, baas_account_id, role, api_key, api_key_test, created_at)
+		 VALUES($1, $2, $3, $4, 'lojista', $5, $6, $7) RETURNING id`,
+		name, emailEncrypted, passwordHash, baasID, apiKeyLive, apiKeyTest, time.Now().Format(time.RFC3339),
 	).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("UserRepository.Create: %w", err)
@@ -38,25 +38,44 @@ func (r *UserRepository) GetAllForLogin() (*sql.Rows, error) {
 	return r.db.Query("SELECT id, email, password_hash, role FROM merchants")
 }
 
-func (r *UserRepository) GetAPIKey(merchantID int) (string, string, error) {
-	var key, caps string
-	// Como sqlite3 com 'ADD COLUMN' retorna null para linhas velhas por padrão se não tiver DEFAULT at runtime (tem, mas via migrations pode não atualizar velhas sem re-insert), garantimos com COALESCE
-	err := r.db.QueryRow("SELECT api_key, COALESCE(api_capabilities, 'pix,card') FROM merchants WHERE id = $1", merchantID).Scan(&key, &caps)
-	return key, caps, err
+func (r *UserRepository) GetAPIKey(merchantID int) (string, string, string, error) {
+	var live, test, caps string
+	err := r.db.QueryRow(`
+		SELECT api_key, api_key_test, COALESCE(api_capabilities, 'pix,card') 
+		FROM merchants WHERE id = $1`, merchantID).Scan(&live, &test, &caps)
+	return live, test, caps, err
 }
 
-func (r *UserRepository) SetAPIKey(merchantID int, key string, capabilities string) error {
-	_, err := r.db.Exec("UPDATE merchants SET api_key = $1, api_capabilities = $2 WHERE id = $3", key, capabilities, merchantID)
+func (r *UserRepository) SetAPIKeys(merchantID int, live, test, capabilities string) error {
+	_, err := r.db.Exec(`
+		UPDATE merchants SET api_key = $1, api_key_test = $2, api_capabilities = $3 
+		WHERE id = $4`, live, test, capabilities, merchantID)
 	return err
 }
 
-func (r *UserRepository) GetByAPIKey(apiKey string) (int, string, error) {
+func (r *UserRepository) GetByAPIKey(apiKey string) (int, string, bool, error) {
 	var id int
 	var caps string
+
+	// Tenta buscar na live
 	err := r.db.QueryRow(
 		"SELECT id, COALESCE(api_capabilities, 'pix,card') FROM merchants WHERE api_key = $1 AND role = 'lojista'", apiKey,
 	).Scan(&id, &caps)
-	return id, caps, err
+
+	if err == nil {
+		return id, caps, false, nil
+	}
+
+	// Se não achou na live, tenta na sandbox
+	err = r.db.QueryRow(
+		"SELECT id, COALESCE(api_capabilities, 'pix,card') FROM merchants WHERE api_key_test = $1 AND role = 'lojista'", apiKey,
+	).Scan(&id, &caps)
+
+	if err == nil {
+		return id, caps, true, nil
+	}
+
+	return 0, "", false, err
 }
 
 func (r *UserRepository) Delete(merchantID int) error {
@@ -68,7 +87,7 @@ func (r *UserRepository) GetMasterStats() (float64, []model.EmpresaRow, error) {
 	rows, err := r.db.Query(`
 		SELECT m.name, COALESCE(SUM(t.valor_total),0), COALESCE(SUM(t.taxa),0)
 		FROM merchants m
-		LEFT JOIN transactions t ON m.id = t.merchant_id AND t.status = 'pago'
+		LEFT JOIN transactions t ON m.id = t.merchant_id AND t.status = 'pago' AND t.is_test = false
 		WHERE m.role != 'master'
 		GROUP BY m.id
 	`)

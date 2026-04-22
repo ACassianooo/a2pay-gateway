@@ -8,7 +8,8 @@ import {
   Building, ChevronRight, Search, Ban, Globe,
   User, Settings, Upload, Bell, Webhook, BookOpen, Terminal,
   Users, Lock, Unlock, FileText, PieChart, TrendingDown, ArrowUp,
-  List, RotateCcw, Banknote, History
+  List, RotateCcw, Banknote, History,
+  LogOut, HelpCircle, ChevronDown, Monitor, Shield
 } from 'lucide-react';
 import { MasterApp } from './admin/MasterApp';
 import { API_BASE_URL } from './api';
@@ -30,8 +31,16 @@ interface DashboardData {
   transacoes?: Transaction[];
   lucro_total?: number;
   empresas?: EmpresaInfo[];
+  is_sandbox?: boolean;
+  error?: string; // Adicionado campo de erro
 }
-interface APIKeyData { api_key: string; capabilities: string; endpoint: string; created_at: string; }
+interface APIKeyData { 
+  api_key: string; 
+  api_key_test: string; 
+  capabilities: string; 
+  endpoint: string; 
+  created_at: string; 
+}
 
 type Tab = 'overview' | 'financeiro' | 'pagamentos' | 'antifraude' | 'desenvolvedor' | 'conta';
 
@@ -76,17 +85,13 @@ function MetricCard({ icon, label, value, sub, color = '#8942FC', spark }: {
   icon: JSX.Element; label: string; value: string; sub?: string; color?: string; spark?: number[];
 }) {
   return (
-    <div style={{ background: '#13151a', border: '1px solid #22242c', borderRadius: 16, padding: '1.4rem 1.6rem', display: 'flex', flexDirection: 'column', gap: '0.6rem', transition: 'border-color .2s', cursor: 'default', position: 'relative', overflow: 'hidden' }}
-      onMouseEnter={e => (e.currentTarget.style.borderColor = `${color}50`)}
-      onMouseLeave={e => (e.currentTarget.style.borderColor = '#22242c')}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          <span style={{ color }}>{icon}</span> {label}
-        </div>
+    <div style={{ background: '#ffffff', border: '1px solid #f1f5f9', borderRadius: '12px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', transition: 'all .2s', cursor: 'default', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+        <div style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 600 }}>{label}</div>
         {spark && <Sparkline data={spark} color={color} />}
       </div>
-      <div style={{ fontSize: '1.9rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.03em' }}>{value}</div>
-      {sub && <div style={{ fontSize: '0.78rem', color: '#6b7280' }}>{sub}</div>}
+      <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#111827', letterSpacing: '-0.025em' }}>{value}</div>
+      {sub && <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>{sub}</div>}
     </div>
   );
 }
@@ -95,7 +100,7 @@ function MetricCard({ icon, label, value, sub, color = '#8942FC', spark }: {
 function SectionHeader({ icon, title, sub }: { icon: JSX.Element; title: string; sub?: string }) {
   return (
     <div style={{ marginBottom: '1.8rem' }}>
-      <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#fff', fontSize: '1.3rem', fontWeight: 800, marginBottom: '0.3rem' }}>
+      <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#111827', fontSize: '1.3rem', fontWeight: 800, marginBottom: '0.3rem' }}>
         <span style={{ color: '#8942FC' }}>{icon}</span>{title}
       </h2>
       {sub && <p style={{ color: '#6b7280', fontSize: '0.88rem' }}>{sub}</p>}
@@ -106,7 +111,7 @@ function SectionHeader({ icon, title, sub }: { icon: JSX.Element; title: string;
 // ── Card container ────────────────────────────────────────────────────────────
 function Card({ children, style = {} }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div style={{ background: '#13151a', border: '1px solid #22242c', borderRadius: 16, padding: '1.5rem', ...style }}>
+    <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 16, padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', ...style }}>
       {children}
     </div>
   );
@@ -116,6 +121,7 @@ function Card({ children, style = {} }: { children: React.ReactNode; style?: Rea
 // TAB: OVERVIEW
 // ══════════════════════════════════════════════════════════════════════════════
 function OverviewTab({ data }: { data: DashboardData }) {
+  const [period, setPeriod] = useState('Hoje');
   const txs = data.transacoes || [];
   const pagas = txs.filter(t => t.status === 'pago');
   const pendentes = txs.filter(t => t.status === 'aguardando_pix' || t.status === 'pendente');
@@ -131,35 +137,43 @@ function OverviewTab({ data }: { data: DashboardData }) {
   });
 
   const recent = txs.slice(0, 5);
+  const periods = ['Hoje', 'Esse mês', 'Últimos 30 dias', 'Últimos 90 dias', 'Todo o período', 'Personalizado'];
 
   return (
     <div>
-      <SectionHeader icon={<LayoutDashboard size={22} />} title="Visão Geral" sub="Métricas em tempo real do seu negócio." />
+      {/* Filtros de Período */}
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+        {periods.map(p => (
+          <button key={p} onClick={() => setPeriod(p)}
+            style={{ padding: '0.5rem 0.85rem', borderRadius: '8px', border: '1px solid #e2e8f0', background: period === p ? '#8942FC' : '#fff', color: period === p ? '#fff' : '#64748b', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', transition: 'all .2s', whiteSpace: 'nowrap' }}>
+            {p}
+          </button>
+        ))}
+      </div>
 
       {/* KPI Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-        <MetricCard icon={<DollarSign size={15} />} label="Saldo Disponível" value={fmt(saldo)} sub="Pronto para saque" color="#22c55e" spark={sparks} />
-        <MetricCard icon={<Clock size={15} />} label="Saldo Pendente" value={fmt(saldoPendente)} sub="Aguardando confirmação" color="#f59e0b" />
-        <MetricCard icon={<TrendingUp size={15} />} label="Volume Total" value={fmt(volume)} sub={`${pagas.length} transações pagas`} color="#8942FC" spark={sparks} />
-        <MetricCard icon={<Activity size={15} />} label="Taxas Cobradas" value={fmt(taxas)} sub="Taxa fixa de R$ 0,99/PIX" color="#6366f1" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
+        <MetricCard icon={<DollarSign size={15} />} label="Total em vendas" value={fmt(volume)} sub="Em relação ao período anterior" color="#8942FC" spark={sparks} />
+        <MetricCard icon={<List size={15} />} label="Total de transações" value={String(pagas.length)} sub="Transações processadas" color="#8942FC" />
+        <MetricCard icon={<Activity size={15} />} label="Ticket Médio" value={fmt(pagas.length > 0 ? volume / pagas.length : 0)} sub="Valor médio por venda" color="#8942FC" />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
         {/* Transações recentes */}
         <Card>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
-            <h3 style={{ color: '#fff', fontWeight: 700, fontSize: '0.95rem' }}>Transações Recentes</h3>
+            <h3 style={{ color: '#111827', fontWeight: 700, fontSize: '0.95rem' }}>Transações Recentes</h3>
             <span style={{ color: '#8942FC', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Ver todas →</span>
           </div>
           {recent.length === 0 && <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>Nenhuma transação.</p>}
           {recent.map(t => (
-            <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid #1a1c24' }}>
+            <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid #f3f4f6' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#1a1c24', display: 'grid', placeItems: 'center', color: '#8942FC' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f9fafb', display: 'grid', placeItems: 'center', color: '#8942FC' }}>
                   {t.metodo_pagamento === 'pix' ? <Zap size={16} /> : <CreditCard size={16} />}
                 </div>
                 <div>
-                  <div style={{ color: '#fff', fontSize: '0.88rem', fontWeight: 600 }}>{t.item_name || 'Pagamento'}</div>
+                  <div style={{ color: '#111827', fontSize: '0.88rem', fontWeight: 600 }}>{t.item_name || 'Pagamento'}</div>
                   <div style={{ color: '#6b7280', fontSize: '0.75rem' }}>#{t.id} · {fmtDate(t.created_at)}</div>
                 </div>
               </div>
@@ -173,23 +187,19 @@ function OverviewTab({ data }: { data: DashboardData }) {
 
         {/* Alertas */}
         <Card>
-          <h3 style={{ color: '#fff', fontWeight: 700, fontSize: '0.95rem', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <h3 style={{ color: '#111827', fontWeight: 700, fontSize: '0.95rem', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <AlertTriangle size={16} color="#f59e0b" /> Alertas
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
             {pendentes.length > 0 && (
-              <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 10, padding: '0.8rem' }}>
-                <div style={{ color: '#f59e0b', fontWeight: 700, fontSize: '0.82rem' }}>⚡ {pendentes.length} PIX aguardando</div>
+              <div style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 10, padding: '0.8rem' }}>
+                <div style={{ color: '#d97706', fontWeight: 700, fontSize: '0.82rem' }}>⚡ {pendentes.length} PIX aguardando</div>
                 <div style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '0.2rem' }}>Confirme no painel financeiro</div>
               </div>
             )}
-            <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 10, padding: '0.8rem' }}>
-              <div style={{ color: '#22c55e', fontWeight: 700, fontSize: '0.82rem' }}>✅ Antifraude ativo</div>
+            <div style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 10, padding: '0.8rem' }}>
+              <div style={{ color: '#15803d', fontWeight: 700, fontSize: '0.82rem' }}>✅ Antifraude ativo</div>
               <div style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '0.2rem' }}>4 regras monitorando</div>
-            </div>
-            <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 10, padding: '0.8rem' }}>
-              <div style={{ color: '#818cf8', fontWeight: 700, fontSize: '0.82rem' }}>🔑 API Key ativa</div>
-              <div style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '0.2rem' }}>Integração pronta para uso</div>
             </div>
           </div>
         </Card>
@@ -242,7 +252,7 @@ function FinanceiroTab({ data }: { data: DashboardData }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
         {/* Solicitar Saque */}
         <Card>
-          <h3 style={{ color: '#fff', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <h3 style={{ color: '#111827', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
             <ArrowUpRight size={18} color="#8942FC" /> Solicitar Saque (PIX)
           </h3>
           {saqueOK ? (
@@ -258,19 +268,19 @@ function FinanceiroTab({ data }: { data: DashboardData }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
                 <label style={{ display: 'block', color: '#6b7280', fontSize: '0.82rem', marginBottom: '0.4rem', fontWeight: 600 }}>VALOR (R$)</label>
-                <input value={saqueValor} onChange={e => setSaqueValor(e.target.value)} type="number" placeholder="Ex: 100,00" style={{ width: '100%', background: '#0b0c10', border: '1px solid #22242c', borderRadius: 8, padding: '0.7rem 1rem', color: '#fff', fontSize: '0.95rem', outline: 'none' }} />
+                <input value={saqueValor} onChange={e => setSaqueValor(e.target.value)} type="number" placeholder="Ex: 100,00" style={{ width: '100%', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.7rem 1rem', color: '#111827', fontSize: '0.95rem', outline: 'none' }} />
               </div>
               <div>
                 <label style={{ display: 'block', color: '#6b7280', fontSize: '0.82rem', marginBottom: '0.4rem', fontWeight: 600 }}>CHAVE PIX</label>
-                <input value={saqueChave} onChange={e => setSaqueChave(e.target.value)} placeholder="CPF, email ou chave aleatória" style={{ width: '100%', background: '#0b0c10', border: '1px solid #22242c', borderRadius: 8, padding: '0.7rem 1rem', color: '#fff', fontSize: '0.95rem', outline: 'none' }} />
+                <input value={saqueChave} onChange={e => setSaqueChave(e.target.value)} placeholder="CPF, email ou chave aleatória" style={{ width: '100%', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.7rem 1rem', color: '#111827', fontSize: '0.95rem', outline: 'none' }} />
               </div>
-              <div style={{ background: 'rgba(137,66,252,0.08)', borderRadius: 8, padding: '0.7rem 1rem', fontSize: '0.8rem', color: '#a78bfa' }}>
+              <div style={{ background: 'rgba(137,66,252,0.05)', borderRadius: 8, padding: '0.7rem 1rem', fontSize: '0.82rem', color: '#8942FC', border: '1px solid rgba(137,66,252,0.1)' }}>
                 Saldo disponível: <strong>{fmt(saldo)}</strong> · Taxa de saque: grátis
               </div>
               <button
                 disabled={!saqueValor || !saqueChave || parseFloat(saqueValor) > saldo}
                 onClick={() => setSaqueOK(true)}
-                style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 10, padding: '0.8rem', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem', opacity: (!saqueValor || !saqueChave || parseFloat(saqueValor) > saldo) ? 0.5 : 1 }}>
+                style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 10, padding: '0.8rem', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem', opacity: (!saqueValor || !saqueChave || parseFloat(saqueValor) > saldo) ? 0.5 : 1, transition: 'all .2s' }}>
                 Solicitar Saque
               </button>
             </div>
@@ -279,7 +289,7 @@ function FinanceiroTab({ data }: { data: DashboardData }) {
 
         {/* Histórico de Saques */}
         <Card>
-          <h3 style={{ color: '#fff', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <h3 style={{ color: '#111827', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
             <Activity size={18} color="#8942FC" /> Histórico de Saques
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
@@ -288,9 +298,9 @@ function FinanceiroTab({ data }: { data: DashboardData }) {
               { valor: 100.00, status: 'pago', data: '10/04', chave: 'cpf: ***456' },
               { valor: 500.00, status: 'pendente', data: 'Hoje', chave: 'chave aleatória' },
             ].map((s, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.7rem', background: '#0b0c10', borderRadius: 8, border: '1px solid #1a1c24' }}>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.7rem', background: '#f9fafb', borderRadius: 8, border: '1px solid #e5e7eb' }}>
                 <div>
-                  <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.88rem' }}>{fmt(s.valor)}</div>
+                  <div style={{ color: '#111827', fontWeight: 700, fontSize: '0.88rem' }}>{fmt(s.valor)}</div>
                   <div style={{ color: '#6b7280', fontSize: '0.75rem' }}>{s.data} · {s.chave}</div>
                 </div>
                 <StatusBadge status={s.status} />
@@ -304,15 +314,15 @@ function FinanceiroTab({ data }: { data: DashboardData }) {
       {/* Extrato */}
       <Card>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '0.8rem' }}>
-          <h3 style={{ color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <h3 style={{ color: '#111827', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Filter size={16} color="#8942FC" /> Extrato Completo
           </h3>
           <div style={{ display: 'flex', gap: '0.7rem', flexWrap: 'wrap' }}>
             <div style={{ position: 'relative' }}>
               <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }} />
-              <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar..." style={{ background: '#0b0c10', border: '1px solid #22242c', borderRadius: 8, padding: '0.5rem 0.8rem 0.5rem 2rem', color: '#fff', fontSize: '0.85rem', outline: 'none', width: 160 }} />
+              <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar..." style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.5rem 0.8rem 0.5rem 2rem', color: '#111827', fontSize: '0.85rem', outline: 'none', width: 160 }} />
             </div>
-            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ background: '#0b0c10', border: '1px solid #22242c', borderRadius: 8, padding: '0.5rem 0.8rem', color: '#fff', fontSize: '0.85rem', outline: 'none', cursor: 'pointer' }}>
+            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.5rem 0.8rem', color: '#111827', fontSize: '0.85rem', outline: 'none', cursor: 'pointer' }}>
               <option value="todos">Todos</option>
               <option value="pago">Pagos</option>
               <option value="aguardando_pix">Aguardando</option>
@@ -326,23 +336,23 @@ function FinanceiroTab({ data }: { data: DashboardData }) {
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #22242c' }}>
+              <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                 {['ID', 'Item', 'Total', 'Líquido', 'Taxa', 'Método', 'Status', 'Data'].map(h => (
-                  <th key={h} style={{ padding: '0.7rem 1rem', textAlign: 'left', color: '#6b7280', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
+                  <th key={h} style={{ padding: '0.7rem 1rem', textAlign: 'left', color: '#94a3b8', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.map(t => (
-                <tr key={t.id} style={{ borderBottom: '1px solid #1a1c24' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#1a1c24')}
+                <tr key={t.id} style={{ borderBottom: '1px solid #f8fafc' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                   <td style={{ padding: '0.8rem 1rem', color: '#6b7280' }}>#{t.id}</td>
-                  <td style={{ padding: '0.8rem 1rem', color: '#fff', fontWeight: 600, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.item_name}</td>
-                  <td style={{ padding: '0.8rem 1rem', color: '#fff' }}>{fmt(t.valor_total)}</td>
+                  <td style={{ padding: '0.8rem 1rem', color: '#111827', fontWeight: 600, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.item_name}</td>
+                  <td style={{ padding: '0.8rem 1rem', color: '#111827' }}>{fmt(t.valor_total)}</td>
                   <td style={{ padding: '0.8rem 1rem', color: '#22c55e', fontWeight: 700 }}>{fmt(t.valor_liquido)}</td>
                   <td style={{ padding: '0.8rem 1rem', color: '#f59e0b' }}>{fmt(t.valor_total - t.valor_liquido)}</td>
-                  <td style={{ padding: '0.8rem 1rem' }}><span style={{ background: '#1a1c24', padding: '0.2rem 0.5rem', borderRadius: 4, fontSize: '0.75rem', color: '#a78bfa', textTransform: 'uppercase', fontWeight: 700 }}>{t.metodo_pagamento || 'N/A'}</span></td>
+                  <td style={{ padding: '0.8rem 1rem' }}><span style={{ background: '#f3f4f6', padding: '0.2rem 0.6rem', borderRadius: 6, fontSize: '0.72rem', color: '#8942FC', textTransform: 'uppercase', fontWeight: 700, border: '1px solid #e5e7eb' }}>{t.metodo_pagamento || 'N/A'}</span></td>
                   <td style={{ padding: '0.8rem 1rem' }}><StatusBadge status={t.status} /></td>
                   <td style={{ padding: '0.8rem 1rem', color: '#6b7280', whiteSpace: 'nowrap' }}>{fmtDate(t.created_at)}</td>
                 </tr>
@@ -394,24 +404,24 @@ function PagamentosTab({ data }: { data: DashboardData }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
         {/* Lista de transações */}
         <Card style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '1.2rem 1.5rem', borderBottom: '1px solid #22242c', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ color: '#fff', fontWeight: 700, fontSize: '0.95rem' }}>Lista de Transações</h3>
+          <div style={{ padding: '1.2rem 1.5rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ color: '#111827', fontWeight: 700, fontSize: '0.95rem' }}>Lista de Transações</h3>
             <div style={{ position: 'relative' }}>
-              <Search size={13} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }} />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar..." style={{ background: '#0b0c10', border: '1px solid #22242c', borderRadius: 8, padding: '0.4rem 0.7rem 0.4rem 1.8rem', color: '#fff', fontSize: '0.82rem', outline: 'none', width: 140 }} />
+              <Search size={13} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar..." style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.4rem 0.7rem 0.4rem 1.8rem', color: '#111827', fontSize: '0.82rem', outline: 'none', width: 140 }} />
             </div>
           </div>
           <div style={{ maxHeight: 400, overflowY: 'auto' }}>
             {filtered.map(t => (
               <div key={t.id} onClick={() => setSelected(selected?.id === t.id ? null : t)}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.9rem 1.5rem', borderBottom: '1px solid #1a1c24', cursor: 'pointer', background: selected?.id === t.id ? 'rgba(137,66,252,0.08)' : 'transparent', transition: 'background .15s' }}
-                onMouseEnter={e => { if (selected?.id !== t.id) e.currentTarget.style.background = '#1a1c24'; }}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.9rem 1.5rem', borderBottom: '1px solid #f1f5f9', cursor: 'pointer', background: selected?.id === t.id ? 'rgba(137,66,252,0.05)' : 'transparent', transition: 'background .15s' }}
+                onMouseEnter={e => { if (selected?.id !== t.id) e.currentTarget.style.background = '#f8fafc'; }}
                 onMouseLeave={e => { if (selected?.id !== t.id) e.currentTarget.style.background = 'transparent'; }}>
-                <div style={{ width: 34, height: 34, borderRadius: 9, background: '#1a1c24', display: 'grid', placeItems: 'center', color: '#8942FC', flexShrink: 0 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, background: '#f3f4f6', display: 'grid', placeItems: 'center', color: '#8942FC', flexShrink: 0 }}>
                   {t.metodo_pagamento === 'pix' ? <Zap size={15} /> : <CreditCard size={15} />}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ color: '#fff', fontWeight: 600, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.item_name}</div>
+                  <div style={{ color: '#111827', fontWeight: 600, fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.item_name}</div>
                   <div style={{ color: '#6b7280', fontSize: '0.72rem' }}>#{t.id} · {fmtDate(t.created_at)}</div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -430,7 +440,7 @@ function PagamentosTab({ data }: { data: DashboardData }) {
           {selected ? (
             <Card>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3 style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem' }}>Detalhes #{selected.id}</h3>
+                <h3 style={{ color: '#111827', fontWeight: 700, fontSize: '0.9rem' }}>Detalhes #{selected.id}</h3>
                 <button onClick={() => setSelected(null)} style={{ background: 'transparent', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '1.2rem' }}>×</button>
               </div>
               {[
@@ -442,9 +452,9 @@ function PagamentosTab({ data }: { data: DashboardData }) {
                 { label: 'Método', value: (selected.metodo_pagamento || 'N/A').toUpperCase() },
                 { label: 'Data', value: fmtDate(selected.created_at) },
               ].map(r => (
-                <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.55rem 0', borderBottom: '1px solid #1a1c24' }}>
+                <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.55rem 0', borderBottom: '1px solid #f3f4f6' }}>
                   <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>{r.label}</span>
-                  <span style={{ color: (r as any).color || '#fff', fontSize: '0.85rem', fontWeight: 600 }}>{r.value}</span>
+                  <span style={{ color: (r as any).color || '#111827', fontSize: '0.85rem', fontWeight: 600 }}>{r.value}</span>
                 </div>
               ))}
               {/* Timeline */}
@@ -456,31 +466,31 @@ function PagamentosTab({ data }: { data: DashboardData }) {
                   { label: 'Pago', done: selected.status === 'pago' },
                 ].map((step, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
-                    <div style={{ width: 16, height: 16, borderRadius: 99, background: step.done ? '#8942FC' : '#22242c', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 16, height: 16, borderRadius: 99, background: step.done ? '#8942FC' : '#e5e7eb', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
                       {step.done && <Check size={9} color="#fff" />}
                     </div>
-                    <span style={{ color: step.done ? '#fff' : '#6b7280', fontSize: '0.78rem' }}>{step.label}</span>
+                    <span style={{ color: step.done ? '#111827' : '#6b7280', fontSize: '0.78rem' }}>{step.label}</span>
                   </div>
                 ))}
               </div>
             </Card>
           ) : (
             <Card>
-              <h3 style={{ color: '#fff', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+              <h3 style={{ color: '#111827', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
                 <Zap size={16} color="#8942FC" /> Gerar Cobrança PIX
               </h3>
               {pixResult ? (
                 <div>
-                  <div style={{ background: '#fff', borderRadius: 10, padding: '0.5rem', marginBottom: '0.8rem', display: 'grid', placeItems: 'center' }}>
+                  <div style={{ background: '#f9fafb', borderRadius: 10, padding: '0.5rem', marginBottom: '0.8rem', display: 'grid', placeItems: 'center' }}>
                     <img src={`data:image/png;base64,${pixResult.qrcode}`} alt="QR Code PIX" style={{ width: 150, height: 150 }} onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                   </div>
-                  <div style={{ background: '#0b0c10', border: '1px solid #22242c', borderRadius: 8, padding: '0.6rem', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <code style={{ flex: 1, fontSize: '0.65rem', color: '#a78bfa', wordBreak: 'break-all', lineHeight: 1.4 }}>{pixResult.copia.slice(0, 60)}...</code>
+                  <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.6rem', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <code style={{ flex: 1, fontSize: '0.65rem', color: '#8942FC', wordBreak: 'break-all', lineHeight: 1.4 }}>{pixResult.copia.slice(0, 60)}...</code>
                     <button onClick={() => { navigator.clipboard.writeText(pixResult.copia); setCopied(true); setTimeout(() => setCopied(false), 2000); }} style={{ background: 'transparent', border: 'none', color: copied ? '#22c55e' : '#6b7280', cursor: 'pointer', flexShrink: 0 }}>
                       {copied ? <Check size={16} /> : <Copy size={16} />}
                     </button>
                   </div>
-                  <button onClick={() => { setPixResult(null); setPixForm({ valor: '', descricao: '', nome: '', email: '', cpf: '' }); }} style={{ width: '100%', background: 'transparent', border: '1px solid #22242c', borderRadius: 8, padding: '0.6rem', color: '#6b7280', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>
+                  <button onClick={() => { setPixResult(null); setPixForm({ valor: '', descricao: '', nome: '', email: '', cpf: '' }); }} style={{ width: '100%', background: 'transparent', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.6rem', color: '#6b7280', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>
                     Nova Cobrança
                   </button>
                 </div>
@@ -496,7 +506,7 @@ function PagamentosTab({ data }: { data: DashboardData }) {
                     <div key={f.key}>
                       <label style={{ display: 'block', color: '#6b7280', fontSize: '0.72rem', fontWeight: 700, marginBottom: '0.3rem' }}>{f.label}</label>
                       <input type={(f as any).type || 'text'} value={(pixForm as any)[f.key]} onChange={e => setPixForm(prev => ({ ...prev, [f.key]: e.target.value }))} placeholder={f.placeholder}
-                        style={{ width: '100%', background: '#0b0c10', border: '1px solid #22242c', borderRadius: 8, padding: '0.55rem 0.8rem', color: '#fff', fontSize: '0.85rem', outline: 'none' }} />
+                        style={{ width: '100%', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.55rem 0.8rem', color: '#111827', fontSize: '0.85rem', outline: 'none' }} />
                     </div>
                   ))}
                   <button onClick={gerarPIX} disabled={pixLoading || !pixForm.valor} style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 9, padding: '0.75rem', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem', marginTop: '0.3rem', opacity: (!pixForm.valor || pixLoading) ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
@@ -542,23 +552,23 @@ function AntifraudeTab({ data }: { data: DashboardData }) {
         {/* Monitoramento */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <Card>
-            <h3 style={{ color: '#fff', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
+            <h3 style={{ color: '#111827', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
               <Activity size={16} color="#ef4444" /> Monitoramento em Tempo Real
             </h3>
             {txs.length === 0 && <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>Sem transações para monitorar.</p>}
             {txs.slice(0, 8).map(t => {
               const score = t.status === 'bloqueado' ? 85 : t.status === 'pago' ? 5 : 35;
               return (
-                <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.7rem', borderRadius: 8, marginBottom: '0.5rem', background: '#0b0c10', border: '1px solid #1a1c24' }}>
+                <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.7rem', borderRadius: 8, marginBottom: '0.5rem', background: '#f9fafb', border: '1px solid #e5e7eb' }}>
                   <div>
-                    <div style={{ color: '#fff', fontWeight: 600, fontSize: '0.82rem' }}>{t.item_name} <span style={{ color: '#6b7280' }}>#{t.id}</span></div>
+                    <div style={{ color: '#111827', fontWeight: 600, fontSize: '0.82rem' }}>{t.item_name} <span style={{ color: '#6b7280' }}>#{t.id}</span></div>
                     <div style={{ color: '#6b7280', fontSize: '0.72rem' }}>{fmt(t.valor_total)} · {t.metodo_pagamento || 'N/A'}</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                     {/* Score bar */}
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ color: scoreColor(score), fontWeight: 800, fontSize: '0.9rem' }}>{score}</div>
-                      <div style={{ width: 60, height: 4, background: '#22242c', borderRadius: 99, overflow: 'hidden' }}>
+                      <div style={{ width: 60, height: 4, background: '#e5e7eb', borderRadius: 99, overflow: 'hidden' }}>
                         <div style={{ width: `${score}%`, height: '100%', background: scoreColor(score), borderRadius: 99, transition: 'width .5s' }} />
                       </div>
                     </div>
@@ -571,19 +581,19 @@ function AntifraudeTab({ data }: { data: DashboardData }) {
 
           {/* Análise Manual */}
           <Card>
-            <h3 style={{ color: '#fff', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
+            <h3 style={{ color: '#111827', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
               <Search size={16} color="#f59e0b" /> Análise Manual
             </h3>
             {txs.filter(t => t.status === 'aguardando_pix').slice(0, 3).map(t => (
               <div key={t.id} style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 10, padding: '0.9rem', marginBottom: '0.7rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <div style={{ color: '#fff', fontWeight: 600, fontSize: '0.85rem' }}>#{t.id} · {t.item_name}</div>
+                  <div style={{ color: '#111827', fontWeight: 600, fontSize: '0.85rem' }}>#{t.id} · {t.item_name}</div>
                   <span style={{ color: '#f59e0b', fontWeight: 800 }}>{fmt(t.valor_total)}</span>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.7rem', fontSize: '0.72rem' }}>
-                  <span style={{ background: '#1a1c24', padding: '0.2rem 0.5rem', borderRadius: 4, color: '#6b7280' }}>🌐 IP: 127.0.0.1</span>
-                  <span style={{ background: '#1a1c24', padding: '0.2rem 0.5rem', borderRadius: 4, color: '#6b7280' }}>📍 BR</span>
-                  <span style={{ background: '#1a1c24', padding: '0.2rem 0.5rem', borderRadius: 4, color: '#6b7280' }}>Score: 35</span>
+                  <span style={{ background: '#fff', padding: '0.2rem 0.5rem', borderRadius: 4, color: '#6b7280', border: '1px solid #e5e7eb' }}>🌐 IP: 127.0.0.1</span>
+                  <span style={{ background: '#fff', padding: '0.2rem 0.5rem', borderRadius: 4, color: '#6b7280', border: '1px solid #e5e7eb' }}>📍 BR</span>
+                  <span style={{ background: '#fff', padding: '0.2rem 0.5rem', borderRadius: 4, color: '#6b7280', border: '1px solid #e5e7eb' }}>Score: 35</span>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button style={{ flex: 1, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', borderRadius: 7, padding: '0.4rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700 }}>✓ Aprovar</button>
@@ -599,32 +609,32 @@ function AntifraudeTab({ data }: { data: DashboardData }) {
 
         {/* Regras */}
         <Card>
-          <h3 style={{ color: '#fff', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
+          <h3 style={{ color: '#111827', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
             🗂️ Regras do Antifraude
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
             {/* Regra 1: Limite de valor */}
-            <div style={{ borderBottom: '1px solid #22242c', paddingBottom: '1rem' }}>
-              <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.85rem', marginBottom: '0.4rem' }}>💰 Limite de Valor</div>
+            <div style={{ borderBottom: '1px solid #f3f4f6', paddingBottom: '1rem' }}>
+              <div style={{ color: '#111827', fontWeight: 700, fontSize: '0.85rem', marginBottom: '0.4rem' }}>💰 Limite de Valor</div>
               <div style={{ color: '#6b7280', fontSize: '0.78rem', marginBottom: '0.6rem' }}>Transações acima deste valor recebem +20 pontos de risco</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>R$</span>
-                <input value={limitValor} onChange={e => setLimitValor(e.target.value)} type="number" style={{ flex: 1, background: '#0b0c10', border: '1px solid #22242c', borderRadius: 7, padding: '0.5rem 0.7rem', color: '#fff', fontSize: '0.9rem', outline: 'none' }} />
+                <input value={limitValor} onChange={e => setLimitValor(e.target.value)} type="number" style={{ flex: 1, background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 7, padding: '0.5rem 0.7rem', color: '#111827', fontSize: '0.9rem', outline: 'none' }} />
               </div>
             </div>
 
             {/* Regra 2: Limite de transações */}
-            <div style={{ borderBottom: '1px solid #22242c', paddingBottom: '1rem' }}>
-              <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.85rem', marginBottom: '0.4rem' }}>⚡ Limite de Tentativas (5 min)</div>
+            <div style={{ borderBottom: '1px solid #f3f4f6', paddingBottom: '1rem' }}>
+              <div style={{ color: '#111827', fontWeight: 700, fontSize: '0.85rem', marginBottom: '0.4rem' }}>⚡ Limite de Tentativas (5 min)</div>
               <div style={{ color: '#6b7280', fontSize: '0.78rem', marginBottom: '0.6rem' }}>Acima deste número de transações por merchant em 5 min = suspeito</div>
-              <input value={limitTx} onChange={e => setLimitTx(e.target.value)} type="number" style={{ width: '100%', background: '#0b0c10', border: '1px solid #22242c', borderRadius: 7, padding: '0.5rem 0.7rem', color: '#fff', fontSize: '0.9rem', outline: 'none' }} />
+              <input value={limitTx} onChange={e => setLimitTx(e.target.value)} type="number" style={{ width: '100%', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 7, padding: '0.5rem 0.7rem', color: '#111827', fontSize: '0.9rem', outline: 'none' }} />
             </div>
 
             {/* Regra 3: Bloqueio por país */}
-            <div style={{ borderBottom: '1px solid #22242c', paddingBottom: '1rem' }}>
+            <div style={{ borderBottom: '1px solid #f3f4f6', paddingBottom: '1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Globe size={14} /> Bloquear IPs Estrangeiros</div>
-                <button onClick={() => setBlockPais(p => !p)} style={{ width: 42, height: 22, borderRadius: 99, background: blockPais ? '#8942FC' : '#22242c', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background .2s' }}>
+                <div style={{ color: '#111827', fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Globe size={14} /> Bloquear IPs Estrangeiros</div>
+                <button onClick={() => setBlockPais(p => !p)} style={{ width: 42, height: 22, borderRadius: 99, background: blockPais ? '#8942FC' : '#e5e7eb', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background .2s' }}>
                   <div style={{ width: 16, height: 16, borderRadius: 99, background: '#fff', position: 'absolute', top: 3, transition: 'left .2s', left: blockPais ? 22 : 3 }} />
                 </button>
               </div>
@@ -634,8 +644,8 @@ function AntifraudeTab({ data }: { data: DashboardData }) {
             {/* Regra 4: Bloquear proxy */}
             <div style={{ paddingBottom: '1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.85rem' }}>🔒 Bloquear VPN/Proxy</div>
-                <button onClick={() => setBlockProxy(p => !p)} style={{ width: 42, height: 22, borderRadius: 99, background: blockProxy ? '#8942FC' : '#22242c', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background .2s' }}>
+                <div style={{ color: '#111827', fontWeight: 700, fontSize: '0.85rem' }}>🔒 Bloquear VPN/Proxy</div>
+                <button onClick={() => setBlockProxy(p => !p)} style={{ width: 42, height: 22, borderRadius: 99, background: blockProxy ? '#8942FC' : '#e5e7eb', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background .2s' }}>
                   <div style={{ width: 16, height: 16, borderRadius: 99, background: '#fff', position: 'absolute', top: 3, transition: 'left .2s', left: blockProxy ? 22 : 3 }} />
                 </button>
               </div>
@@ -647,7 +657,7 @@ function AntifraudeTab({ data }: { data: DashboardData }) {
               {saved ? <><Check size={16} /> Salvo!</> : 'Salvar Regras'}
             </button>
 
-            <div style={{ background: 'rgba(137,66,252,0.08)', borderRadius: 8, padding: '0.8rem', fontSize: '0.75rem', color: '#a78bfa' }}>
+            <div style={{ background: 'rgba(137,66,252,0.05)', borderRadius: 8, padding: '0.8rem', fontSize: '0.78rem', color: '#8942FC', border: '1px solid rgba(137,66,252,0.1)' }}>
               <strong>Score ≥ 60</strong> = bloqueio automático<br />
               <strong>Score 30–59</strong> = marcado como suspeito<br />
               <strong>Score &lt; 30</strong> = aprovado automaticamente
@@ -667,35 +677,34 @@ function DesenvolvedorTab() {
   const [loading, setLoading] = useState(true);
   const [rotating, setRotating] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [copiedCode, setCopiedCode] = useState(false);
   const [visible, setVisible] = useState(false);
-  const [webhookUrl, setWebhookUrl] = useState('https://minhaloja.com/webhook/a2pay');
-
-  const [selectedCaps, setSelectedCaps] = useState('pix,card');
 
   const fetchKey = () => {
     fetch(`${API}/api/merchants/apikey`, { headers: { 'Authorization': `Bearer ${token()}` } })
-      .then(r => r.json()).then((d: APIKeyData) => { setKeyData(d); setLoading(false); setSelectedCaps(d.capabilities || 'pix,card'); });
+      .then(r => r.json()).then((d: APIKeyData) => { setKeyData(d); setLoading(false); });
   };
   useEffect(() => { fetchKey(); }, []);
 
-  const handleRotate = async () => {
-    if (!confirm('Isso invalidará sua chave atual. Confirmar?')) return;
+  const handleRotate = async (environment: 'live' | 'test') => {
+    if (!confirm(`Isso invalidará sua chave de ${environment === 'test' ? 'Sandbox' : 'Produção'} atual. Confirmar?`)) return;
     setRotating(true);
     const r = await fetch(`${API}/api/merchants/apikey/rotate`, { 
-      method: 'POST', 
       headers: { 'Authorization': `Bearer ${token()}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ capabilities: selectedCaps })
+      method: 'POST', 
+      body: JSON.stringify({ environment })
     });
     const d = await r.json();
-    setKeyData(prev => prev ? { ...prev, api_key: d.api_key, capabilities: d.capabilities } : prev);
+    setKeyData(prev => prev ? { ...prev, api_key: d.api_key, api_key_test: d.api_key_test } : prev);
     setRotating(false);
     setVisible(true);
   };
 
-  const maskedKey = keyData ? 'a2pay_pk_' + '•'.repeat(20) + keyData.api_key.slice(-6) : '';
-  const codeExample = keyData ? `curl -X POST ${keyData.endpoint} \\
-  -H "Authorization: Bearer ${keyData.api_key}" \\
+  const maskedKey = (k: string) => k.split('_').slice(0, 2).join('_') + '_' + '•'.repeat(20) + k.slice(-6);
+  
+  const currentKey = keyData ? (localStorage.getItem('a2pay_env') === 'test' ? keyData.api_key_test : keyData.api_key) : '';
+
+  const codeExample = currentKey ? `curl -X POST ${keyData?.endpoint} \\
+  -H "Authorization: Bearer ${currentKey}" \\
   -H "Content-Type: application/json" \\
   -d '{
     "valor": 99.90,
@@ -712,115 +721,115 @@ function DesenvolvedorTab() {
       <SectionHeader icon={<Terminal size={22} />} title="Desenvolvedor" sub="API Keys, Webhooks e Ambiente de Teste Sandbox." />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-        {/* Card da chave */}
+        {/* Card das chaves */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* LIVE KEY */}
+          <Card>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
+              <div>
+                <div style={{ color: '#111827', fontWeight: 700, fontSize: '0.9rem' }}>Chave de Produção (Live)</div>
+                <div style={{ color: '#6b7280', fontSize: '0.72rem' }}>Use para receber pagamentos reais</div>
+              </div>
+              <span style={{ background: 'rgba(34,197,94,0.1)', color: '#15803d', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 99, padding: '0.2rem 0.6rem', fontSize: '0.65rem', fontWeight: 800 }}>LIVE</span>
+            </div>
+            
+            <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '1rem', fontFamily: 'monospace', fontSize: '0.8rem', color: '#111827' }}>
+              <span style={{ wordBreak: 'break-all', flex: 1, color: '#15803d' }}>{visible ? keyData?.api_key : maskedKey(keyData?.api_key || '')}</span>
+              <div style={{ display: 'flex', gap: '0.3rem' }}>
+                <button onClick={() => setVisible(!visible)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b7280' }}>{visible ? <EyeOff size={15} /> : <Eye size={15} />}</button>
+                <button onClick={() => { navigator.clipboard.writeText(keyData?.api_key || ''); setCopied(true); setTimeout(() => setCopied(false), 2000); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: copied ? '#22c55e' : '#6b7280' }}>
+                  {copied ? <Check size={15} /> : <Copy size={15} />}
+                </button>
+              </div>
+            </div>
+
+            <button onClick={() => handleRotate('live')} disabled={rotating} style={{ background: 'transparent', border: '1px solid #e5e7eb', color: '#6b7280', borderRadius: 6, padding: '0.4rem 0.8rem', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>
+              Rotacionar Live Key
+            </button>
+          </Card>
+
+          {/* SANDBOX KEY */}
+          <Card style={{ border: '1px solid rgba(137,66,252,0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
+              <div>
+                <div style={{ color: '#111827', fontWeight: 700, fontSize: '0.9rem' }}>Chave de Testes (Sandbox)</div>
+                <div style={{ color: '#6b7280', fontSize: '0.72rem' }}>Exclusiva para simulações</div>
+              </div>
+              <span style={{ background: 'rgba(245,158,11,0.1)', color: '#d97706', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 99, padding: '0.2rem 0.6rem', fontSize: '0.65rem', fontWeight: 800 }}>TEST</span>
+            </div>
+            
+            <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '1rem', fontFamily: 'monospace', fontSize: '0.8rem', color: '#111827' }}>
+              <span style={{ wordBreak: 'break-all', flex: 1, color: '#d97706' }}>{visible ? keyData?.api_key_test : maskedKey(keyData?.api_key_test || '')}</span>
+              <div style={{ display: 'flex', gap: '0.3rem' }}>
+                <button onClick={() => setVisible(!visible)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b7280' }}>{visible ? <EyeOff size={15} /> : <Eye size={15} />}</button>
+                <button onClick={() => { navigator.clipboard.writeText(keyData?.api_key_test || ''); setCopied(true); setTimeout(() => setCopied(false), 2000); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: copied ? '#22c55e' : '#6b7280' }}>
+                  {copied ? <Check size={15} /> : <Copy size={15} />}
+                </button>
+              </div>
+            </div>
+
+            <button onClick={() => handleRotate('test')} disabled={rotating} style={{ background: 'transparent', border: '1px solid #e5e7eb', color: '#6b7280', borderRadius: 6, padding: '0.4rem 0.8rem', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>
+              Rotacionar Sandbox Key
+            </button>
+          </Card>
+        </div>
+
+          {/* Exemplo de integração */}
         <Card>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <div>
-              <div style={{ color: '#fff', fontWeight: 700, marginBottom: '0.2rem' }}>Chave Secreta de Produção</div>
-              <div style={{ color: '#6b7280', fontSize: '0.78rem' }}>Gerada em {keyData?.created_at}</div>
-            </div>
-            <span style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 99, padding: '0.2rem 0.8rem', fontSize: '0.72rem', fontWeight: 700 }}>ATIVA</span>
+          <div style={{ color: '#111827', fontWeight: 700, fontSize: '0.9rem', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Zap size={15} color="#8942FC" /> Exemplo de Integração (cURL)
           </div>
-          <div style={{ background: '#0b0c10', border: '1px solid #22242c', borderRadius: 10, padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.8rem', marginBottom: '1rem', fontFamily: 'monospace', fontSize: '0.85rem', color: '#fff' }}>
-            <span style={{ wordBreak: 'break-all', flex: 1 }}>{visible ? keyData?.api_key : maskedKey}</span>
-            <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
-              <button onClick={() => setVisible(v => !v)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b7280' }}>{visible ? <EyeOff size={17} /> : <Eye size={17} />}</button>
-              <button onClick={() => { navigator.clipboard.writeText(keyData?.api_key || ''); setCopied(true); setTimeout(() => setCopied(false), 2000); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: copied ? '#22c55e' : '#6b7280' }}>
-                {copied ? <Check size={17} /> : <Copy size={17} />}
-              </button>
-            </div>
-          </div>
-          <div style={{ fontSize: '0.82rem', color: '#6b7280', marginBottom: '1.5rem' }}>
-            <strong style={{ color: '#fff' }}>Endpoint de Pagamento:</strong>{' '}
-            <code style={{ color: '#a78bfa', background: 'rgba(167,139,250,0.1)', padding: '0.1rem 0.5rem', borderRadius: 4 }}>POST {keyData?.endpoint}</code>
-          </div>
-
-          <div style={{ marginBottom: '1.5rem', background: '#1a1c24', padding: '1rem', borderRadius: 10 }}>
-            <div style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.8rem' }}>Permissões da Chave (Escopo)</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
-                <input type="radio" name="caps" value="pix,card" checked={selectedCaps === 'pix,card'} onChange={(e) => setSelectedCaps(e.target.value)} style={{ accentColor: '#8942FC', transform: 'scale(1.2)' }} />
-                <span style={{ color: '#fff', fontSize: '0.85rem' }}>Híbrido (Cartão e PIX)</span>
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
-                <input type="radio" name="caps" value="pix" checked={selectedCaps === 'pix'} onChange={(e) => setSelectedCaps(e.target.value)} style={{ accentColor: '#8942FC', transform: 'scale(1.2)' }} />
-                <span style={{ color: '#fff', fontSize: '0.85rem' }}>Exclusivo PIX <span style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e', padding: '0.1rem 0.4rem', borderRadius: 4, fontSize: '0.7rem', marginLeft: '0.4rem', fontWeight: 700 }}>RECOMENDADO</span></span>
-              </label>
-            </div>
-            <p style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '0.8rem', lineHeight: 1.4 }}>Selecione o escopo acima e clique em Rotacionar. A chave resultante só conseguirá autorizar pagamentos nos métodos selecionados.</p>
-          </div>
-
-          <button onClick={handleRotate} disabled={rotating} style={{ background: 'transparent', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '0.6rem 1.2rem', cursor: rotating ? 'not-allowed' : 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.88rem', opacity: rotating ? 0.6 : 1 }}>
-            <RefreshCw size={15} /> {rotating ? 'Aplicando...' : 'Guardar Alteração e Rotacionar Chave'}
-          </button>
-        </Card>
-
-        {/* Exemplo de integração */}
-        <Card>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Code size={16} color="#8942FC" /> Documentação Expressa (cURL)
-            </h3>
-            <button onClick={() => { navigator.clipboard.writeText(codeExample); setCopiedCode(true); setTimeout(() => setCopiedCode(false), 2000); }} style={{ background: 'transparent', border: '1px solid #22242c', color: copiedCode ? '#22c55e' : '#6b7280', borderRadius: 6, padding: '0.3rem 0.7rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem' }}>
-              {copiedCode ? <Check size={12} /> : <Copy size={12} />} {copiedCode ? 'Copiado!' : 'Copiar Exemplo'}
+          <div style={{ background: '#1e293b', borderRadius: 12, padding: '1.2rem', position: 'relative', overflowX: 'auto', border: '1px solid #334155' }}>
+            <pre style={{ margin: 0, color: '#f8fafc', fontSize: '0.8rem', lineHeight: 1.5, fontFamily: 'monospace' }}>
+              {codeExample}
+            </pre>
+            <button onClick={() => { navigator.clipboard.writeText(codeExample); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+              style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: 6, padding: '0.3rem 0.6rem', fontSize: '0.7rem', cursor: 'pointer' }}>
+              {copied ? 'Copiado!' : 'Copiar Exemplo'}
             </button>
           </div>
-          <pre style={{ background: '#0b0c10', border: '1px solid #22242c', borderRadius: 10, padding: '1.2rem', color: '#a78bfa', fontSize: '0.78rem', overflowX: 'auto', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap' }}>{codeExample}</pre>
-          <h4 style={{ color: '#fff', marginTop: '1.2rem', marginBottom: '0.6rem', fontSize: '0.85rem' }}>Resposta JSON</h4>
-          <pre style={{ background: '#0b0c10', border: '1px solid #22242c', borderRadius: 10, padding: '1rem', color: '#6b7280', fontSize: '0.75rem', overflowX: 'auto', lineHeight: 1.7, margin: 0 }}>{`{
-  "id": 42,
-  "charge_id": "pay_abc123",
-  "status": "aguardando_pix",
-  "valor": 99.90,
-  "taxa_gateway": 0.99,
-  "valor_liquido": 98.91,
-  "pix_qrcode": "data:image/png;base64,...",
-  "pix_copia_cola": "00020101021226...",
-  "pix_expiracao": "2026-04-16"
-}`}</pre>
+          <p style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '1rem', lineHeight: 1.4 }}>
+            Substitua os dados do cliente e o valor conforme sua necessidade. Este endpoint retorna um link de checkout ou payload PIX Copia e Cola.
+          </p>
         </Card>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
         {/* Webhooks */}
         <Card>
-          <h3 style={{ color: '#fff', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
-            <Webhook size={16} color="#8942FC" /> Webhooks de Retorno (Notificações)
+          <h3 style={{ color: '#111827', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
+            <RefreshCw size={16} color="#8942FC" /> Webhooks (Notificações)
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
             <div>
-              <label style={{ display: 'block', color: '#6b7280', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem' }}>URL DO WEBBHOOK (MÉTODO POST)</label>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <input value={webhookUrl} onChange={e => setWebhookUrl(e.target.value)} placeholder="https://seudominio.com/webhook" style={{ flex: 1, background: '#0b0c10', border: '1px solid #22242c', borderRadius: 8, padding: '0.7rem 0.8rem', color: '#fff', fontSize: '0.85rem', outline: 'none' }} />
-                <button style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 8, padding: '0 1.2rem', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}>Salvar URL</button>
-              </div>
-              <p style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '0.5rem' }}>Enviaremos payloads JSON sempre que o status de uma transação mudar.</p>
+              <label style={{ display: 'block', color: '#6b7280', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.4rem' }}>URL DE NOTIFICAÇÃO</label>
+              <input defaultValue="https://sualoja.com/api/webhooks/a2pay" style={{ width: '100%', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.75rem', color: '#111827', fontSize: '0.9rem', outline: 'none' }} />
             </div>
             
             <div>
-              <div style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.6rem' }}>Eventos Monitorados (Notificações Geradas):</div>
+              <div style={{ color: '#111827', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.6rem' }}>Eventos Monitorados (Notificações Geradas):</div>
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {['Pagamento Recebido', 'Falha no PIX', 'Saque Enviado', 'Fraude Detectada'].map(e => (
-                  <span key={e} style={{ background: '#1a1c24', color: '#a78bfa', padding: '0.3rem 0.6rem', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600 }}>{e}</span>
+                  <span key={e} style={{ background: 'rgba(137,66,252,0.1)', color: '#8942FC', padding: '0.3rem 0.6rem', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600 }}>{e}</span>
                 ))}
               </div>
             </div>
 
-            <div style={{ background: 'rgba(137,66,252,0.08)', borderRadius: 8, padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ background: '#f9fafb', borderRadius: 8, padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e5e7eb' }}>
               <div>
-                <div style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 600 }}>Status do último disparo</div>
+                <div style={{ color: '#111827', fontSize: '0.85rem', fontWeight: 600 }}>Status do último disparo</div>
                 <div style={{ color: '#22c55e', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.2rem' }}>
                   <CheckCircle2 size={12} /> 200 OK — Há 5 minutos
                 </div>
               </div>
-              <button style={{ background: 'transparent', border: '1px solid #22242c', color: '#fff', borderRadius: 6, padding: '0.5rem 0.9rem', fontSize: '0.8rem', cursor: 'pointer' }}>Re-processar Eventos</button>
+              <button style={{ background: '#ffffff', border: '1px solid #e5e7eb', color: '#111827', borderRadius: 6, padding: '0.5rem 0.9rem', fontSize: '0.8rem', cursor: 'pointer' }}>Re-processar Eventos</button>
             </div>
           </div>
         </Card>
 
         {/* Ambiente de Teste / Sandbox */}
         <Card>
-          <h3 style={{ color: '#fff', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
+          <h3 style={{ color: '#111827', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
             <Activity size={16} color="#f59e0b" /> Ambiente de Teste (Sandbox)
           </h3>
           <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 8, padding: '1rem', marginBottom: '1.5rem' }}>
@@ -858,10 +867,10 @@ function ContaTab() {
       <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
         {/* Perfil & Dados da Empresa */}
         <Card>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', marginBottom: '1.8rem', paddingBottom: '1.5rem', borderBottom: '1px solid #22242c' }}>
-            <div style={{ width: 68, height: 68, borderRadius: 18, background: '#8942FC', display: 'grid', placeItems: 'center', color: '#fff', fontSize: '1.8rem', fontWeight: 800 }}>LT</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', marginBottom: '1.8rem', paddingBottom: '1.5rem', borderBottom: '1px solid #f3f4f6' }}>
+            <div style={{ width: 68, height: 68, borderRadius: 18, background: '#8942FC', display: 'grid', placeItems: 'center', color: '#fff', fontSize: '1.8rem', fontWeight: 800, boxShadow: '0 4px 15px rgba(137,66,252,0.3)' }}>LT</div>
             <div>
-              <h3 style={{ color: '#fff', fontWeight: 800, fontSize: '1.2rem' }}>Lojista Demo</h3>
+              <h3 style={{ color: '#111827', fontWeight: 800, fontSize: '1.2rem' }}>Lojista Demo</h3>
               <div style={{ color: '#6b7280', fontSize: '0.88rem', marginTop: '0.2rem' }}>CNPJ: 45.123.456/0001-99</div>
             </div>
           </div>
@@ -869,34 +878,34 @@ function ContaTab() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.2rem' }}>
             <div>
               <label style={{ display: 'block', color: '#6b7280', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.4rem' }}>NOME FANTASIA (SUA LOJA)</label>
-              <input defaultValue="Lojista Demo" style={{ width: '100%', background: '#0b0c10', border: '1px solid #22242c', borderRadius: 8, padding: '0.75rem', color: '#fff', fontSize: '0.9rem', outline: 'none' }} />
+              <input defaultValue="Lojista Demo" style={{ width: '100%', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.75rem', color: '#111827', fontSize: '0.9rem', outline: 'none' }} />
             </div>
             <div>
               <label style={{ display: 'block', color: '#6b7280', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.4rem' }}>E-MAIL COMERCIAL</label>
-              <input defaultValue="demo@lojista.com" style={{ width: '100%', background: '#0b0c10', border: '1px solid #22242c', borderRadius: 8, padding: '0.75rem', color: '#fff', fontSize: '0.9rem', outline: 'none' }} />
+              <input defaultValue="demo@lojista.com" style={{ width: '100%', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.75rem', color: '#111827', fontSize: '0.9rem', outline: 'none' }} />
             </div>
           </div>
-          <button style={{ marginTop: '1.5rem', background: '#22242c', color: '#fff', border: 'none', borderRadius: 8, padding: '0.7rem 1.5rem', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>Salvar Alterações</button>
+          <button style={{ marginTop: '1.5rem', background: '#f3f4f6', color: '#111827', border: 'none', borderRadius: 8, padding: '0.7rem 1.5rem', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>Salvar Alterações</button>
         </Card>
 
         {/* Verificação KYC */}
         <Card>
-          <h3 style={{ color: '#fff', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
+          <h3 style={{ color: '#111827', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
             <CheckCircle2 size={16} color="#22c55e" /> Verificação KYC
           </h3>
-          <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 10, padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(34,197,94,0.15)', display: 'grid', placeItems: 'center', color: '#22c55e' }}>
+          <div style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 10, padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(34,197,94,0.1)', display: 'grid', placeItems: 'center', color: '#22c55e' }}>
               <Check size={22} />
             </div>
             <div>
-              <div style={{ color: '#22c55e', fontWeight: 700, fontSize: '0.95rem' }}>Conta Verificada</div>
+              <div style={{ color: '#15803d', fontWeight: 700, fontSize: '0.95rem' }}>Conta Verificada</div>
               <div style={{ color: '#6b7280', fontSize: '0.78rem', marginTop: '0.2rem' }}>Documentos aprovados em 14/04</div>
             </div>
           </div>
 
-          <div style={{ border: '1px dashed #22242c', borderRadius: 10, padding: '1.8rem 1rem', textAlign: 'center', cursor: 'pointer', transition: 'background .2s' }} onMouseEnter={e => e.currentTarget.style.background = '#1a1c24'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+          <div style={{ border: '1px dashed #e5e7eb', borderRadius: 10, padding: '1.8rem 1rem', textAlign: 'center', cursor: 'pointer', transition: 'background .2s' }} onMouseEnter={e => e.currentTarget.style.background = '#f9fafb'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
             <Upload size={28} color="#6b7280" style={{ marginBottom: '0.8rem' }} />
-            <div style={{ color: '#fff', fontWeight: 600, fontSize: '0.9rem' }}>Atualizar Documentos</div>
+            <div style={{ color: '#111827', fontWeight: 600, fontSize: '0.9rem' }}>Atualizar Documentos</div>
             <div style={{ color: '#6b7280', fontSize: '0.78rem', marginTop: '0.3rem' }}>Envie seu Contrato Social ou CNH/RG (PDF, JPG)</div>
           </div>
         </Card>
@@ -904,26 +913,26 @@ function ContaTab() {
 
       {/* Configurações Financeiras */}
       <Card>
-        <h3 style={{ color: '#fff', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
+        <h3 style={{ color: '#111827', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
           <Settings size={16} color="#8942FC" /> Configurações Financeiras Avançadas
         </h3>
         
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
           {/* Conta Bancária */}
           <div>
-            <div style={{ color: '#fff', fontWeight: 600, fontSize: '0.85rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>🏦 Conta para Saque (Destino)</div>
-            <div style={{ background: '#0b0c10', border: '1px solid #1a1c24', borderRadius: 8, padding: '1.2rem' }}>
+            <div style={{ color: '#111827', fontWeight: 600, fontSize: '0.85rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>🏦 Conta para Saque (Destino)</div>
+            <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '1.2rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.7rem' }}>
                 <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>Instituição</span>
-                <span style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 600 }}>033 - Banco Santander</span>
+                <span style={{ color: '#111827', fontSize: '0.85rem', fontWeight: 600 }}>033 - Banco Santander</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.7rem' }}>
                 <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>Agência</span>
-                <span style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 600 }}>1234</span>
+                <span style={{ color: '#111827', fontSize: '0.85rem', fontWeight: 600 }}>1234</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>Conta Corrente</span>
-                <span style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 600 }}>1234567-8</span>
+                <span style={{ color: '#111827', fontSize: '0.85rem', fontWeight: 600 }}>1234567-8</span>
               </div>
             </div>
             <button style={{ marginTop: '1rem', color: '#8942FC', background: 'transparent', border: 'none', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}>Alterar conta bancária →</button>
@@ -931,21 +940,21 @@ function ContaTab() {
 
           {/* Taxas Customizadas */}
           <div>
-            <div style={{ color: '#fff', fontWeight: 600, fontSize: '0.85rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>💸 Taxas Personalizadas & Repasse</div>
+            <div style={{ color: '#111827', fontWeight: 600, fontSize: '0.85rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>💸 Taxas Personalizadas & Repasse</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.8rem', borderBottom: '1px solid #1a1c24' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.8rem', borderBottom: '1px solid #e5e7eb' }}>
                 <div>
-                  <div style={{ color: '#fff', fontSize: '0.85rem' }}>Taxa Checkout PIX (Fixa)</div>
+                  <div style={{ color: '#111827', fontSize: '0.85rem' }}>Taxa Checkout PIX (Fixa)</div>
                   <div style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '0.2rem' }}>Acordo comercial vigente</div>
                 </div>
                 <div style={{ color: '#f59e0b', fontWeight: 800, fontSize: '1.1rem' }}>R$ 0,99</div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ color: '#fff', fontSize: '0.85rem' }}>Frequência de Liquidação</div>
+                  <div style={{ color: '#111827', fontSize: '0.85rem' }}>Frequência de Liquidação</div>
                   <div style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '0.2rem' }}>Quando seu dinheiro fica livre</div>
                 </div>
-                <select style={{ background: '#0b0c10', border: '1px solid #22242c', borderRadius: 6, padding: '0.5rem 0.8rem', color: '#fff', outline: 'none', fontSize: '0.85rem' }}>
+                <select style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 6, padding: '0.5rem 0.8rem', color: '#111827', outline: 'none', fontSize: '0.85rem' }}>
                   <option>D+0 (Tempo Real)</option>
                   <option>D+1 (Diário)</option>
                   <option>Semanal</option>
@@ -966,56 +975,197 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [isSandbox, setIsSandbox] = useState(() => localStorage.getItem('a2pay_env') === 'test');
   const navigate = useNavigate();
 
+  const fetchData = (env: boolean) => {
+    setLoading(true);
+    fetch(`${API}/api/pagamentos`, { 
+      headers: { 
+        'Authorization': `Bearer ${token()}`,
+        'x-a2pay-env': env ? 'test' : 'live'
+      } 
+    })
+      .then(r => { 
+        if (!r.ok) {
+          if (r.status === 401) { localStorage.removeItem('token'); navigate('/login'); }
+          throw new Error("Erro ao carregar dados do painel");
+        }
+        return r.json(); 
+      })
+      .then((d: DashboardData) => { 
+        setData(d); 
+        setLoading(false); 
+      })
+      .catch((err) => { 
+        console.error("[Dashboard] Error:", err);
+        setData({ role: 'error', error: err.message } as any);
+        setLoading(false);
+      });
+  };
+
   useEffect(() => {
-    fetch(`${API}/api/pagamentos`, { headers: { 'Authorization': `Bearer ${token()}` } })
-      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-      .then((d: DashboardData) => { setData(d); setLoading(false); })
-      .catch(() => { localStorage.removeItem('token'); navigate('/login'); });
+    fetchData(isSandbox);
   }, [navigate]);
 
-  if (loading || !data) return (
+  const toggleEnv = () => {
+    const newVal = !isSandbox;
+    setIsSandbox(newVal);
+    localStorage.setItem('a2pay_env', newVal ? 'test' : 'live');
+    fetchData(newVal);
+  };
+
+  if (loading) return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: '1rem' }}>
-      <div style={{ width: 48, height: 48, border: '3px solid #22242c', borderTopColor: '#8942FC', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ width: 48, height: 48, border: '3px solid #f3f4f6', borderTopColor: '#8942FC', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
       <p style={{ color: '#6b7280' }}>Carregando painel...</p>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 
+  if (!data || data.role === 'error') return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: '1rem', textAlign: 'center', padding: '2rem' }}>
+        <ShieldAlert size={48} color="#ef4444" />
+        <h2 style={{ color: '#111827', fontWeight: 700 }}>Erro ao carregar o painel</h2>
+        <p style={{ color: '#6b7280', maxWidth: 400 }}>Não foi possível buscar as informações da API. Verifique sua conexão ou tente novamente.</p>
+        <button onClick={() => fetchData(isSandbox)} style={{ background: '#8942FC', color: '#fff', border: 'none', padding: '0.6rem 1.5rem', borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>Tentar Novamente</button>
+    </div>
+  );
+
   if (data.role === 'master') return <MasterApp data={data} />;
 
-  const tabs: { id: Tab; icon: JSX.Element; label: string }[] = [
-    { id: 'overview',    icon: <LayoutDashboard size={16} />, label: 'Visão Geral' },
-    { id: 'financeiro',  icon: <DollarSign size={16} />,      label: 'Financeiro' },
-    { id: 'pagamentos',  icon: <CreditCard size={16} />,      label: 'Pagamentos' },
-    { id: 'antifraude',  icon: <ShieldAlert size={16} />,     label: 'Antifraude' },
-    { id: 'desenvolvedor', icon: <Terminal size={16} />,      label: 'Desenvolvedor' },
-    { id: 'conta',       icon: <User size={16} />,            label: 'Conta / KYC' },
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    navigate('/login');
+  };
+
+  const tabs: { id: Tab; icon: JSX.Element; label: string; group?: string }[] = [
+    { id: 'overview',    icon: <LayoutDashboard size={18} />, label: 'Dashboard', group: 'PRINCIPAL' },
+    { id: 'financeiro',  icon: <DollarSign size={18} />,      label: 'Financeiro', group: 'SUA LOJA' },
+    { id: 'pagamentos',  icon: <CreditCard size={18} />,      label: 'Pagamentos', group: 'SUA LOJA' },
+    { id: 'antifraude',  icon: <ShieldAlert size={18} />,     label: 'Antifraude', group: 'SUA LOJA' },
+    { id: 'desenvolvedor', icon: <Terminal size={18} />,      label: 'Integração', group: 'DEVELOPER' },
+    { id: 'conta',       icon: <User size={18} />,            label: 'Configurações', group: 'DEVELOPER' },
   ];
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-      {/* Tab bar */}
-      <div style={{ display: 'flex', gap: '0.3rem', marginBottom: '2rem', background: '#13151a', borderRadius: 12, padding: '0.4rem', width: 'fit-content', border: '1px solid #22242c', overflowX: 'auto', flexWrap: 'nowrap', maxWidth: '100%' }}>
-        {tabs.map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', padding: '0.55rem 1.1rem', borderRadius: 9, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', transition: 'all .2s', whiteSpace: 'nowrap',
-              background: activeTab === tab.id ? '#8942FC' : 'transparent',
-              color: activeTab === tab.id ? '#fff' : '#6b7280',
-              boxShadow: activeTab === tab.id ? '0 2px 12px rgba(137,66,252,0.35)' : 'none',
-            }}>
-            {tab.icon}{tab.label}
-          </button>
-        ))}
-      </div>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: 'Inter, system-ui, sans-serif' }}>
+      
+      {/* SIDEBAR */}
+      <aside style={{ width: '280px', background: '#ffffff', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', zIndex: 100 }}>
+        
+        {/* Sidebar Header */}
+        <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+          <div style={{ background: '#8942FC', width: '32px', height: '32px', borderRadius: '8px', display: 'grid', placeItems: 'center' }}>
+            <Shield size={18} color="#fff" fill="#fff" />
+          </div>
+          <span style={{ fontWeight: 800, fontSize: '1.2rem', color: '#111827', letterSpacing: '-0.02em' }}>A2Pay</span>
+        </div>
 
-      {activeTab === 'overview'   && <OverviewTab data={data} />}
-      {activeTab === 'financeiro' && <FinanceiroTab data={data} />}
-      {activeTab === 'pagamentos' && <PagamentosTab data={data} />}
-      {activeTab === 'antifraude' && <AntifraudeTab data={data} />}
-      {activeTab === 'desenvolvedor' && <DesenvolvedorTab />}
-      {activeTab === 'conta'      && <ContaTab />}
+        {/* App Switcher (Simulado) */}
+        <div style={{ margin: '0 1rem 2rem', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
+            <div style={{ width: 24, height: 24, borderRadius: 6, background: '#f3f4f6', display: 'grid', placeItems: 'center' }}>
+              <Building size={14} color="#6b7280" />
+            </div>
+            <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#374151' }}>Minha Loja</span>
+          </div>
+          <ChevronDown size={16} color="#94a3b8" />
+        </div>
+
+        {/* Navigation Groups */}
+        <div style={{ flex: 1, padding: '0 0.75rem', overflowY: 'auto' }}>
+          {['PRINCIPAL', 'SUA LOJA', 'DEVELOPER'].map(group => (
+            <div key={group} style={{ marginBottom: '1.5rem' }}>
+              <div style={{ padding: '0 0.75rem', fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{group}</div>
+              {tabs.filter(t => t.group === group).map(tab => (
+                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.7rem 0.75rem', borderRadius: '10px', border: 'none', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 600, transition: 'all .2s', marginBottom: '2px',
+                    background: activeTab === tab.id ? 'rgba(137,66,252,0.08)' : 'transparent',
+                    color: activeTab === tab.id ? '#8942FC' : '#6b7280',
+                  }}>
+                  <span style={{ color: activeTab === tab.id ? '#8942FC' : '#94a3b8' }}>{tab.icon}</span>
+                  {tab.label}
+                  {activeTab === tab.id && <div style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: '#8942FC' }} />}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* Sidebar Footer */}
+        <div style={{ padding: '1rem', borderTop: '1px solid #f3f4f6' }}>
+          {/* Dev Mode Toggle */}
+          <div onClick={toggleEnv} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', borderRadius: '10px', cursor: 'pointer', marginBottom: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Code size={18} color="#6b7280" />
+              <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#374151' }}>Dev Mode</span>
+            </div>
+            <div style={{ width: 36, height: 20, borderRadius: 99, background: isSandbox ? '#8942FC' : '#e5e7eb', position: 'relative', transition: 'background .3s' }}>
+              <div style={{ width: 14, height: 14, borderRadius: 99, background: '#fff', position: 'absolute', top: 3, left: isSandbox ? 19 : 3, transition: 'all .3s cubic-bezier(0.4, 0, 0.2, 1)' }} />
+            </div>
+          </div>
+
+          {/* Support */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '10px', cursor: 'pointer', color: '#6b7280' }}>
+            <HelpCircle size={18} />
+            <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>Suporte</span>
+          </div>
+
+          {/* User Profile */}
+          <div style={{ marginTop: '0.5rem', padding: '0.75rem', borderRadius: '12px', background: '#f9fafb', display: 'flex', alignItems: 'center', gap: '0.75rem', border: '1px solid #f3f4f6' }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#8942FC', color: '#fff', fontSize: '0.8rem', fontWeight: 800, display: 'grid', placeItems: 'center' }}>
+              {data.role === 'admin' ? 'AD' : 'LJ'}
+            </div>
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Lojista A2Pay</div>
+              <div style={{ fontSize: '0.7rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{data.role === 'admin' ? 'Administrador' : 'Merchant'}</div>
+            </div>
+            <button onClick={handleLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
+              <LogOut size={16} />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* MAIN CONTENT AREA */}
+      <main style={{ flex: 1, height: '100vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+        
+        {/* TOP HEADER */}
+        <header style={{ height: '73px', background: '#ffffff', borderBottom: '1px solid #e5e7eb', padding: '0 2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 90 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', fontSize: '0.9rem', fontWeight: 500 }}>
+            <Monitor size={16} />
+            <span style={{ color: '#94a3b8' }}>Dashboard</span>
+            <ChevronRight size={14} />
+            <span style={{ color: '#111827', fontWeight: 600 }}>{tabs.find(t => t.id === activeTab)?.label}</span>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+            {isSandbox && (
+              <div style={{ background: 'rgba(245,158,11,0.1)', color: '#d97706', padding: '0.35rem 0.75rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, border: '1px solid rgba(245,158,11,0.2)', textTransform: 'uppercase' }}>
+                Ambiente Teste
+              </div>
+            )}
+            <button style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer' }}><Bell size={20} /></button>
+            <div style={{ width: '1px', height: '20px', background: '#e5e7eb' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+               <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>Minha Loja</div>
+               <ChevronDown size={14} color="#94a3b8" />
+            </div>
+          </div>
+        </header>
+
+        {/* PAGE CONTENT */}
+        <div style={{ padding: '2rem 2.5rem', maxWidth: '1400px' }}>
+          {activeTab === 'overview'   && <OverviewTab data={data} />}
+          {activeTab === 'financeiro' && <FinanceiroTab data={data} />}
+          {activeTab === 'pagamentos' && <PagamentosTab data={data} />}
+          {activeTab === 'antifraude' && <AntifraudeTab data={data} />}
+          {activeTab === 'desenvolvedor' && <DesenvolvedorTab />}
+          {activeTab === 'conta'      && <ContaTab />}
+        </div>
+      </main>
     </div>
   );
 }

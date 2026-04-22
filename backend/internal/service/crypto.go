@@ -65,10 +65,10 @@ func (c *CryptoService) Decrypt(encoded string) string {
 	return string(pt)
 }
 
-func GenerateAPIKey() string {
+func GenerateAPIKey(prefix string) string {
 	b := make([]byte, 24)
 	rand.Read(b)
-	return "gato_pk_" + hex.EncodeToString(b)
+	return prefix + hex.EncodeToString(b)
 }
 
 // WalletService vault de tokenização de cartões (em memória, thread-safe)
@@ -84,7 +84,7 @@ func NewWalletService() *WalletService {
 func (w *WalletService) Tokenize(cardNumber, _, _ string) string {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	token := fmt.Sprintf("gato_tk_%d", len(w.vault)+1)
+	token := fmt.Sprintf("a2p_tk_%d", len(w.vault)+1)
 	w.vault[token] = cardNumber
 	prefix := cardNumber
 	if len(cardNumber) > 4 {
@@ -95,8 +95,8 @@ func (w *WalletService) Tokenize(cardNumber, _, _ string) string {
 }
 
 func (w *WalletService) Resolve(token string) (string, error) {
-	if !strings.HasPrefix(token, "gato_tk_") {
-		return "", fmt.Errorf("token inválido: deve começar com gato_tk_")
+	if !strings.HasPrefix(token, "a2p_tk_") {
+		return "", fmt.Errorf("token inválido: deve começar com a2p_tk_")
 	}
 	w.mu.RLock()
 	defer w.mu.RUnlock()

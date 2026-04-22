@@ -66,9 +66,9 @@ export default function Checkout() {
   if (success) {
     return (
       <div className="checkout-container" style={{textAlign: 'center'}}>
-        <CheckCircle size={64} color="#66fcf1" style={{margin: '0 auto 1.5rem'}} />
-        <h2 style={{color: '#fff', marginBottom: '1rem'}}>Pagamento Confirmado!</h2>
-        <p style={{color: 'var(--text-muted)', marginBottom: '2rem'}}>
+        <CheckCircle size={64} color="#8942FC" style={{margin: '0 auto 1.5rem'}} />
+        <h2 style={{color: '#111827', marginBottom: '1rem'}}>Pagamento Confirmado!</h2>
+        <p style={{color: '#6b7280', marginBottom: '2rem'}}>
           Obrigado pela sua compra. O valor foi processado integralmente pelo A2Pay.
         </p>
         <button className="btn-primary" onClick={() => navigate('/')}>
@@ -137,7 +137,7 @@ export default function Checkout() {
               <input type="text" className="form-control" placeholder="123" required value={cvv} onChange={e => setCvv(e.target.value)} />
             </div>
           </div>
-          <button type="submit" className="btn-primary" disabled={loading}>
+          <button type="submit" className="btn-primary" disabled={loading} style={{ width: '100%' }}>
             {loading ? 'Redirecionando Visa/Master...' : 'Completar Pagamento de Cartão'}
           </button>
         </form>
@@ -166,8 +166,8 @@ export default function Checkout() {
             Livre de taxas variáveis de intermediação. Apenas exatos R$ 0,99 de custo gateway.
           </p>
 
-          <button onClick={() => handleProcessPayment('pix')} className="btn-primary" disabled={loading} style={{backgroundColor: '#32CD32', color: '#000'}}>
-             {loading ? 'Aguardando o Banco...' : 'Simular Pagamento no Celular (Confirmar PIX)'}
+          <button onClick={() => handleProcessPayment('pix')} className="btn-primary" disabled={loading} style={{backgroundColor: '#8942FC', color: '#fff', width: '100%' }}>
+             {loading ? 'Aguardando o Banco...' : 'Confirmar Pagamento PIX'}
           </button>
         </div>
       )}
