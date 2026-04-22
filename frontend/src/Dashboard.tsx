@@ -7,7 +7,7 @@ import {
   ShieldCheck, Users, History, Lock, ShoppingBag, Clock, XCircle, Copy, Globe,
   AlertTriangle, Upload, Settings, Banknote, QrCode, Wallet, Plus, Info, ArrowRight,
   Ticket, Repeat, FileText, Link as LinkIcon, Undo2, BookOpen, Key, Radio, Puzzle, Layers, SlidersHorizontal,
-  Pencil, LayoutGrid, ListFilter, Image as ImageIcon, MoreHorizontal, ArrowLeft
+  Pencil, LayoutGrid, ListFilter, Image as ImageIcon, MoreHorizontal, ArrowLeft, Folder
 } from 'lucide-react';
 import { MasterApp } from './admin/MasterApp';
 import { API_BASE_URL } from './api';
@@ -1457,6 +1457,41 @@ export default function Dashboard() {
   const currentTabs = isMaster ? adminTabs : merchantTabs;
   const groups = isMaster ? ['GESTÃO', 'FINANCEIRO', 'SEGURANÇA', 'SISTEMA'] : ['PRINCIPAL', 'SUA LOJA', 'INTEGRAÇÃO', 'CONTA'];
 
+  const renderBreadcrumbs = () => {
+    const currentTabObj = currentTabs.find(t => t.id === activeTab);
+    if (!currentTabObj) return null;
+
+    const getGroupIcon = (group: string) => {
+      switch(group) {
+        case 'SUA LOJA': return <ShoppingBag size={14} />;
+        case 'INTEGRAÇÃO': return <SlidersHorizontal size={14} />;
+        case 'GESTÃO': return <Shield size={14} />;
+        case 'FINANCEIRO': return <Banknote size={14} />;
+        case 'SEGURANÇA': return <Lock size={14} />;
+        case 'SISTEMA': return <Settings size={14} />;
+        default: return <Folder size={14} />;
+      }
+    };
+
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', color: '#94a3b8', fontSize: '0.88rem', fontWeight: 600 }}>
+        {currentTabObj.group && currentTabObj.group !== 'PRINCIPAL' && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b' }}>
+               {getGroupIcon(currentTabObj.group)}
+               <span style={{ textTransform: 'capitalize' }}>{currentTabObj.group.toLowerCase()}</span>
+            </div>
+            <span style={{ color: '#e2e8f0', fontWeight: 400, fontSize: '1.1rem' }}>/</span>
+          </>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#111827' }}>
+          {React.cloneElement(currentTabObj.icon as React.ReactElement, { size: 14 })}
+          <span>{currentTabObj.label}</span>
+        </div>
+      </div>
+    );
+  };
+
   // (useEffect de admin tab movido para antes dos early returns)
 
   return (
@@ -1583,10 +1618,7 @@ export default function Dashboard() {
         
         {/* TOP HEADER */}
         <header style={{ height: '73px', background: '#ffffff', borderBottom: '1px solid #e5e7eb', padding: '0 2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 90 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', color: '#111827', fontSize: '1.1rem', fontWeight: 800 }}>
-            <LayoutDashboard size={20} color="#6b7280" />
-            <span>Dashboard</span>
-          </div>
+          {renderBreadcrumbs()}
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
             {isSandbox && (
