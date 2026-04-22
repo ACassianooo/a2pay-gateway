@@ -72,6 +72,26 @@ func (h *PaymentHandler) CreateIntent(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GetIntent — GET /api/pagamentos/intent/{id}
+func (h *PaymentHandler) GetIntent(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	var id int
+	fmt.Sscanf(idStr, "%d", &id)
+
+	if id == 0 {
+		respondErr(w, apierrors.InvalidInput("ID inválido"))
+		return
+	}
+
+	intent, err := h.payment.GetIntent(id)
+	if err != nil {
+		respondErr(w, apierrors.NotFound("Pagamento", idStr))
+		return
+	}
+
+	respondJSON(w, http.StatusOK, intent)
+}
+
 // ProcessPayment — POST /api/pagamentos/processar
 func (h *PaymentHandler) ProcessPayment(w http.ResponseWriter, r *http.Request) {
 	var req dto.ProcessPaymentRequest

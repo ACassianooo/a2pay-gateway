@@ -30,14 +30,15 @@ func (r *TransactionRepository) Create(merchantID int, itemName string, valorTot
 	return id, nil
 }
 
-func (r *TransactionRepository) GetByID(id int) (float64, int, bool, error) {
+func (r *TransactionRepository) GetByID(id int) (float64, int, bool, string, error) {
 	var valor float64
 	var merchantID int
 	var isTest bool
+	var status string
 	err := r.db.QueryRow(
-		"SELECT valor_total, merchant_id, is_test FROM transactions WHERE id = $1", id,
-	).Scan(&valor, &merchantID, &isTest)
-	return valor, merchantID, isTest, err
+		"SELECT valor_total, merchant_id, is_test, status FROM transactions WHERE id = $1", id,
+	).Scan(&valor, &merchantID, &isTest, &status)
+	return valor, merchantID, isTest, status, err
 }
 
 func (r *TransactionRepository) GetItemName(id int) string {

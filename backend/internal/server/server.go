@@ -88,6 +88,7 @@ func New(cfg *config.Config, db *database.DB) *Server {
 		r.With(middleware.RateLimiter(10, time.Minute)).Post("/auth/register", authH.Register)
 
 		r.Post("/pagamentos/intent", payH.CreateIntent)
+		r.Get("/pagamentos/intent/{id}", payH.GetIntent)
 		r.Post("/pagamentos/processar", payH.ProcessPayment)
 		r.Get("/pagamentos/pix/{charge_id}/qrcode", payH.GetPixQRCode)
 		r.Post("/vault/tokenize", payH.TokenizeCard)

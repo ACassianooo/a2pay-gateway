@@ -1,177 +1,196 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from './api';
-import { CreditCard, CheckCircle, QrCode } from 'lucide-react';
+import { CheckCircle, Copy, RefreshCw, X } from 'lucide-react';
 
 export default function Checkout() {
   const { id } = useParams<{id: string}>();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState(false);
-  const [method, setMethod] = useState<'cartao' | 'pix'>('pix');
-  const [pixCode, setPixCode] = useState('');
-  
-  const [cardNumber, setCardNumber] = useState('4111 1111 1111 1111');
-  const [validade, setValidade] = useState('12/30');
-  const [cvv, setCvv] = useState('123');
+  const [intent, setIntent] = useState<any>(null);
+  const [pixData, setPixData] = useState<any>(null);
+  const [timeLeft, setTimeLeft] = useState(900); // 15 minutos
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-    // Simulando uma API gerando nosso código Copia e Cola unico do Banco Central
-    setPixCode("00020101021126360014br.gov.bcb.pix0114+5511999999999520400005303986540510.005802BR5915A2Pay6009Sao Paulo62070503***6304");
-  }, []);
+    // Buscar detalhes da intenção
+    fetch(`${API_BASE_URL}/api/pagamentos/intent/${id}`)
+      .then(r => r.json())
+      .then(data => {
+        setIntent(data);
+        if (data.status === 'pago') setSuccess(true);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [id]);
 
-  const handleProcessPayment = async (metodo: 'cartao' | 'pix') => {
-    setLoading(true);
-    try {
-      let finalCardToken = "";
-
-      if (metodo === 'cartao') {
-         // Passo 1: Segurança PCI - Coletar dados brutos e transformar em Token A2Pay anonimo
-         const vaultRes = await fetch(`${API_BASE_URL}/api/vault/tokenize`, {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify({ card_number: cardNumber, validade, cvv })
-         });
-         
-         if (!vaultRes.ok) throw new Error("Erro ao tokenizar cartão no Vault.");
-         const vaultData = await vaultRes.json();
-         finalCardToken = vaultData.token;
-      }
-
-      // Passo 2: Pagamento final usando apenas o token
-      const payload = {
-        intent_id: parseInt(id || "0"),
-        metodo: metodo,
-        cartao: finalCardToken
-      };
-
-      const res = await fetch(`${API_BASE_URL}/api/pagamentos/processar`, {
+  useEffect(() => {
+    // Processar PIX automaticamente se não tiver os dados
+    if (intent && !pixData && !success && intent.status !== 'pago') {
+      setProcessing(true);
+      fetch(`${API_BASE_URL}/api/pagamentos/processar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (res.ok) {
-        setSuccess(true);
-      } else {
-        const err_text = await res.text();
-        alert("Erro no pagamento: " + err_text);
-      }
-    } catch(e: any) {
-      alert(e.message || "Erro de comunicação com o servidor.");
+        body: JSON.stringify({ intent_id: parseInt(id || "0"), metodo: 'pix' })
+      })
+      .then(r => r.json())
+      .then(data => {
+        setPixData(data);
+        setProcessing(false);
+      })
+      .catch(() => setProcessing(false));
     }
-    setLoading(false);
+  }, [intent, id, pixData, success]);
+
+  // Polling de status para detectar o pagamento real
+  useEffect(() => {
+    if (!success && intent) {
+      const interval = setInterval(() => {
+        fetch(`${API_BASE_URL}/api/pagamentos/intent/${id}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data.status === 'pago') setSuccess(true);
+          });
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [success, intent, id]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
+  const handleCopy = () => {
+    if (pixData?.pix_copia_cola) {
+      navigator.clipboard.writeText(pixData.pix_copia_cola);
+      alert("Código PIX copiado!");
+    }
+  };
+
+  if (loading) return (
+    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#fcfcfc' }}>
+      <div style={{ textAlign: 'center' }}>
+        <RefreshCw size={32} className="spin" color="#8942FC" />
+        <div style={{ marginTop: '1rem', fontWeight: 600, color: '#64748b' }}>Iniciando Checkout Seguro...</div>
+      </div>
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } .spin { animation: spin 2s linear infinite; }`}</style>
+    </div>
+  );
 
   if (success) {
     return (
-      <div className="checkout-container" style={{textAlign: 'center'}}>
-        <CheckCircle size={64} color="#8942FC" style={{margin: '0 auto 1.5rem'}} />
-        <h2 style={{color: '#111827', marginBottom: '1rem'}}>Pagamento Confirmado!</h2>
-        <p style={{color: '#6b7280', marginBottom: '2rem'}}>
-          Obrigado pela sua compra. O valor foi processado integralmente pelo A2Pay.
-        </p>
-        <button className="btn-primary" onClick={() => navigate('/')}>
-          Ver Saldo no Dashboard Lojista
-        </button>
+      <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'grid', placeItems: 'center', padding: '2rem' }}>
+        <div style={{ maxWidth: '450px', width: '100%', textAlign: 'center', background: '#fff', padding: '3.5rem 2rem', borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.08)' }}>
+          <div style={{ width: 80, height: 80, borderRadius: '50%', background: '#f0fdf4', color: '#22c55e', display: 'grid', placeItems: 'center', margin: '0 auto 1.5rem' }}>
+             <CheckCircle size={48} strokeWidth={2.5} />
+          </div>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#111827', marginBottom: '1rem', letterSpacing: '-0.02em' }}>Pagamento Confirmado!</h2>
+          <p style={{ color: '#64748b', marginBottom: '2.5rem', lineHeight: 1.6, fontSize: '1.05rem' }}>Obrigado! Sua transação foi processada com sucesso pelo Gato Gateway.</p>
+          <button onClick={() => navigate('/')} style={{ width: '100%', background: '#111827', color: '#fff', border: 'none', borderRadius: '16px', padding: '1.2rem', fontWeight: 800, fontSize: '1rem', cursor: 'pointer', transition: 'transform 0.2s' }}>Voltar para a loja</button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="checkout-container">
-      <div className="checkout-header">
-        <div style={{display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '1rem'}}>
-           <div 
-             onClick={() => setMethod('pix')} 
-             style={{
-               padding: '1rem', 
-               cursor: 'pointer',
-               borderBottom: method === 'pix' ? '2px solid var(--accent)' : '2px solid transparent',
-               color: method === 'pix' ? 'var(--accent)' : 'var(--text-muted)'
-             }}>
-             <QrCode size={24} style={{display: 'block', margin: '0 auto 0.5rem'}} />
-             PIX Instantâneo
-           </div>
-           <div 
-             onClick={() => setMethod('cartao')} 
-             style={{
-               padding: '1rem', 
-               cursor: 'pointer',
-               borderBottom: method === 'cartao' ? '2px solid var(--accent)' : '2px solid transparent',
-               color: method === 'cartao' ? 'var(--accent)' : 'var(--text-muted)'
-             }}>
-             <CreditCard size={24} style={{display: 'block', margin: '0 auto 0.5rem'}} />
-             Cartão (Visa Direct)
-           </div>
-        </div>
-      </div>
-
-      <div className="receipt">
-        <div className="receipt-row">
-          <span>Transação ID:</span>
-          <span>#{id}</span>
-        </div>
-        <div className="receipt-row">
-          <span>Processador:</span>
-          <span style={{color: 'var(--accent)'}}>A2Pay Pagamentos LTDA</span>
-        </div>
-      </div>
-
-      {method === 'cartao' && (
-        <form onSubmit={(e) => { e.preventDefault(); handleProcessPayment('cartao'); }}>
-          <p style={{marginBottom: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem'}}>
-            Integrado diretamente à rede Visa MPGS. Custo único: 3,00% + R$ 0,50 sobre o valor da compra.
-          </p>
-          <div className="form-group">
-            <label>Número do Cartão Verificado</label>
-            <input type="text" className="form-control" placeholder="0000 0000 0000 0000" required value={cardNumber} onChange={e => setCardNumber(e.target.value)} />
-          </div>
-          <div style={{display: 'flex', gap: '1rem'}}>
-            <div className="form-group" style={{flex: 1}}>
-              <label>Validade</label>
-              <input type="text" className="form-control" placeholder="MM/YY" required value={validade} onChange={e => setValidade(e.target.value)} />
+    <div style={{ minHeight: '100vh', background: '#fcfcfc', color: '#111827', fontFamily: "'Inter', sans-serif" }}>
+      {/* Black Header */}
+      <header style={{ background: '#000', color: '#fff', padding: '1rem 2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2.5rem' }}>
+          <div style={{ fontWeight: 950, fontSize: '1.3rem', letterSpacing: '-0.06em', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <div style={{ width: 22, height: 22, background: '#fff', borderRadius: 4, display: 'grid', placeItems: 'center' }}>
+                <div style={{ width: 10, height: 10, background: '#000', transform: 'rotate(45deg)' }}></div>
             </div>
-            <div className="form-group" style={{flex: 1}}>
-              <label>CVV</label>
-              <input type="text" className="form-control" placeholder="123" required value={cvv} onChange={e => setCvv(e.target.value)} />
+            GATO
+          </div>
+          <nav style={{ display: 'flex', gap: '1.75rem', fontSize: '0.9rem', fontWeight: 600 }}>
+            <span style={{ cursor: 'pointer', opacity: 0.8 }}>Eventos</span>
+            <span style={{ cursor: 'pointer', opacity: 0.8 }}>Ingressos</span>
+          </nav>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', fontSize: '0.9rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#333', fontSize: '0.75rem', fontWeight: 800, display: 'grid', placeItems: 'center' }}>A</div>
+            <span style={{ fontWeight: 600 }}>Antonio</span>
+          </div>
+          <X size={20} style={{ cursor: 'pointer', opacity: 0.6 }} />
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main style={{ maxWidth: '680px', margin: '4rem auto', padding: '0 1.5rem' }}>
+        <div style={{ marginBottom: '2.5rem' }}>
+          <div style={{ fontSize: '1rem', color: '#64748b', marginBottom: '0.4rem', fontWeight: 500 }}>Valor da inscrição</div>
+          <div style={{ fontSize: '3rem', fontWeight: 900, color: '#ef4444', letterSpacing: '-0.04em' }}>
+            R$ {(intent?.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </div>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginTop: '2rem', color: '#111827', letterSpacing: '-0.02em' }}>Pagamento via PIX</h2>
+        </div>
+
+        {/* Gray Box Container */}
+        <div style={{ background: '#f4f4f4', borderRadius: '32px', padding: '3rem 2rem', textAlign: 'center', border: '1px solid #eee' }}>
+          <div style={{ marginBottom: '2.5rem' }}>
+            <div style={{ fontSize: '1rem', fontWeight: 600, color: '#111827' }}>
+                Valor: <span style={{ fontWeight: 800 }}>R$ {(intent?.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+            </div>
+            <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.6rem', fontWeight: 500 }}>
+                ({intent?.item_name || 'Inscrição'} R$ {(intent?.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} + Kit R$ 0,00)
             </div>
           </div>
-          <button type="submit" className="btn-primary" disabled={loading} style={{ width: '100%' }}>
-            {loading ? 'Redirecionando Visa/Master...' : 'Completar Pagamento de Cartão'}
-          </button>
-        </form>
-      )}
 
-      {method === 'pix' && (
-        <div style={{textAlign: 'center'}}>
-          <div style={{
-            background: '#fff', 
-            width: '200px', 
-            height: '200px', 
-            margin: '0 auto 1.5rem', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            borderRadius: '8px'
-          }}>
-            <QrCode size={160} color="#000" />
+          {/* QR Code */}
+          <div style={{ background: '#fff', padding: '2rem', borderRadius: '24px', width: 'fit-content', margin: '0 auto 2.5rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.04)', position: 'relative' }}>
+            {processing ? (
+                <div style={{ width: '220px', height: '220px', display: 'grid', placeItems: 'center' }}>
+                    <RefreshCw size={32} className="spin" color="#64748b" />
+                </div>
+            ) : pixData?.pix_qrcode ? (
+                <img src={`data:image/png;base64,${pixData.pix_qrcode}`} alt="QR Code" style={{ width: '220px', height: '220px', display: 'block' }} />
+            ) : (
+                <div style={{ width: '220px', height: '220px', display: 'grid', placeItems: 'center', color: '#94a3b8' }}>Gerando QR Code...</div>
+            )}
           </div>
-          <div className="form-group">
-            <label>Código Copia e Cola</label>
-            <input type="text" className="form-control" readOnly value={pixCode} style={{textAlign: 'center', fontSize: '0.8rem'}} />
-          </div>
-          
-          <p style={{color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem'}}>
-            Livre de taxas variáveis de intermediação. Apenas exatos R$ 0,99 de custo gateway.
-          </p>
 
-          <button onClick={() => handleProcessPayment('pix')} className="btn-primary" disabled={loading} style={{backgroundColor: '#8942FC', color: '#fff', width: '100%' }}>
-             {loading ? 'Aguardando o Banco...' : 'Confirmar Pagamento PIX'}
+          {/* Copy Button */}
+          <button 
+            onClick={handleCopy}
+            disabled={!pixData}
+            style={{ width: '100%', maxWidth: '480px', background: '#fff', border: 'none', borderRadius: '16px', padding: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.8rem', fontWeight: 700, fontSize: '1rem', color: '#111827', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', transition: 'all 0.2s', opacity: pixData ? 1 : 0.5 }}
+            onMouseEnter={e => { if (pixData) e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)'; }}
+          >
+            <Copy size={20} /> Copiar código PIX
           </button>
+
+          {/* Timer */}
+          <div style={{ marginTop: '3rem', fontSize: '2.5rem', fontWeight: 900, color: '#111827', letterSpacing: '0.08em' }}>
+            {formatTime(timeLeft)}
+          </div>
+
+          {/* Status */}
+          <div style={{ marginTop: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.7rem', color: '#d97706', fontSize: '1rem', fontWeight: 700 }}>
+            <RefreshCw size={20} className="spin" /> Aguardando pagamento...
+          </div>
+          <style>{`
+            @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+            .spin { animation: spin 2.5s linear infinite; }
+          `}</style>
         </div>
-      )}
 
+        <div style={{ textAlign: 'center', marginTop: '3rem' }}>
+          <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '1rem', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', opacity: 0.8 }} onMouseEnter={e => e.currentTarget.style.opacity = '1'} onMouseLeave={e => e.currentTarget.style.opacity = '0.8'}>Cancelar</button>
+        </div>
+      </main>
     </div>
   );
 }
