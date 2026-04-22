@@ -1463,29 +1463,29 @@ export default function Dashboard() {
 
     const getGroupIcon = (group: string) => {
       switch(group) {
-        case 'SUA LOJA': return <ShoppingBag size={14} />;
-        case 'INTEGRAÇÃO': return <SlidersHorizontal size={14} />;
-        case 'GESTÃO': return <Shield size={14} />;
-        case 'FINANCEIRO': return <Banknote size={14} />;
-        case 'SEGURANÇA': return <Lock size={14} />;
-        case 'SISTEMA': return <Settings size={14} />;
-        default: return <Folder size={14} />;
+        case 'SUA LOJA': return <ShoppingBag size={18} />;
+        case 'INTEGRAÇÃO': return <SlidersHorizontal size={18} />;
+        case 'GESTÃO': return <Shield size={18} />;
+        case 'FINANCEIRO': return <Banknote size={18} />;
+        case 'SEGURANÇA': return <Lock size={18} />;
+        case 'SISTEMA': return <Settings size={18} />;
+        default: return <Folder size={18} />;
       }
     };
 
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', color: '#94a3b8', fontSize: '0.88rem', fontWeight: 600 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', color: '#94a3b8', fontSize: '0.95rem', fontWeight: 600 }}>
         {currentTabObj.group && currentTabObj.group !== 'PRINCIPAL' && (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#64748b' }}>
                {getGroupIcon(currentTabObj.group)}
                <span style={{ textTransform: 'capitalize' }}>{currentTabObj.group.toLowerCase()}</span>
             </div>
-            <span style={{ color: '#e2e8f0', fontWeight: 400, fontSize: '1.1rem' }}>/</span>
+            <span style={{ color: '#e2e8f0', fontWeight: 400, fontSize: '1.2rem' }}>/</span>
           </>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#111827' }}>
-          {React.cloneElement(currentTabObj.icon as React.ReactElement, { size: 14 })}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#111827' }}>
+          {React.cloneElement(currentTabObj.icon as React.ReactElement, { size: 18 })}
           <span>{currentTabObj.label}</span>
         </div>
       </div>
