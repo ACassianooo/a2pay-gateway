@@ -363,35 +363,7 @@ function ProdutosTab() {
         }
       `}</style>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#111827', margin: 0 }}>Catálogo de produtos</h1>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-           <button style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.88rem', fontWeight: 600, color: '#64748b', cursor: 'pointer' }}>
-              <Activity size={16} /> Analisar
-           </button>
-           <button style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 10, padding: '0.6rem 1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer' }}>
-              <Plus size={18} /> Criar produto <span style={{ background: 'rgba(255,255,255,0.2)', padding: '0 4px', borderRadius: 4, fontSize: '0.65rem', marginLeft: 4 }}>N</span>
-           </button>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', gap: '2rem', borderBottom: '1px solid #e2e8f0', marginBottom: '2rem' }}>
-        {subTabs.map(tab => (
-          <div 
-            key={tab.id}
-            onClick={() => setCurrentSubTab(tab.id)}
-            style={{ 
-              paddingBottom: '1rem', 
-              fontSize: '0.9rem', 
-              fontWeight: 600, 
-              color: currentSubTab === tab.id ? '#8942FC' : '#64748b', 
-              borderBottom: currentSubTab === tab.id ? '2px solid #8942FC' : '2px solid transparent',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            {tab.label}
-          </div>
-        ))}
+        <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#111827', margin: 0 }}>Seus Produtos</h1>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
