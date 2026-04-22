@@ -1305,33 +1305,34 @@ export default function Dashboard() {
 
             return (
               <div key={group} style={{ marginBottom: '0.75rem' }}>
-                <div 
-                  onClick={() => isCollapsible && toggleGroup(group)}
-                  style={{ 
-                    padding: '0.7rem 0.75rem', 
-                    fontSize: '0.88rem', 
-                    fontWeight: 700, 
-                    color: isAnyTabActive ? '#111827' : '#64748b', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between',
-                    cursor: isCollapsible ? 'pointer' : 'default',
-                    borderRadius: '10px',
-                    border: (isCollapsible && isAnyTabActive) ? '1px solid #8942FC' : '1px solid transparent',
-                    background: (isCollapsible && isAnyTabActive && !isExpanded) ? 'rgba(137,66,252,0.05)' : 'transparent',
-                    marginBottom: '0.25rem'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    {group === 'SUA LOJA' && <ShoppingBag size={18} color={isAnyTabActive ? '#8942FC' : '#94a3b8'} />}
-                    {group === 'INTEGRAÇÃO' && <SlidersHorizontal size={18} color={isAnyTabActive ? '#8942FC' : '#94a3b8'} />}
-                    {group === 'PRINCIPAL' && <LayoutDashboard size={18} color="#94a3b8" />}
-                    <span style={{ textTransform: 'capitalize', fontSize: '0.9rem' }}>{group.toLowerCase()}</span>
+                {group !== 'PRINCIPAL' && (
+                  <div 
+                    onClick={() => isCollapsible && toggleGroup(group)}
+                    style={{ 
+                      padding: '0.7rem 0.75rem', 
+                      fontSize: '0.88rem', 
+                      fontWeight: 700, 
+                      color: isAnyTabActive ? '#111827' : '#64748b', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between',
+                      cursor: isCollapsible ? 'pointer' : 'default',
+                      borderRadius: '10px',
+                      border: (isCollapsible && isAnyTabActive) ? '1px solid #8942FC' : '1px solid transparent',
+                      background: (isCollapsible && isAnyTabActive && !isExpanded) ? 'rgba(137,66,252,0.05)' : 'transparent',
+                      marginBottom: '0.25rem'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      {group === 'SUA LOJA' && <ShoppingBag size={18} color={isAnyTabActive ? '#8942FC' : '#94a3b8'} />}
+                      {group === 'INTEGRAÇÃO' && <SlidersHorizontal size={18} color={isAnyTabActive ? '#8942FC' : '#94a3b8'} />}
+                      <span style={{ textTransform: 'capitalize', fontSize: '0.9rem' }}>{group.toLowerCase()}</span>
+                    </div>
+                    {isCollapsible && (
+                      isExpanded ? <ChevronDown size={16} color="#94a3b8" /> : <ChevronRight size={16} color="#94a3b8" />
+                    )}
                   </div>
-                  {isCollapsible && (
-                    isExpanded ? <ChevronDown size={16} color="#94a3b8" /> : <ChevronRight size={16} color="#94a3b8" />
-                  )}
-                </div>
+                )}
 
                 {isExpanded && (
                   <div style={{ marginLeft: isCollapsible ? '0.5rem' : '0', borderLeft: isCollapsible ? '1px solid #f1f5f9' : 'none', paddingLeft: isCollapsible ? '0.5rem' : '0' }}>
