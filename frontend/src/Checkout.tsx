@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from './api';
-import { CheckCircle, Copy, RefreshCw, X } from 'lucide-react';
+import { CheckCircle, Copy, RefreshCw, Clock, ArrowLeft } from 'lucide-react';
 
 export default function Checkout() {
   const { id } = useParams<{id: string}>();
@@ -14,7 +14,6 @@ export default function Checkout() {
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-    // Buscar detalhes da intenção
     fetch(`${API_BASE_URL}/api/pagamentos/intent/${id}`)
       .then(r => r.json())
       .then(data => {
@@ -26,7 +25,6 @@ export default function Checkout() {
   }, [id]);
 
   useEffect(() => {
-    // Processar PIX automaticamente se não tiver os dados
     if (intent && !pixData && !success && intent.status !== 'pago') {
       setProcessing(true);
       fetch(`${API_BASE_URL}/api/pagamentos/processar`, {
@@ -43,7 +41,6 @@ export default function Checkout() {
     }
   }, [intent, id, pixData, success]);
 
-  // Polling de status para detectar o pagamento real
   useEffect(() => {
     if (!success && intent) {
       const interval = setInterval(() => {
@@ -79,10 +76,7 @@ export default function Checkout() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#fcfcfc' }}>
-      <div style={{ textAlign: 'center' }}>
-        <RefreshCw size={32} className="spin" color="#8942FC" />
-        <div style={{ marginTop: '1rem', fontWeight: 600, color: '#64748b' }}>Iniciando Checkout Seguro...</div>
-      </div>
+      <RefreshCw size={40} className="spin" color="#9d66ff" />
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } .spin { animation: spin 2s linear infinite; }`}</style>
     </div>
   );
@@ -96,101 +90,187 @@ export default function Checkout() {
           </div>
           <h2 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#111827', marginBottom: '1rem', letterSpacing: '-0.02em' }}>Pagamento Confirmado!</h2>
           <p style={{ color: '#64748b', marginBottom: '2.5rem', lineHeight: 1.6, fontSize: '1.05rem' }}>Obrigado! Sua transação foi processada com sucesso pelo Gato Gateway.</p>
-          <button onClick={() => navigate('/')} style={{ width: '100%', background: '#111827', color: '#fff', border: 'none', borderRadius: '16px', padding: '1.2rem', fontWeight: 800, fontSize: '1rem', cursor: 'pointer', transition: 'transform 0.2s' }}>Voltar para a loja</button>
+          <button onClick={() => navigate('/')} style={{ width: '100%', background: '#111827', color: '#fff', border: 'none', borderRadius: '16px', padding: '1.2rem', fontWeight: 800, fontSize: '1rem', cursor: 'pointer' }}>Voltar para a loja</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fcfcfc', color: '#111827', fontFamily: "'Inter', sans-serif" }}>
-      {/* Black Header */}
-      <header style={{ background: '#000', color: '#fff', padding: '1rem 2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2.5rem' }}>
-          <div style={{ fontWeight: 950, fontSize: '1.3rem', letterSpacing: '-0.06em', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <div style={{ width: 22, height: 22, background: '#fff', borderRadius: 4, display: 'grid', placeItems: 'center' }}>
-                <div style={{ width: 10, height: 10, background: '#000', transform: 'rotate(45deg)' }}></div>
-            </div>
-            GATO
-          </div>
-          <nav style={{ display: 'flex', gap: '1.75rem', fontSize: '0.9rem', fontWeight: 600 }}>
-            <span style={{ cursor: 'pointer', opacity: 0.8 }}>Eventos</span>
-            <span style={{ cursor: 'pointer', opacity: 0.8 }}>Ingressos</span>
-          </nav>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', fontSize: '0.9rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer' }}>
-            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#333', fontSize: '0.75rem', fontWeight: 800, display: 'grid', placeItems: 'center' }}>A</div>
-            <span style={{ fontWeight: 600 }}>Antonio</span>
-          </div>
-          <X size={20} style={{ cursor: 'pointer', opacity: 0.6 }} />
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main style={{ maxWidth: '680px', margin: '4rem auto', padding: '0 1.5rem' }}>
-        <div style={{ marginBottom: '2.5rem' }}>
-          <div style={{ fontSize: '1rem', color: '#64748b', marginBottom: '0.4rem', fontWeight: 500 }}>Valor da inscrição</div>
-          <div style={{ fontSize: '3rem', fontWeight: 900, color: '#ef4444', letterSpacing: '-0.04em' }}>
-            R$ {(intent?.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginTop: '2rem', color: '#111827', letterSpacing: '-0.02em' }}>Pagamento via PIX</h2>
-        </div>
-
-        {/* Gray Box Container */}
-        <div style={{ background: '#f4f4f4', borderRadius: '32px', padding: '3rem 2rem', textAlign: 'center', border: '1px solid #eee' }}>
-          <div style={{ marginBottom: '2.5rem' }}>
-            <div style={{ fontSize: '1rem', fontWeight: 600, color: '#111827' }}>
-                Valor: <span style={{ fontWeight: 800 }}>R$ {(intent?.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-            </div>
-            <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.6rem', fontWeight: 500 }}>
-                ({intent?.item_name || 'Inscrição'} R$ {(intent?.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} + Kit R$ 0,00)
-            </div>
-          </div>
-
-          {/* QR Code */}
-          <div style={{ background: '#fff', padding: '2rem', borderRadius: '24px', width: 'fit-content', margin: '0 auto 2.5rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.04)', position: 'relative' }}>
-            {processing ? (
-                <div style={{ width: '220px', height: '220px', display: 'grid', placeItems: 'center' }}>
-                    <RefreshCw size={32} className="spin" color="#64748b" />
-                </div>
-            ) : pixData?.pix_qrcode ? (
-                <img src={`data:image/png;base64,${pixData.pix_qrcode}`} alt="QR Code" style={{ width: '220px', height: '220px', display: 'block' }} />
-            ) : (
-                <div style={{ width: '220px', height: '220px', display: 'grid', placeItems: 'center', color: '#94a3b8' }}>Gerando QR Code...</div>
-            )}
-          </div>
-
-          {/* Copy Button */}
-          <button 
-            onClick={handleCopy}
-            disabled={!pixData}
-            style={{ width: '100%', maxWidth: '480px', background: '#fff', border: 'none', borderRadius: '16px', padding: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.8rem', fontWeight: 700, fontSize: '1rem', color: '#111827', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', transition: 'all 0.2s', opacity: pixData ? 1 : 0.5 }}
-            onMouseEnter={e => { if (pixData) e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)'; }}
-          >
-            <Copy size={20} /> Copiar código PIX
+    <div style={{ 
+      minHeight: '100vh', 
+      background: '#fff', 
+      color: '#111827', 
+      fontFamily: "'Inter', sans-serif",
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '2rem'
+    }}>
+      <div style={{ 
+        width: '100%', 
+        maxWidth: '1100px', 
+        display: 'grid', 
+        gridTemplateColumns: '1.2fr 0.8fr', 
+        gap: '4rem',
+        alignItems: 'start'
+      }}>
+        
+        {/* Left Column: Payment Info */}
+        <div>
+          <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontWeight: 600, cursor: 'pointer', marginBottom: '2rem' }}>
+            <ArrowLeft size={18} /> Voltar
           </button>
 
-          {/* Timer */}
-          <div style={{ marginTop: '3rem', fontSize: '2.5rem', fontWeight: 900, color: '#111827', letterSpacing: '0.08em' }}>
-            {formatTime(timeLeft)}
-          </div>
+          <h1 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '1rem', letterSpacing: '-0.04em' }}>Finalizar Pagamento</h1>
+          <p style={{ color: '#64748b', fontSize: '1.1rem', lineHeight: 1.5, marginBottom: '3rem', maxWidth: '500px' }}>
+            Para completar sua compra, escaneie o QR Code abaixo ou copie o código PIX. Seu pagamento será processado instantaneamente.
+          </p>
 
-          {/* Status */}
-          <div style={{ marginTop: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.7rem', color: '#d97706', fontSize: '1rem', fontWeight: 700 }}>
-            <RefreshCw size={20} className="spin" /> Aguardando pagamento...
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {/* PIX QR Code Area */}
+            <div style={{ display: 'flex', gap: '2.5rem', alignItems: 'center' }}>
+              <div style={{ 
+                background: '#f3f4f6', 
+                padding: '1.5rem', 
+                borderRadius: '24px', 
+                width: 'fit-content',
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+              }}>
+                {processing ? (
+                    <div style={{ width: '180px', height: '180px', display: 'grid', placeItems: 'center' }}>
+                        <RefreshCw size={32} className="spin" color="#9d66ff" />
+                    </div>
+                ) : pixData?.pix_qrcode ? (
+                    <img src={`data:image/png;base64,${pixData.pix_qrcode}`} alt="QR Code" style={{ width: '180px', height: '180px', display: 'block' }} />
+                ) : (
+                    <div style={{ width: '180px', height: '180px', display: 'grid', placeItems: 'center', color: '#94a3b8' }}>Gerando...</div>
+                )}
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#d97706', fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                  <RefreshCw size={18} className="spin" /> Aguardando pagamento
+                </div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827' }}>
+                   {formatTime(timeLeft)}
+                </div>
+                <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.5rem' }}>O código expira em 15 minutos.</p>
+              </div>
+            </div>
+
+            {/* Copy Button */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <label style={{ fontSize: '0.9rem', fontWeight: 600, color: '#64748b' }}>Código Copia e Cola</label>
+                <div style={{ 
+                    background: '#f3f4f6', 
+                    padding: '1.2rem', 
+                    borderRadius: '16px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    gap: '1rem',
+                    border: '1px solid #e5e7eb'
+                }}>
+                    <div style={{ 
+                        fontSize: '0.85rem', 
+                        color: '#111827', 
+                        whiteSpace: 'nowrap', 
+                        overflow: 'hidden', 
+                        textOverflow: 'ellipsis',
+                        fontFamily: 'monospace'
+                    }}>
+                        {pixData?.pix_copia_cola || 'Gerando código...'}
+                    </div>
+                    <button onClick={handleCopy} style={{ background: 'none', border: 'none', color: '#9d66ff', cursor: 'pointer' }}>
+                        <Copy size={20} />
+                    </button>
+                </div>
+            </div>
+
+            <button 
+              onClick={handleCopy}
+              style={{ 
+                background: '#9d66ff', 
+                color: '#fff', 
+                border: 'none', 
+                borderRadius: '16px', 
+                padding: '1.2rem 2.5rem', 
+                fontSize: '1.1rem', 
+                fontWeight: 700, 
+                cursor: 'pointer',
+                boxShadow: '0 10px 15px -3px rgba(157, 102, 255, 0.3)',
+                transition: 'all 0.2s',
+                width: 'fit-content'
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'none'}
+            >
+              Copiar e Pagar
+            </button>
           </div>
-          <style>{`
-            @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-            .spin { animation: spin 2.5s linear infinite; }
-          `}</style>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '3rem' }}>
-          <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '1rem', fontWeight: 600, cursor: 'pointer', textDecoration: 'none', opacity: 0.8 }} onMouseEnter={e => e.currentTarget.style.opacity = '1'} onMouseLeave={e => e.currentTarget.style.opacity = '0.8'}>Cancelar</button>
+        {/* Right Column: Order Summary */}
+        <div style={{ 
+          background: '#f9fafb', 
+          borderRadius: '40px', 
+          padding: '3rem',
+          position: 'relative',
+          overflow: 'hidden',
+          border: '1px solid #f1f1f1'
+        }}>
+          {/* Purple Glow Effect */}
+          <div style={{ 
+            position: 'absolute', 
+            top: '-50px', 
+            right: '-50px', 
+            width: '250px', 
+            height: '250px', 
+            background: 'radial-gradient(circle, rgba(157, 102, 255, 0.15) 0%, rgba(157, 102, 255, 0) 70%)',
+            zIndex: 0
+          }}></div>
+
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <p style={{ color: '#64748b', fontSize: '1.1rem', marginBottom: '0.5rem', fontWeight: 500 }}>Você está pagando,</p>
+            <h2 style={{ fontSize: '3.5rem', fontWeight: 900, marginBottom: '3rem', letterSpacing: '-0.04em' }}>
+               R$ {(intent?.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </h2>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                    <div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#111827' }}>{intent?.item_name || 'Inscrição Evento'}</div>
+                        <div style={{ fontSize: '0.9rem', color: '#64748b', marginTop: '0.4rem' }}>Qtd: 1 • Lote: Único</div>
+                    </div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>R$ {(intent?.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#111827' }}>Descontos e Ofertas</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#10b981' }}>R$ 0,00</div>
+                </div>
+
+                <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '1rem 0' }} />
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#64748b', fontSize: '1.1rem', fontWeight: 500 }}>
+                    <div>Taxas</div>
+                    <div>R$ 0,00</div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 800 }}>Total</div>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 800 }}>R$ {(intent?.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                </div>
+            </div>
+          </div>
         </div>
-      </main>
+
+      </div>
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .spin { animation: spin 2.5s linear infinite; }
+      `}</style>
     </div>
   );
 }
