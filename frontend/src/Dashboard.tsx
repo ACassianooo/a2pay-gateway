@@ -5,7 +5,8 @@ import {
   ChevronRight, Bell, Monitor, Search, Filter, Download, CheckCircle2, Building, ChevronDown, 
   Code, Shield, List, ArrowUpRight, Ban, TrendingUp, Eye, EyeOff, Check, RefreshCw, 
   ShieldCheck, Users, History, Lock, ShoppingBag, Clock, XCircle, Copy, Globe,
-  AlertTriangle, Upload, Settings, Banknote, QrCode, Wallet, Plus, Info, ArrowRight
+  AlertTriangle, Upload, Settings, Banknote, QrCode, Wallet, Plus, Info, ArrowRight,
+  Ticket, Repeat, FileText, Link as LinkIcon, Undo2, BookOpen, Key, Radio, Puzzle, Layers
 } from 'lucide-react';
 import { MasterApp } from './admin/MasterApp';
 import { API_BASE_URL } from './api';
@@ -59,10 +60,10 @@ interface APIKeyData {
   created_at: string; 
 }
 
-type Tab = 
-  | 'overview' | 'financeiro' | 'pagamentos' | 'clientes' | 'antifraude' | 'desenvolvedor' | 'conta'
-  | 'admin-overview' | 'admin-users' | 'admin-transactions' | 'admin-finance' | 'admin-withdrawals' 
-  | 'admin-fraud' | 'admin-audit' | 'admin-integrations' | 'admin-demo' | 'admin-reports' | 'admin-access';
+type Tab = 'overview' | 'financeiro' | 'pagamentos' | 'clientes' | 'desenvolvedor' | 'conta' | 
+  'produtos' | 'cupons' | 'assinaturas' | 'cobrancas' | 'antecipacoes' | 'link-pagamentos' | 'extrato' | 'disputas' |
+  'docs' | 'api-keys' | 'webhook' | 'plugins' | 'roadmap' |
+  'admin-overview' | 'admin-users' | 'admin-transactions' | 'admin-finance' | 'admin-withdrawals' | 'admin-fraud' | 'admin-reports' | 'admin-integrations' | 'admin-audit' | 'admin-access' | 'admin-demo';
 
 const API = API_BASE_URL;
 const token = () => localStorage.getItem('token') || '';
@@ -1219,12 +1220,28 @@ export default function Dashboard() {
   };
 
   const merchantTabs: { id: Tab; icon: React.ReactElement; label: string; group?: string }[] = [
-    { id: 'overview',    icon: <LayoutDashboard size={18} />, label: 'Dashboard', group: 'PRINCIPAL' },
-    { id: 'clientes',    icon: <Users size={18} />,           label: 'Clientes', group: 'PRINCIPAL' },
-    { id: 'financeiro',  icon: <Banknote size={18} />,        label: 'Saques', group: 'SUA LOJA' },
-    { id: 'pagamentos',  icon: <CreditCard size={18} />,      label: 'Pagamentos', group: 'SUA LOJA' },
-    { id: 'desenvolvedor', icon: <Terminal size={18} />,      label: 'Integração', group: 'DEVELOPER' },
-    { id: 'conta',       icon: <User size={18} />,            label: 'Configurações', group: 'DEVELOPER' },
+    { id: 'overview',        icon: <LayoutDashboard size={18} />, label: 'Dashboard', group: 'PRINCIPAL' },
+    
+    // Grupo SUA LOJA
+    { id: 'produtos',        icon: <ShoppingBag size={18} />,     label: 'Produtos', group: 'SUA LOJA' },
+    { id: 'cupons',          icon: <Ticket size={18} />,          label: 'Cupons', group: 'SUA LOJA' },
+    { id: 'clientes',        icon: <Users size={18} />,           label: 'Clientes', group: 'SUA LOJA' },
+    { id: 'assinaturas',     icon: <Repeat size={18} />,          label: 'Assinaturas', group: 'SUA LOJA' },
+    { id: 'cobrancas',       icon: <FileText size={18} />,        label: 'Cobranças', group: 'SUA LOJA' },
+    { id: 'antecipacoes',    icon: <Zap size={18} />,             label: 'Antecipações', group: 'SUA LOJA' },
+    { id: 'link-pagamentos', icon: <LinkIcon size={18} />,        label: 'Link de pagamentos', group: 'SUA LOJA' },
+    { id: 'financeiro',      icon: <Banknote size={18} />,        label: 'Saques', group: 'SUA LOJA' },
+    { id: 'extrato',         icon: <List size={18} />,            label: 'Extrato', group: 'SUA LOJA' },
+    { id: 'disputas',        icon: <Undo2 size={18} />,           label: 'Disputas', group: 'SUA LOJA' },
+
+    // Grupo INTEGRAÇÃO
+    { id: 'docs',            icon: <BookOpen size={18} />,        label: 'Documentação', group: 'INTEGRAÇÃO' },
+    { id: 'api-keys',        icon: <Key size={18} />,             label: 'API', group: 'INTEGRAÇÃO' },
+    { id: 'webhook',         icon: <Radio size={18} />,           label: 'Webhook', group: 'INTEGRAÇÃO' },
+    { id: 'plugins',         icon: <Puzzle size={18} />,          label: 'Plugins', group: 'INTEGRAÇÃO' },
+    { id: 'roadmap',         icon: <Layers size={18} />,          label: 'Roadmap', group: 'INTEGRAÇÃO' },
+    
+    { id: 'conta',           icon: <User size={18} />,            label: 'Configurações', group: 'CONTA' },
   ];
 
   const adminTabs: { id: Tab; icon: React.ReactElement; label: string; group?: string }[] = [
@@ -1242,7 +1259,7 @@ export default function Dashboard() {
   ];
 
   const currentTabs = isMaster ? adminTabs : merchantTabs;
-  const groups = isMaster ? ['GESTÃO', 'FINANCEIRO', 'SEGURANÇA', 'SISTEMA'] : ['PRINCIPAL', 'SUA LOJA', 'DEVELOPER'];
+  const groups = isMaster ? ['GESTÃO', 'FINANCEIRO', 'SEGURANÇA', 'SISTEMA'] : ['PRINCIPAL', 'SUA LOJA', 'INTEGRAÇÃO', 'CONTA'];
 
   // (useEffect de admin tab movido para antes dos early returns)
 
