@@ -6,7 +6,7 @@ import {
   Code, Shield, List, ArrowUpRight, Ban, TrendingUp, Eye, EyeOff, Check, RefreshCw, 
   ShieldCheck, Users, History, Lock, ShoppingBag, Clock, XCircle, Copy, Globe,
   AlertTriangle, Upload, Settings, Banknote, QrCode, Wallet, Plus, Info, ArrowRight,
-  Ticket, Repeat, FileText, Link as LinkIcon, Undo2, BookOpen, Key, Radio, Puzzle, Layers
+  ShoppingBag, Ticket, Repeat, FileText, Link as LinkIcon, Undo2, BookOpen, Key, Radio, Puzzle, Layers, SlidersHorizontal
 } from 'lucide-react';
 import { MasterApp } from './admin/MasterApp';
 import { API_BASE_URL } from './api';
@@ -1213,6 +1213,11 @@ export default function Dashboard() {
 
   // isMaster já foi calculado antes dos early returns
 
+  const [expandedGroups, setExpandedGroups] = useState<string[]>(['PRINCIPAL', 'SUA LOJA', 'INTEGRAÇÃO', 'CONTA', 'GESTÃO', 'FINANCEIRO', 'SEGURANÇA', 'SISTEMA']);
+  const toggleGroup = (group: string) => {
+    setExpandedGroups(prev => prev.includes(group) ? prev.filter(g => g !== group) : [...prev, group]);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
@@ -1290,22 +1295,60 @@ export default function Dashboard() {
 
         {/* Navigation Groups */}
         <div style={{ flex: 1, padding: '0 0.75rem', overflowY: 'auto' }}>
-          {groups.map(group => (
-            <div key={group} style={{ marginBottom: '1.5rem' }}>
-              <div style={{ padding: '0 0.75rem', fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>{group}</div>
-              {currentTabs.filter(t => t.group === group).map(tab => (
-                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.7rem 0.75rem', borderRadius: '10px', border: 'none', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 600, transition: 'all .2s', marginBottom: '2px',
-                    background: activeTab === tab.id ? 'rgba(137,66,252,0.08)' : 'transparent',
-                    color: activeTab === tab.id ? '#8942FC' : '#6b7280',
-                  }}>
-                  <span style={{ color: activeTab === tab.id ? '#8942FC' : '#94a3b8' }}>{tab.icon}</span>
-                  {tab.label}
-                  {activeTab === tab.id && <div style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: '#8942FC' }} />}
-                </button>
-              ))}
-            </div>
-          ))}
+          {groups.map(group => {
+            const isExpanded = expandedGroups.includes(group);
+            const isCollapsible = group === 'SUA LOJA' || group === 'INTEGRAÇÃO';
+            const groupTabs = currentTabs.filter(t => t.group === group);
+            const isAnyTabActive = groupTabs.some(t => t.id === activeTab);
+
+            return (
+              <div key={group} style={{ marginBottom: '0.75rem' }}>
+                <div 
+                  onClick={() => isCollapsible && toggleGroup(group)}
+                  style={{ 
+                    padding: '0.7rem 0.75rem', 
+                    fontSize: '0.88rem', 
+                    fontWeight: 700, 
+                    color: isAnyTabActive ? '#111827' : '#64748b', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    cursor: isCollapsible ? 'pointer' : 'default',
+                    borderRadius: '10px',
+                    border: (isCollapsible && isAnyTabActive) ? '1px solid #8942FC' : '1px solid transparent',
+                    background: (isCollapsible && isAnyTabActive && !isExpanded) ? 'rgba(137,66,252,0.05)' : 'transparent',
+                    marginBottom: '0.25rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    {group === 'SUA LOJA' && <ShoppingBag size={18} color={isAnyTabActive ? '#8942FC' : '#94a3b8'} />}
+                    {group === 'INTEGRAÇÃO' && <SlidersHorizontal size={18} color={isAnyTabActive ? '#8942FC' : '#94a3b8'} />}
+                    {group === 'PRINCIPAL' && <LayoutDashboard size={18} color="#94a3b8" />}
+                    <span style={{ textTransform: 'capitalize', fontSize: '0.9rem' }}>{group.toLowerCase()}</span>
+                  </div>
+                  {isCollapsible && (
+                    isExpanded ? <ChevronDown size={16} color="#94a3b8" /> : <ChevronRight size={16} color="#94a3b8" />
+                  )}
+                </div>
+
+                {isExpanded && (
+                  <div style={{ marginLeft: isCollapsible ? '0.5rem' : '0', borderLeft: isCollapsible ? '1px solid #f1f5f9' : 'none', paddingLeft: isCollapsible ? '0.5rem' : '0' }}>
+                    {groupTabs.map(tab => (
+                      <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.7rem 0.75rem', borderRadius: '10px', border: 'none', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 600, transition: 'all .2s', marginBottom: '2px',
+                          background: activeTab === tab.id ? 'rgba(137,66,252,0.08)' : 'transparent',
+                          color: activeTab === tab.id ? '#8942FC' : '#6b7280',
+                        }}>
+                        <span style={{ color: activeTab === tab.id ? '#8942FC' : '#94a3b8' }}>{tab.icon}</span>
+                        {tab.label}
+                        {activeTab === tab.id && <div style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: '#8942FC' }} />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* Sidebar Footer */}
