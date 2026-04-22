@@ -727,6 +727,128 @@ function SaqueModal({ onClose, saldo, onSucess }: { onClose: () => void; saldo: 
 
 
 // ══════════════════════════════════════════════════════════════════════════════
+// TAB: CUPONS
+// ══════════════════════════════════════════════════════════════════════════════
+function CuponsTab() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [search, setSearch] = useState('');
+
+  return (
+    <div style={{ animation: 'fadeIn 0.4s ease-out' }}>
+       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+          <h1 style={{ fontSize: '2.2rem', fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.04em' }}>Cupons</h1>
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            style={{ background: '#99f667', color: '#14532d', border: 'none', borderRadius: 12, padding: '0.85rem 1.8rem', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', boxShadow: '0 4px 14px rgba(153, 246, 103, 0.3)', transition: 'all 0.2s' }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(153, 246, 103, 0.4)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(153, 246, 103, 0.3)'; }}
+          >
+            <Plus size={20} strokeWidth={3} /> Criar cupom
+          </button>
+       </div>
+
+       <Card style={{ padding: '2rem', border: '1px solid #f1f5f9', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.02)' }}>
+          <div style={{ position: 'relative', width: '420px', marginBottom: '2.5rem' }}>
+             <Search size={18} style={{ position: 'absolute', left: 18, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+             <input 
+               value={search} 
+               onChange={e => setSearch(e.target.value)} 
+               placeholder="Pesquisar por código" 
+               style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 14, padding: '1rem 1rem 1rem 3.5rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }}
+               onFocus={e => { e.currentTarget.style.borderColor = '#8942FC'; e.currentTarget.style.background = '#fff'; e.currentTarget.style.boxShadow = '0 0 0 4px rgba(137,66,252,0.05)'; }}
+               onBlur={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.boxShadow = 'none'; }}
+             />
+          </div>
+
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+               <thead>
+                  <tr style={{ background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
+                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Código</th>
+                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Resgatados</th>
+                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Limites de Resgates</th>
+                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Desconto</th>
+                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Criação</th>
+                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
+                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ações</th>
+                  </tr>
+               </thead>
+               <tbody>
+                  <tr>
+                     <td colSpan={7} style={{ padding: '8rem 2rem', textAlign: 'center', color: '#94a3b8', fontSize: '1rem', fontWeight: 500 }}>Nenhum dado encontrado</td>
+                  </tr>
+               </tbody>
+            </table>
+          </div>
+       </Card>
+
+       {isModalOpen && <CreateCouponModal onClose={() => setIsModalOpen(false)} />}
+    </div>
+  );
+}
+
+function CreateCouponModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.3)', backdropFilter: 'blur(8px)', display: 'grid', placeItems: 'center', zIndex: 1000, animation: 'fadeIn 0.2s ease-out' }}>
+       <Card style={{ width: '100%', maxWidth: '520px', padding: 0, overflow: 'hidden', animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)', border: '1px solid #f1f5f9' }}>
+          <style>{`
+            @keyframes modalSlideUp { 
+              from { transform: translateY(30px) scale(0.98); opacity: 0; } 
+              to { transform: translateY(0) scale(1); opacity: 1; } 
+            }
+          `}</style>
+          
+          <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', padding: '0.5rem', borderRadius: '10px', transition: 'background 0.2s', display: 'grid', placeItems: 'center' }} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                   <ArrowLeft size={20} />
+                </button>
+                <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>Criar cupom</h3>
+             </div>
+             <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '0.5rem', borderRadius: '10px', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.color = '#ef4444'; }}>
+                <XCircle size={22} />
+             </button>
+          </div>
+
+          <div style={{ padding: '2.5rem 2rem', display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                <label style={{ display: 'block', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, marginLeft: '4px' }}>Código</label>
+                <input placeholder="Nome do cupom" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} />
+             </div>
+
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                <label style={{ display: 'block', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, marginLeft: '4px' }}>Tipo de desconto</label>
+                <div style={{ position: 'relative' }}>
+                   <select style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', appearance: 'none', cursor: 'pointer', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'}>
+                      <option>Fixo</option>
+                      <option>Percentual</option>
+                   </select>
+                   <ChevronDown size={18} color="#94a3b8" style={{ position: 'absolute', right: 18, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                </div>
+             </div>
+
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                <label style={{ display: 'block', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, marginLeft: '4px' }}>Desconto</label>
+                <input placeholder="Desconto" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} />
+             </div>
+
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                <label style={{ display: 'block', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, marginLeft: '4px' }}>Quantidade máxima de utilizações</label>
+                <input placeholder="Quantidade máxima de utilizações (-1 = infinito)" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} />
+             </div>
+
+             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                <button onClick={onClose} style={{ background: '#99f667', color: '#14532d', border: 'none', borderRadius: 12, padding: '1rem 3rem', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 14px rgba(153, 246, 103, 0.3)', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(153, 246, 103, 0.4)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(153, 246, 103, 0.3)'; }}>
+                   Salvar
+                </button>
+             </div>
+          </div>
+       </Card>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 // TAB: PAGAMENTOS
 // ══════════════════════════════════════════════════════════════════════════════
 function PagamentosTab({ data }: { data: DashboardData }) {
@@ -1640,6 +1762,7 @@ export default function Dashboard() {
           {/* Merchant Tabs */}
           {activeTab === 'overview'   && <OverviewTab data={data} />}
           {activeTab === 'produtos'   && <ProdutosTab />}
+          {activeTab === 'cupons'     && <CuponsTab />}
           {activeTab === 'clientes'   && <ClientesTab />}
           {activeTab === 'financeiro' && <SaquesTab data={data} />}
           {activeTab === 'pagamentos' && <PagamentosTab data={data} />}
