@@ -241,7 +241,9 @@ export default function Checkout() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                     <div>
                         <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#111827' }}>{intent?.item_name || 'Inscrição Evento'}</div>
-                        <div style={{ fontSize: '0.9rem', color: '#64748b', marginTop: '0.4rem' }}>Qtd: 1 • Lote: Único</div>
+                        <div style={{ fontSize: '0.9rem', color: '#64748b', marginTop: '0.4rem' }}>
+                            Qtd: {intent?.metadata?.quantity || 1} • Lote: {intent?.metadata?.lote || 'Único'}
+                        </div>
                     </div>
                     <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>R$ {(intent?.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
                 </div>

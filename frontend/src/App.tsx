@@ -51,10 +51,11 @@ function NavLinks() {
 function AppContent() {
   const location = useLocation();
   const isDashboard = location.pathname.startsWith('/dashboard');
+  const isCheckout = location.pathname.startsWith('/checkout');
 
   return (
     <div className={isDashboard ? "dashboard-layout" : "app-container"}>
-      {!isDashboard && (
+      {!isDashboard && !isCheckout && (
         <nav className="navbar">
           <Link to="/" className="navbar-brand">
             <Shield color="#8942FC" fill="#8942FC" size={28} />

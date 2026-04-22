@@ -5,9 +5,10 @@ package dto
 // ── Requests ──────────────────────────────────────────────────────────────────
 
 type CreateIntentRequest struct {
-	MerchantID int     `json:"merchant_id"`
-	ItemName   string  `json:"item_name"`
-	ValorTotal float64 `json:"valor_total"`
+	MerchantID int                    `json:"merchant_id"`
+	ItemName   string                 `json:"item_name"`
+	ValorTotal float64                `json:"valor_total"`
+	Metadata   map[string]interface{} `json:"metadata,omitempty"`
 }
 
 type ProcessPaymentRequest struct {

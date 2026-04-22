@@ -1,5 +1,7 @@
 package model
 
+import "encoding/json"
+
 // Transaction representa uma transação financeira processada pelo gateway
 type Transaction struct {
 	ID              int     `json:"id"`
@@ -10,8 +12,9 @@ type Transaction struct {
 	Taxa            float64 `json:"taxa,omitempty"`
 	Status          string  `json:"status"`
 	MetodoPagamento string  `json:"metodo_pagamento"`
-	AsaasChargeID   string  `json:"asaas_charge_id,omitempty"`
-	CreatedAt       string  `json:"created_at"`
+	AsaasChargeID   string          `json:"asaas_charge_id,omitempty"`
+	CreatedAt       string          `json:"created_at"`
+	Metadata        json.RawMessage `json:"metadata,omitempty"`
 }
 
 // EmpresaRow é usado no dashboard master para exibir métricas por empresa

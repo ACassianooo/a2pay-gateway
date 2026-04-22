@@ -81,7 +81,7 @@ func (s *PIXService) CreateCharge(intentID int, valor float64, itemName string, 
 	}
 
 	// Busca o merchantID para salvar o cliente corretamente
-	_, mID, _, _, _ := s.txRepo.GetByID(intentID)
+	_, mID, _, _, _, _ := s.txRepo.GetByID(intentID)
 	s.custRepo.Create(model.Customer{
 		ID:         customerID,
 		MerchantID: mID,
@@ -133,7 +133,7 @@ func (s *PIXService) ExternalCharge(merchantID int, req ExternalPixRequest, isSa
 		client = s.clientTest
 	}
 
-	intentID, err := s.txRepo.Create(merchantID, req.Descricao, req.Valor, liquido, taxa, isSandbox)
+	intentID, err := s.txRepo.Create(merchantID, req.Descricao, req.Valor, liquido, taxa, isSandbox, nil)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -268,20 +268,26 @@ func NewPaymentService(txRepo *repository.TransactionRepository, pix *PIXService
 	return &PaymentService{txRepo: txRepo, pix: pix, wallet: wallet, fraud: fraud}
 }
 
-func (s *PaymentService) CreateIntent(merchantID int, itemName string, valor float64, isSandbox bool) (int64, error) {
+func (s *PaymentService) CreateIntent(merchantID int, itemName string, valor float64, isSandbox bool, metadata map[string]interface{}) (int64, error) {
 	if valor <= TaxaFixaPIX {
 		return 0, fmt.Errorf("valor mínimo: R$ %.2f", TaxaFixaPIX+0.01)
 	}
-	return s.txRepo.Create(merchantID, itemName, valor, valor-TaxaFixaPIX, TaxaFixaPIX, isSandbox)
+	metaBytes, _ := json.Marshal(metadata)
+	return s.txRepo.Create(merchantID, itemName, valor, valor-TaxaFixaPIX, TaxaFixaPIX, isSandbox, metaBytes)
 }
 
 func (s *PaymentService) GetIntent(id int) (map[string]interface{}, error) {
-	valor, mID, isTest, status, err := s.txRepo.GetByID(id)
+	valor, mID, isTest, status, metaBytes, err := s.txRepo.GetByID(id)
 	if err != nil {
 		return nil, err
 	}
 	name := s.txRepo.GetItemName(id)
 	
+	var metadata map[string]interface{}
+	if len(metaBytes) > 0 {
+		json.Unmarshal(metaBytes, &metadata)
+	}
+
 	return map[string]interface{}{
 		"id":          id,
 		"merchant_id": mID,
@@ -289,11 +295,12 @@ func (s *PaymentService) GetIntent(id int) (map[string]interface{}, error) {
 		"valor_total": valor,
 		"status":      status,
 		"is_test":     isTest,
+		"metadata":    metadata,
 	}, nil
 }
 
 func (s *PaymentService) ProcessPIX(intentID int, clientIP string) (*PIXResult, error) {
-	valor, merchantID, isSandbox, _, err := s.txRepo.GetByID(intentID)
+	valor, merchantID, isSandbox, _, _, err := s.txRepo.GetByID(intentID)
 	if err != nil {
 		return nil, fmt.Errorf("intent %d não encontrado", intentID)
 	}
@@ -305,7 +312,7 @@ func (s *PaymentService) ProcessPIX(intentID int, clientIP string) (*PIXResult, 
 }
 
 func (s *PaymentService) ProcessCard(intentID int, token string, clientIP string) (*CardResult, error) {
-	valor, merchantID, _, _, err := s.txRepo.GetByID(intentID)
+	valor, merchantID, _, _, _, err := s.txRepo.GetByID(intentID)
 	if err != nil {
 		return nil, fmt.Errorf("intent %d não encontrado", intentID)
 	}

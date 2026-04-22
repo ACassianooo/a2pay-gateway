@@ -60,7 +60,7 @@ func (h *PaymentHandler) CreateIntent(w http.ResponseWriter, r *http.Request) {
 		isSandbox = r.Header.Get("x-a2pay-env") == "test"
 	}
 
-	id, err := h.payment.CreateIntent(merchantID, req.ItemName, req.ValorTotal, isSandbox)
+	id, err := h.payment.CreateIntent(merchantID, req.ItemName, req.ValorTotal, isSandbox, req.Metadata)
 	if err != nil {
 		respondErr(w, apierrors.InvalidInput(err.Error()))
 		return
@@ -85,7 +85,7 @@ func (h *PaymentHandler) GetIntent(w http.ResponseWriter, r *http.Request) {
 
 	intent, err := h.payment.GetIntent(id)
 	if err != nil {
-		respondErr(w, apierrors.NotFound("Pagamento", idStr))
+		respondErr(w, apierrors.NotFound("Pagamento"))
 		return
 	}
 

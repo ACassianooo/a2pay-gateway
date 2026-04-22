@@ -17,12 +17,12 @@ func NewTransactionRepository(db *sql.DB) *TransactionRepository {
 	return &TransactionRepository{db: db}
 }
 
-func (r *TransactionRepository) Create(merchantID int, itemName string, valorTotal, liquido, taxa float64, isTest bool) (int64, error) {
+func (r *TransactionRepository) Create(merchantID int, itemName string, valorTotal, liquido, taxa float64, isTest bool, metadata []byte) (int64, error) {
 	var id int64
 	err := r.db.QueryRow(
-		`INSERT INTO transactions(merchant_id, item_name, valor_total, valor_liquido, taxa, status, metodo_pagamento, asaas_charge_id, created_at, is_test)
-		 VALUES($1, $2, $3, $4, $5, 'pendente', 'N/A', '', $6, $7) RETURNING id`,
-		merchantID, itemName, valorTotal, liquido, taxa, time.Now().Format(time.RFC3339), isTest,
+		`INSERT INTO transactions(merchant_id, item_name, valor_total, valor_liquido, taxa, status, metodo_pagamento, asaas_charge_id, created_at, is_test, metadata)
+		 VALUES($1, $2, $3, $4, $5, 'pendente', 'N/A', '', $6, $7, $8) RETURNING id`,
+		merchantID, itemName, valorTotal, liquido, taxa, time.Now().Format(time.RFC3339), isTest, metadata,
 	).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("TransactionRepository.Create: %w", err)
@@ -30,15 +30,16 @@ func (r *TransactionRepository) Create(merchantID int, itemName string, valorTot
 	return id, nil
 }
 
-func (r *TransactionRepository) GetByID(id int) (float64, int, bool, string, error) {
+func (r *TransactionRepository) GetByID(id int) (float64, int, bool, string, []byte, error) {
 	var valor float64
 	var merchantID int
 	var isTest bool
 	var status string
+	var metadata []byte
 	err := r.db.QueryRow(
-		"SELECT valor_total, merchant_id, is_test, status FROM transactions WHERE id = $1", id,
-	).Scan(&valor, &merchantID, &isTest, &status)
-	return valor, merchantID, isTest, status, err
+		"SELECT valor_total, merchant_id, is_test, status, metadata FROM transactions WHERE id = $1", id,
+	).Scan(&valor, &merchantID, &isTest, &status, &metadata)
+	return valor, merchantID, isTest, status, metadata, err
 }
 
 func (r *TransactionRepository) GetItemName(id int) string {
