@@ -1,18 +1,11 @@
 {
   "version": 2,
-  "functions": {
-    "api/index.go": {
-      "runtime": "vercel-go@3.0.0"
-    }
-  },
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist",
   "rewrites": [
     {
       "source": "/api/(.*)",
       "destination": "/api/index.go"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/frontend/dist/$1"
     }
   ]
 }
