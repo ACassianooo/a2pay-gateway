@@ -269,12 +269,7 @@ function ProdutosTab() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [editingProduct, setEditingProduct] = useState<any>(null);
 
-  const products = [
-    { id: 'prod_ZK5SFdeCh1fWzUKGN5TL5yka', name: 'Hugo e Guilherme — Open-bar: 1x 12/...', sub: 'Inclui taxa de serviço', price: 220.00, color: '#8942FC' },
-    { id: 'prod_827364559102837465', name: 'Hugo e Guilherme — Open-bar: 1x 12/...', sub: 'Inclui taxa de serviço', price: 220.00, color: '#a3a219' },
-    { id: 'prod_192837465564738291', name: 'Hugo e Guilherme — Open-bar: 1x 12/...', sub: 'Inclui taxa de serviço', price: 220.00, color: '#ef4444' },
-    { id: 'prod_654321098765432109', name: 'Hugo e Guilherme — Open-bar: 1x 12/...', sub: 'Inclui taxa de serviço', price: 220.00, color: '#84cc16' },
-  ];
+  const products: any[] = [];
 
   const subTabs = [
     { id: 'todos', label: 'Todos os produtos' },
@@ -1351,21 +1346,23 @@ function ContaTab() {
         {/* Perfil & Dados da Empresa */}
         <Card>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem', marginBottom: '1.8rem', paddingBottom: '1.5rem', borderBottom: '1px solid #f3f4f6' }}>
-            <div style={{ width: 68, height: 68, borderRadius: 18, background: '#8942FC', display: 'grid', placeItems: 'center', color: '#fff', fontSize: '1.8rem', fontWeight: 800, boxShadow: '0 4px 15px rgba(137,66,252,0.3)' }}>LT</div>
+            <div style={{ width: 68, height: 68, borderRadius: 18, background: '#8942FC', display: 'grid', placeItems: 'center', color: '#fff', fontSize: '1.8rem', fontWeight: 800, boxShadow: '0 4px 15px rgba(137,66,252,0.3)' }}>
+              {data.role === 'master' ? 'MA' : 'LJ'}
+            </div>
             <div>
-              <h3 style={{ color: '#111827', fontWeight: 800, fontSize: '1.2rem' }}>Lojista Demo</h3>
-              <div style={{ color: '#6b7280', fontSize: '0.88rem', marginTop: '0.2rem' }}>CNPJ: 45.123.456/0001-99</div>
+              <h3 style={{ color: '#111827', fontWeight: 800, fontSize: '1.2rem' }}>{data.role === 'master' ? 'Master Admin' : 'Minha Loja'}</h3>
+              <div style={{ color: '#6b7280', fontSize: '0.88rem', marginTop: '0.2rem' }}>Cadastro Ativo</div>
             </div>
           </div>
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.2rem' }}>
             <div>
               <label style={{ display: 'block', color: '#6b7280', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.4rem' }}>NOME FANTASIA (SUA LOJA)</label>
-              <input defaultValue="Lojista Demo" style={{ width: '100%', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.75rem', color: '#111827', fontSize: '0.9rem', outline: 'none' }} />
+              <input placeholder="Digite o nome da sua loja" style={{ width: '100%', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.75rem', color: '#111827', fontSize: '0.9rem', outline: 'none' }} />
             </div>
             <div>
               <label style={{ display: 'block', color: '#6b7280', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.4rem' }}>E-MAIL COMERCIAL</label>
-              <input defaultValue="demo@lojista.com" style={{ width: '100%', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.75rem', color: '#111827', fontSize: '0.9rem', outline: 'none' }} />
+              <input placeholder="seuemail@exemplo.com" style={{ width: '100%', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.75rem', color: '#111827', fontSize: '0.9rem', outline: 'none' }} />
             </div>
           </div>
           <button style={{ marginTop: '1.5rem', background: '#f3f4f6', color: '#111827', border: 'none', borderRadius: 8, padding: '0.7rem 1.5rem', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>Salvar Alterações</button>
@@ -1728,8 +1725,8 @@ export default function Dashboard() {
               {isMaster ? 'MA' : (data.role === 'admin' ? 'AD' : 'LJ')}
             </div>
             <div style={{ flex: 1, overflow: 'hidden' }}>
-              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{isMaster ? 'Master User' : 'Lojista A2Pay'}</div>
-              <div style={{ fontSize: '0.7rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{isMaster ? 'Sistema Master' : (data.role === 'admin' ? 'Administrador' : 'Merchant')}</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{isMaster ? 'Master User' : 'Minha Loja'}</div>
+              <div style={{ fontSize: '0.7rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{isMaster ? 'Sistema Master' : (data.role === 'admin' ? 'Administrador' : 'Lojista')}</div>
             </div>
             <button onClick={handleLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
               <LogOut size={16} />
