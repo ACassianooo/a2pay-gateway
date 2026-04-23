@@ -1,5 +1,5 @@
 // Centralização da URL da API para facilitar o deploy em produção.
-// Em desenvolvimento usa o localhost:8080. Em produção, configure VITE_API_URL.
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+// Usando a URL oficial do backend hospedado no Render.
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://a2pay-gateway.onrender.com';
 
 console.log("[A2Pay] API Base URL:", API_BASE_URL);
