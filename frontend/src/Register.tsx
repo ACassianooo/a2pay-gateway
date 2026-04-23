@@ -24,7 +24,8 @@ export default function Register() {
       });
 
       if (!res.ok) {
-         throw new Error("Erro ao criar conta. Email já existe?");
+         const errorData = await res.json().catch(() => ({}));
+         throw new Error(errorData.error || "Erro ao criar conta. Tente novamente.");
       }
 
       const data = await res.json();
