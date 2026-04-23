@@ -1337,7 +1337,7 @@ function DesenvolvedorTab() {
 // ══════════════════════════════════════════════════════════════════════════════
 // TAB: CONTA / KYC
 // ══════════════════════════════════════════════════════════════════════════════
-function ContaTab() {
+function ContaTab({ data }: { data: any }) {
   return (
     <div>
       <SectionHeader icon={<User size={22} />} title="Minha Conta" sub="Gerencie seu perfil, verifique sua empresa (KYC) e configure taxas." />
@@ -1768,7 +1768,7 @@ export default function Dashboard() {
           {activeTab === 'pagamentos' && <PagamentosTab data={data} />}
           {activeTab === 'antifraude' && <AntifraudeTab data={data} />}
           {activeTab === 'desenvolvedor' && <DesenvolvedorTab />}
-          {activeTab === 'conta'      && <ContaTab />}
+          {activeTab === 'conta'      && <ContaTab data={data} />}
 
           {/* Admin Tabs */}
           {activeTab === 'admin-overview'     && <AdminOverview data={data} />}
