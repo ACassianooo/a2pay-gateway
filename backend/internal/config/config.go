@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -76,6 +77,19 @@ func Load() (*Config, error) {
 		AESKey:           aesKey,
 		Port:             port,
 		WebhookSecret:    os.Getenv("ASAAS_WEBHOOK_SECRET"),
-		DatabaseURL:      os.Getenv("DATABASE_URL"),
+		DatabaseURL:      prepareDatabaseURL(os.Getenv("DATABASE_URL")),
 	}, nil
+}
+
+// prepareDatabaseURL limpa a URL do banco para evitar erros de parsing no Render/Vercel
+func prepareDatabaseURL(url string) string {
+	cleaned := strings.TrimSpace(url)
+	if cleaned == "" {
+		return ""
+	}
+	// Garante que o driver entenda como uma URL de conexão
+	if !strings.HasPrefix(cleaned, "postgres://") && !strings.HasPrefix(cleaned, "postgresql://") {
+		return "postgres://" + cleaned
+	}
+	return cleaned
 }
