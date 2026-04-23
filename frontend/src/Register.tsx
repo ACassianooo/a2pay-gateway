@@ -24,8 +24,15 @@ export default function Register() {
       });
 
       if (!res.ok) {
-         const errorData = await res.json().catch(() => ({}));
-         throw new Error(errorData.error || "Erro ao criar conta. Tente novamente.");
+         const text = await res.text();
+         let errorMessage = "Erro ao criar conta. Tente novamente.";
+         try {
+            const data = JSON.parse(text);
+            errorMessage = data.error || errorMessage;
+         } catch(e) {
+            errorMessage = text || errorMessage;
+         }
+         throw new Error(errorMessage);
       }
 
       const data = await res.json();
