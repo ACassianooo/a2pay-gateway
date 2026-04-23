@@ -14,6 +14,13 @@ import (
 	"github.com/gato-gateway/internal/utils"
 )
 
+// PIXProvider define os métodos que qualquer banco (Asaas, Inter, etc) deve ter
+type PIXProvider interface {
+	CreateCustomer(name, email, cpfCnpj string) (string, error)
+	CreatePixCharge(customerID string, valor float64, descricao string) (string, error)
+	GetPixQRCode(chargeID string) (*PixQRCode, error)
+}
+
 // Client é o cliente HTTP para a API Asaas
 type Client struct {
 	apiKey  string

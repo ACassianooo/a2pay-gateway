@@ -20,6 +20,12 @@ type Config struct {
 	Port             string
 	WebhookSecret    string
 	DatabaseURL      string
+	// Banco Inter
+	InterClientID     string
+	InterClientSecret string
+	InterCertContent  string
+	InterKeyContent   string
+	InterPixKey       string
 }
 
 func Load() (*Config, error) {
@@ -78,6 +84,11 @@ func Load() (*Config, error) {
 		Port:             port,
 		WebhookSecret:    os.Getenv("ASAAS_WEBHOOK_SECRET"),
 		DatabaseURL:      prepareDatabaseURL(os.Getenv("DATABASE_URL")),
+		InterClientID:     os.Getenv("INTER_CLIENT_ID"),
+		InterClientSecret: os.Getenv("INTER_CLIENT_SECRET"),
+		InterCertContent:  os.Getenv("INTER_CERT_CONTENT"),
+		InterKeyContent:   os.Getenv("INTER_KEY_CONTENT"),
+		InterPixKey:       os.Getenv("INTER_PIX_KEY"),
 	}, nil
 }
 

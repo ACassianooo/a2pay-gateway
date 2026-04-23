@@ -17,13 +17,13 @@ const TaxaPIXPorc   = 0.0099
 const TaxaCartaoPorc = 0.03
 const TaxaCartaoFixa = 0.50
 
-// PixClientAdapter adapta o integration/pix.Client para o service layer
+// PixClientAdapter adapta o integration/pix.PIXProvider para o service layer
 type PixClientAdapter struct {
-	client *intpix.Client
+	client intpix.PIXProvider
 }
 
-func NewPixClientAdapter(apiKey, baseURL string) *PixClientAdapter {
-	return &PixClientAdapter{client: intpix.NewClient(apiKey, baseURL)}
+func NewPixClientAdapter(client intpix.PIXProvider) *PixClientAdapter {
+	return &PixClientAdapter{client: client}
 }
 
 func (a *PixClientAdapter) CreateCustomer(name, email, cpf string) (string, error) {

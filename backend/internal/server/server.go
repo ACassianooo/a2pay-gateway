@@ -18,6 +18,7 @@ import (
 	"github.com/gato-gateway/internal/middleware"
 	"github.com/gato-gateway/internal/repository"
 	"github.com/gato-gateway/internal/service"
+	"github.com/gato-gateway/internal/integration/pix"
 )
 
 // Server encapsula o roteador e todas as dependências
@@ -39,8 +40,39 @@ func New(cfg *config.Config, db *database.DB) *Server {
 	// ── Serviços ─────────────────────────────────────────────────────────
 	cryptoSvc := service.MustNewCryptoService(fmt.Sprintf("%x", cfg.AESKey))
 
-	pixLive := service.NewPixClientAdapter(cfg.AsaasAPIKeyLive, cfg.AsaasBaseURLReal)
-	pixTest := service.NewPixClientAdapter(cfg.AsaasAPIKeyTest, cfg.AsaasBaseURLTest)
+	// Inicializa Banco Inter (Prioridade Total)
+	var pixInterLive, pixInterTest *pix.InterClient
+	
+	// Tentamos carregar as credenciais (seja live ou test)
+	if cfg.InterClientID != "" {
+		// No futuro, podemos separar INTER_URL_LIVE e INTER_URL_SANDBOX
+		// Por enquanto, usamos as credenciais fornecidas para ambos
+		pixInterLive, _ = pix.NewInterClient(
+			cfg.InterClientID,
+			cfg.InterClientSecret,
+			cfg.InterCertContent,
+			cfg.InterKeyContent,
+			cfg.InterPixKey,
+			"https://cdpj.inter.co", // URL de Produção
+		)
+		pixInterTest, _ = pix.NewInterClient(
+			cfg.InterClientID,
+			cfg.InterClientSecret,
+			cfg.InterCertContent,
+			cfg.InterKeyContent,
+			cfg.InterPixKey,
+			"https://cdpj-sandbox.inter.co", // URL de Sandbox
+		)
+	}
+
+	// Adaptadores para o Service (Apenas Inter agora)
+	var pixLive, pixTest *service.PixClientAdapter
+	if pixInterLive != nil {
+		pixLive = service.NewPixClientAdapter(pixInterLive)
+	}
+	if pixInterTest != nil {
+		pixTest = service.NewPixClientAdapter(pixInterTest)
+	}
 
 	walletSvc := service.NewWalletService()
 	fraudSvc := service.NewFraudService(txRepo, walRepo)
