@@ -127,3 +127,8 @@ func (s *Server) Start(addr string) error {
 	log.Printf("[SERVER] Escutando em %s", addr)
 	return http.ListenAndServe(addr, s.router)
 }
+
+// Handler retorna o roteador para uso em Serverless Functions (ex: Vercel)
+func (s *Server) Handler() http.Handler {
+	return s.router
+}
