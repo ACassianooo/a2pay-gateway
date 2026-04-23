@@ -3,22 +3,11 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api/index.go"
+      "destination": "/api"
     },
     {
       "source": "/(.*)",
       "destination": "/frontend/dist/$1"
     }
-  ],
-  "redirects": [
-    {
-      "source": "/",
-      "destination": "/index.html"
-    }
-  ],
-  "functions": {
-    "api/index.go": {
-      "runtime": "vercel-go@3.0.0"
-    }
-  }
+  ]
 }
