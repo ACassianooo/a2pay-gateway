@@ -7,11 +7,14 @@ import (
 	"github.com/gato-gateway/internal/server"
 )
 
+var srvInstance *server.Server
+
 func Handler(w http.ResponseWriter, r *http.Request) {
-	cfg, _ := config.Load()
-	db, _ := database.Connect(cfg.DatabaseURL)
-	srv := server.New(cfg, db)
+	if srvInstance == nil {
+		cfg, _ := config.Load()
+		db, _ := database.Connect(cfg.DatabaseURL)
+		srvInstance = server.New(cfg, db)
+	}
 	
-	// Repassa a requisição para o roteador do seu servidor
-	srv.Handler().ServeHTTP(w, r)
+	srvInstance.Handler().ServeHTTP(w, r)
 }
