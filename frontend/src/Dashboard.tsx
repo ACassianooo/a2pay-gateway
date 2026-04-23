@@ -63,7 +63,7 @@ interface APIKeyData {
 
 type Tab = 'overview' | 'financeiro' | 'pagamentos' | 'clientes' | 'desenvolvedor' | 'conta' | 
   'produtos' | 'cupons' | 'assinaturas' | 'cobrancas' | 'antecipacoes' | 'link-pagamentos' | 'extrato' | 'disputas' |
-  'docs' | 'api-keys' | 'webhook' | 'plugins' | 'roadmap' |
+  'docs' | 'api-keys' | 'webhook' | 'plugins' | 'roadmap' | 'antifraude' |
   'admin-overview' | 'admin-users' | 'admin-transactions' | 'admin-finance' | 'admin-withdrawals' | 'admin-fraud' | 'admin-reports' | 'admin-integrations' | 'admin-audit' | 'admin-access' | 'admin-demo';
 
 const API = API_BASE_URL;
@@ -131,9 +131,12 @@ function SectionHeader({ icon, title, sub }: { icon: React.ReactElement; title: 
 }
 
 // ── Card container ────────────────────────────────────────────────────────────
-function Card({ children, style = {} }: { children: React.ReactNode; style?: React.CSSProperties }) {
+function Card({ children, style = {}, onClick }: { children: React.ReactNode; style?: React.CSSProperties, onClick?: () => void }) {
   return (
-    <div style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 16, padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', ...style }}>
+    <div 
+      onClick={onClick}
+      style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 16, padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', ...style }}
+    >
       {children}
     </div>
   );
@@ -1600,14 +1603,14 @@ export default function Dashboard() {
         {currentTabObj.group && currentTabObj.group !== 'PRINCIPAL' && (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#64748b' }}>
-               {React.cloneElement(getGroupIcon(currentTabObj.group) as React.ReactElement, { strokeWidth: 2.5 })}
+               {React.cloneElement(getGroupIcon(currentTabObj.group) as React.ReactElement<any>, { strokeWidth: 2.5 })}
                <span>{currentTabObj.group === 'SUA LOJA' ? 'Sua Loja' : currentTabObj.group.charAt(0) + currentTabObj.group.slice(1).toLowerCase()}</span>
             </div>
             <span style={{ color: '#e2e8f0', fontWeight: 400, fontSize: '1.2rem' }}>/</span>
           </>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#111827' }}>
-          {React.cloneElement(currentTabObj.icon as React.ReactElement, { size: 18, strokeWidth: 2.5 })}
+          {React.cloneElement(currentTabObj.icon as React.ReactElement<any>, { size: 18, strokeWidth: 2.5 })}
           <span style={{ fontWeight: 700 }}>{currentTabObj.label}</span>
         </div>
       </div>
