@@ -14,8 +14,8 @@ export default function DemoStore() {
     setLoading(true);
     try {
       const valorTotal = parseFloat(valorStr);
-      if (isNaN(valorTotal) || valorTotal <= 0.99) {
-        alert("O valor deve ser maior que R$ 0,99 (taxa do gateway).");
+      if (isNaN(valorTotal) || valorTotal <= 0.01) {
+        alert("O valor deve ser maior que R$ 0,01.");
         setLoading(false);
         return;
       }
@@ -72,7 +72,7 @@ export default function DemoStore() {
             required
           />
           <p style={{fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem'}}>
-            Atenção: A taxa exata do Gateway será abatida dependendo do método de pagamento escolhido pelo cliente (ex: R$ 0,99 se PIX, ou 3,00% + R$ 0,50 se Cartão). O lojista receberá o saldo líquido.
+            Atenção: A taxa exata do Gateway será abatida dependendo do método de pagamento escolhido pelo cliente (ex: 0,99% se PIX, ou 3,00% + R$ 0,50 se Cartão). O lojista receberá o saldo líquido.
           </p>
         </div>
         <button type="submit" className="btn-primary" disabled={loading}>

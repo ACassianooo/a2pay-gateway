@@ -10,7 +10,8 @@ import (
 
 // GetUserFromContext extrai o UserContext injetado pelo middleware de autenticação
 func GetUserFromContext(r *http.Request) model.UserContext {
-	return r.Context().Value("user").(model.UserContext)
+	u, _ := r.Context().Value("user").(model.UserContext)
+	return u
 }
 
 // respondJSON serializa o payload como JSON e define o status HTTP

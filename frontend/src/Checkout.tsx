@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from './api';
-import { CheckCircle, Copy, RefreshCw, Clock, ArrowLeft } from 'lucide-react';
+import { CheckCircle, Copy, RefreshCw, Clock, ArrowLeft, Check } from 'lucide-react';
 
 export default function Checkout() {
   const { id } = useParams<{id: string}>();
+  const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState(false);
@@ -70,7 +71,8 @@ export default function Checkout() {
   const handleCopy = () => {
     if (pixData?.pix_copia_cola) {
       navigator.clipboard.writeText(pixData.pix_copia_cola);
-      alert("Código PIX copiado!");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -159,39 +161,11 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* Copy Button */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <label style={{ fontSize: '0.9rem', fontWeight: 600, color: '#64748b' }}>Código Copia e Cola</label>
-                <div style={{ 
-                    background: '#f3f4f6', 
-                    padding: '1.2rem', 
-                    borderRadius: '16px', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between',
-                    gap: '1rem',
-                    border: '1px solid #e5e7eb'
-                }}>
-                    <div style={{ 
-                        fontSize: '0.85rem', 
-                        color: '#111827', 
-                        whiteSpace: 'nowrap', 
-                        overflow: 'hidden', 
-                        textOverflow: 'ellipsis',
-                        fontFamily: 'monospace'
-                    }}>
-                        {pixData?.pix_copia_cola || 'Gerando código...'}
-                    </div>
-                    <button onClick={handleCopy} style={{ background: 'none', border: 'none', color: '#9d66ff', cursor: 'pointer' }}>
-                        <Copy size={20} />
-                    </button>
-                </div>
-            </div>
 
             <button 
               onClick={handleCopy}
               style={{ 
-                background: '#9d66ff', 
+                background: copied ? '#22c55e' : '#9d66ff', 
                 color: '#fff', 
                 border: 'none', 
                 borderRadius: '16px', 
@@ -199,14 +173,19 @@ export default function Checkout() {
                 fontSize: '1.1rem', 
                 fontWeight: 700, 
                 cursor: 'pointer',
-                boxShadow: '0 10px 15px -3px rgba(157, 102, 255, 0.3)',
-                transition: 'all 0.2s',
-                width: 'fit-content'
+                boxShadow: copied ? '0 10px 15px -3px rgba(34, 197, 94, 0.3)' : '0 10px 15px -3px rgba(157, 102, 255, 0.3)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.8rem'
               }}
               onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
               onMouseLeave={e => e.currentTarget.style.transform = 'none'}
             >
-              Copiar e Pagar
+              {copied ? <Check size={22} /> : <Copy size={20} />}
+              {copied ? 'Copiado!' : 'Copiar e Pagar'}
             </button>
           </div>
         </div>

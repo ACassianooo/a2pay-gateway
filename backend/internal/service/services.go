@@ -13,7 +13,7 @@ import (
 	intpix "github.com/gato-gateway/internal/integration/pix"
 )
 
-const TaxaFixaPIX   = 0.99
+const TaxaPIXPorc   = 0.0099
 const TaxaCartaoPorc = 0.03
 const TaxaCartaoFixa = 0.50
 
@@ -62,7 +62,8 @@ func NewPIXService(live, test *PixClientAdapter, txRepo *repository.TransactionR
 }
 
 func (s *PIXService) CreateCharge(intentID int, valor float64, itemName string, isSandbox bool) (*PIXResult, error) {
-	taxa := TaxaFixaPIX
+	log.Printf("[DEBUG] Iniciando CreateCharge para intent %d, valor %.2f", intentID, valor)
+	taxa := valor * TaxaPIXPorc
 	liquido := valor - taxa
 
 	client := s.clientLive
@@ -72,13 +73,17 @@ func (s *PIXService) CreateCharge(intentID int, valor float64, itemName string, 
 
 	customerID, err := client.CreateCustomer("Cliente A2Pay Gateway", "cliente@a2pay.com", "24971563792")
 	if err != nil {
+		log.Printf("[ERROR] Erro ao criar cliente Asaas: %v", err)
 		return nil, fmt.Errorf("criar cliente Asaas: %w", err)
 	}
+	log.Printf("[DEBUG] Cliente Asaas criado/recuperado: %s", customerID)
 
 	chargeID, err := client.CreatePixCharge(customerID, valor, itemName)
 	if err != nil {
+		log.Printf("[ERROR] Erro ao criar cobrança PIX: %v", err)
 		return nil, fmt.Errorf("criar cobrança PIX: %w", err)
 	}
+	log.Printf("[DEBUG] Cobrança PIX criada: %s", chargeID)
 
 	// Busca o merchantID para salvar o cliente corretamente
 	_, mID, _, _, _, _ := s.txRepo.GetByID(intentID)
@@ -125,7 +130,7 @@ func (s *PIXService) ExternalCharge(merchantID int, req ExternalPixRequest, isSa
 		req.CustomerCPF = "24971563792"
 	}
 
-	taxa := TaxaFixaPIX
+	taxa := req.Valor * TaxaPIXPorc
 	liquido := req.Valor - taxa
 
 	client := s.clientLive
@@ -269,11 +274,12 @@ func NewPaymentService(txRepo *repository.TransactionRepository, pix *PIXService
 }
 
 func (s *PaymentService) CreateIntent(merchantID int, itemName string, valor float64, isSandbox bool, metadata map[string]interface{}) (int64, error) {
-	if valor <= TaxaFixaPIX {
-		return 0, fmt.Errorf("valor mínimo: R$ %.2f", TaxaFixaPIX+0.01)
+	if valor <= 0.01 {
+		return 0, fmt.Errorf("valor mínimo: R$ 0.01")
 	}
+	taxa := valor * TaxaPIXPorc
 	metaBytes, _ := json.Marshal(metadata)
-	return s.txRepo.Create(merchantID, itemName, valor, valor-TaxaFixaPIX, TaxaFixaPIX, isSandbox, metaBytes)
+	return s.txRepo.Create(merchantID, itemName, valor, valor-taxa, taxa, isSandbox, metaBytes)
 }
 
 func (s *PaymentService) GetIntent(id int) (map[string]interface{}, error) {
@@ -300,8 +306,10 @@ func (s *PaymentService) GetIntent(id int) (map[string]interface{}, error) {
 }
 
 func (s *PaymentService) ProcessPIX(intentID int, clientIP string) (*PIXResult, error) {
+	log.Printf("[DEBUG] Processando PIX para intent %d (IP: %s)", intentID, clientIP)
 	valor, merchantID, isSandbox, _, _, err := s.txRepo.GetByID(intentID)
 	if err != nil {
+		log.Printf("[ERROR] Intent %d não encontrado: %v", intentID, err)
 		return nil, fmt.Errorf("intent %d não encontrado", intentID)
 	}
 	fraud := s.fraud.Check(merchantID, intentID, valor, clientIP)

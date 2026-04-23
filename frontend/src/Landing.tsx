@@ -94,8 +94,8 @@ export default function Landing() {
                 <Shield size={20} color="#fff" />
               </div>
               <div style={{color: '#666', fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600}}>Pix</div>
-              <div style={{fontSize: '2.2rem', fontWeight: 800, color: '#111', marginBottom: '0.3rem'}}>R$ 0,99</div>
-              <p style={{color: '#8d939b', fontSize: '0.8rem'}}>por transação (Fixo)</p>
+              <div style={{fontSize: '2.2rem', fontWeight: 800, color: '#111', marginBottom: '0.3rem'}}>0,99%</div>
+              <p style={{color: '#8d939b', fontSize: '0.8rem'}}>por transação</p>
             </div>
 
             {/* BOLETO */}

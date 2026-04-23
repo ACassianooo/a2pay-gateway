@@ -52,12 +52,10 @@ func (h *PaymentHandler) CreateIntent(w http.ResponseWriter, r *http.Request) {
 	
 	// Se não tiver usuário no context (ex: checkout público), o MerchantID vem do request
 	merchantID := req.MerchantID
-	isSandbox := false 
+	isSandbox := r.Header.Get("x-a2pay-env") == "test"
 
 	if user.MerchantID != 0 {
 		merchantID = user.MerchantID
-		// Assume do header x-a2pay-env se o lojista estiver no dashboard
-		isSandbox = r.Header.Get("x-a2pay-env") == "test"
 	}
 
 	id, err := h.payment.CreateIntent(merchantID, req.ItemName, req.ValorTotal, isSandbox, req.Metadata)
@@ -68,7 +66,7 @@ func (h *PaymentHandler) CreateIntent(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, dto.IntentResponse{
 		IntentID: id,
 		Status:   "pendente",
-		Taxa:     service.TaxaFixaPIX,
+		Taxa:     req.ValorTotal * service.TaxaPIXPorc,
 	})
 }
 
@@ -192,9 +190,9 @@ func (h *PaymentHandler) ExternalPixCharge(w http.ResponseWriter, r *http.Reques
 		})
 		return
 	}
-	if req.Valor <= service.TaxaFixaPIX {
+	if req.Valor <= 0.01 {
 		respondJSON(w, http.StatusBadRequest, dto.ErrorResponse{
-			Error: fmt.Sprintf("Valor mínimo: R$ %.2f", service.TaxaFixaPIX+0.01),
+			Error: "Valor mínimo: R$ 0.01",
 		})
 		return
 	}

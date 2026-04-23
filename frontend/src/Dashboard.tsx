@@ -1424,10 +1424,10 @@ function ContaTab() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.8rem', borderBottom: '1px solid #e5e7eb' }}>
                 <div>
-                  <div style={{ color: '#111827', fontSize: '0.85rem' }}>Taxa Checkout PIX (Fixa)</div>
+                  <div style={{ color: '#111827', fontSize: '0.85rem' }}>Taxa Checkout PIX</div>
                   <div style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '0.2rem' }}>Acordo comercial vigente</div>
                 </div>
-                <div style={{ color: '#f59e0b', fontWeight: 800, fontSize: '1.1rem' }}>R$ 0,99</div>
+                <div style={{ color: '#f59e0b', fontWeight: 800, fontSize: '1.1rem' }}>0,99%</div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
