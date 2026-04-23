@@ -59,7 +59,7 @@ func (h *WebhookHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	switch event.Event {
 	case "PAYMENT_RECEIVED", "PAYMENT_CONFIRMED":
 		// 1. Buscar detalhes da transação no nosso banco
-		merchantID, liquido, _, status, err := h.txRepo.GetInfoByChargeID(event.Payment.ID)
+		merchantID, liquido, taxa, _, status, err := h.txRepo.GetInfoByChargeID(event.Payment.ID)
 		if err != nil {
 			log.Printf("[WEBHOOK] Transação %s não encontrada no gateway", event.Payment.ID)
 			w.WriteHeader(http.StatusOK) // Evita que o Asaas reenvie se não temos a transação
@@ -88,14 +88,23 @@ func (h *WebhookHandler) Handle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// 4. Creditar na Wallet e registrar no Ledger
+		// 4. Creditar na Wallet do lojista e registrar no Ledger
 		desc := "Pagamento via PIX"
 		if err := h.walRepo.CreditWallet(tx, merchantID, liquido, "pay_"+event.Payment.ID, desc); err != nil {
-			log.Printf("[WEBHOOK] Erro ao creditar wallet: %v", err)
+			log.Printf("[WEBHOOK] Erro ao creditar wallet lojista: %v", err)
 			return
 		}
 
-		// 5. Commit final
+		// 5. Creditar o LUCRO na conta MASTER (A2Pay)
+		if taxa > 0 {
+			descLucro := fmt.Sprintf("Taxa 0,99%% de pay_%s", event.Payment.ID)
+			if err := h.walRepo.CreditWallet(tx, 1, taxa, "fee_"+event.Payment.ID, descLucro); err != nil {
+				log.Printf("[WEBHOOK] Erro ao creditar lucro master: %v", err)
+				// Não paramos o processo se falhar o lucro, mas logamos o erro
+			}
+		}
+
+		// 6. Commit final
 		if err := tx.Commit(); err != nil {
 			log.Printf("[WEBHOOK] Erro ao commitar transação: %v", err)
 			return
