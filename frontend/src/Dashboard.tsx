@@ -1262,12 +1262,7 @@ function APITab() {
 	);
 }
 
-function ContaTab({ data }: { data: any }) {
-        </Card>
-      </div>
-    </div>
-  );
-}
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 // TAB: CONTA / KYC
