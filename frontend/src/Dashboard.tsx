@@ -1243,7 +1243,7 @@ function APITab() {
 							</td>
 							<td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.88rem', fontWeight: 600 }}>API TICKET</td>
 							<td style={{ padding: '1.2rem 1.5rem' }}>
-								<span style={{ background: '#f1f5f9', color: '#475569', padding: '0.25rem 0.6rem', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700 }}>API v1</span>
+								<span style={{ background: '#f1f5f9', color: '#475569', padding: '0.25rem 0.6rem', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700 }}>API A1</span>
 							</td>
 							<td style={{ padding: '1.2rem 1.5rem' }}>
 								<div style={{ background: '#dcfce7', color: '#166534', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.25rem 0.6rem', borderRadius: 99, fontSize: '0.75rem', fontWeight: 800 }}>
@@ -1305,15 +1305,15 @@ function CreateApiKeyModal({ onClose, onSuccess }: { onClose: () => void; onSucc
               <button 
                 onClick={() => setVersion('v1')}
                 style={{ flex: 1, background: version === 'v1' ? '#fff' : 'transparent', border: 'none', borderRadius: 6, padding: '0.6rem', fontWeight: 700, fontSize: '0.85rem', color: version === 'v1' ? '#111827' : '#64748b', cursor: 'pointer', boxShadow: version === 'v1' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}>
-                API v1
+                API A1
               </button>
               <button 
                 onClick={() => setVersion('v2')}
                 style={{ flex: 1, background: version === 'v2' ? '#8942FC' : 'transparent', border: 'none', borderRadius: 6, padding: '0.6rem', fontWeight: 700, fontSize: '0.85rem', color: version === 'v2' ? '#fff' : '#64748b', cursor: 'pointer', boxShadow: version === 'v2' ? '0 2px 5px rgba(137,66,252,0.3)' : 'none', transition: 'all 0.2s' }}>
-                API v2
+                API A2
               </button>
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>v2: Checkout, Assinaturas, Transparente e recursos compartilhados.</div>
+            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>A2: Checkout, Assinaturas, Transparente e recursos compartilhados.</div>
           </div>
 
           {/* Escopo */}
