@@ -123,6 +123,7 @@ func New(cfg *config.Config, db *database.DB) *Server {
 		r.Use(middleware.RateLimiter(60, time.Minute))
 		r.Use(middleware.RequireAPIKey(userRepo))
 		r.Post("/pix", payH.ExternalPixCharge)
+		r.Post("/subscriptions", subH.Create) // Rota pública de assinaturas
 	})
 
 	// API interna

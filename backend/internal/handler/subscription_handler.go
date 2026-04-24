@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gato-gateway/internal/dto"
+	"github.com/gato-gateway/internal/model"
 	"github.com/gato-gateway/internal/service"
 )
 
@@ -17,12 +18,14 @@ func NewSubscriptionHandler(subService *service.SubscriptionService) *Subscripti
 }
 
 func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
-	merchantID, ok := r.Context().Value("merchant_id").(int)
-	if !ok || merchantID == 0 {
+	userVal := r.Context().Value("user")
+	if userVal == nil {
 		http.Error(w, "Não autorizado", http.StatusUnauthorized)
 		return
 	}
-	isSandbox, _ := r.Context().Value("is_sandbox").(bool)
+	user := userVal.(model.UserContext)
+	merchantID := user.MerchantID
+	isSandbox := user.IsSandbox
 
 	var req dto.CreateSubscriptionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -45,11 +48,13 @@ func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *SubscriptionHandler) List(w http.ResponseWriter, r *http.Request) {
-	merchantID, ok := r.Context().Value("merchant_id").(int)
-	if !ok || merchantID == 0 {
+	userVal := r.Context().Value("user")
+	if userVal == nil {
 		http.Error(w, "Não autorizado", http.StatusUnauthorized)
 		return
 	}
+	user := userVal.(model.UserContext)
+	merchantID := user.MerchantID
 
 	subs, err := h.subService.ListSubscriptions(merchantID)
 	if err != nil {
