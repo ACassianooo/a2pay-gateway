@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS subscriptions (
     id SERIAL PRIMARY KEY,
     merchant_id INTEGER NOT NULL REFERENCES merchants(id),
-    customer_id INTEGER REFERENCES customers(id),
+    customer_id TEXT REFERENCES customers(id),
     cliente_nome TEXT NOT NULL DEFAULT '',
     cliente_email TEXT NOT NULL,
     cliente_cpf TEXT NOT NULL DEFAULT '',
