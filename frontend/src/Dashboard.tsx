@@ -1154,11 +1154,60 @@ function AntifraudeTab({ data }: { data: DashboardData }) {
 // ══════════════════════════════════════════════════════════════════════════════
 // TAB: API INTEGRATION
 // ══════════════════════════════════════════════════════════════════════════════
+
+function ClickableKey({ apiKey }: { apiKey: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(apiKey);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const masked = apiKey ? (apiKey.substring(0, 11) + '...' + apiKey.slice(-3)) : '';
+
+  return (
+    <div onClick={handleCopy} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', position: 'relative', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#8942FC'} onMouseLeave={e => e.currentTarget.style.color = 'inherit'}>
+      <span>{copied ? <span style={{ color: '#22c55e', fontWeight: 700 }}>Copiado!</span> : masked}</span>
+    </div>
+  );
+}
+
+function ActionMenu() {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  return (
+    <div ref={ref} style={{ position: 'relative', display: 'inline-block', textAlign: 'left' }}>
+      <button onClick={() => setIsOpen(!isOpen)} style={{ background: '#f8fafc', border: 'none', borderRadius: 8, width: 32, height: 32, display: 'inline-grid', placeItems: 'center', cursor: 'pointer', color: '#94a3b8', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#111827'; }} onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#94a3b8'; }}>
+        <MoreHorizontal size={18} />
+      </button>
+      {isOpen && (
+        <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: '0.3rem', background: '#fff', borderRadius: '12px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)', minWidth: '150px', zIndex: 10, padding: '0.5rem', animation: 'fadeIn 0.15s ease-out' }}>
+          <button style={{ width: '100%', textAlign: 'left', padding: '0.6rem 0.8rem', background: 'transparent', border: 'none', color: '#111827', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', borderRadius: '6px', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+            Ver Logs
+          </button>
+          <div style={{ height: '1px', background: '#f1f5f9', margin: '0.2rem 0' }} />
+          <button style={{ width: '100%', textAlign: 'left', padding: '0.6rem 0.8rem', background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', borderRadius: '6px', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+            Excluir
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function APITab() {
 	const [keyData, setKeyData] = useState<APIKeyData | null>(null);
 	const [loading, setLoading] = useState(true);
-	const [visible, setVisible] = useState(false);
-	const [copied, setCopied] = useState(false);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 
 	const fetchKey = () => {
@@ -1166,8 +1215,6 @@ function APITab() {
 			.then(r => r.json()).then((d: APIKeyData) => { setKeyData(d); setLoading(false); });
 	};
 	useEffect(() => { fetchKey(); }, []);
-
-	const maskedKey = (k: string) => k.split('_').slice(0, 2).join('_') + '_' + '•'.repeat(12) + k.slice(-4);
 
 	if (loading) return <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>Carregando dados da API...</div>;
 
@@ -1237,14 +1284,9 @@ function APITab() {
                 {/* Linha da Chave Live */}
                 <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.88rem', fontFamily: 'monospace' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      {visible ? keyData.api_key : maskedKey(keyData.api_key)}
-                      <button onClick={() => setVisible(!visible)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
-                        {visible ? <EyeOff size={14} /> : <Eye size={14} />}
-                      </button>
-                    </div>
+                    <ClickableKey apiKey={keyData.api_key} />
                   </td>
-                  <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.88rem', fontWeight: 600 }}>Produção</td>
+                  <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.88rem', fontWeight: 600 }}>API TICKET</td>
                   <td style={{ padding: '1.2rem 1.5rem' }}>
                     <span style={{ background: '#f1f5f9', color: '#475569', padding: '0.25rem 0.6rem', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700 }}>API A1</span>
                   </td>
@@ -1255,36 +1297,27 @@ function APITab() {
                   </td>
                   <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>Hoje</td>
                   <td style={{ padding: '1.2rem 1.5rem', textAlign: 'right' }}>
-                    <button onClick={() => { navigator.clipboard.writeText(keyData.api_key); alert("Chave Live copiada!"); }} style={{ background: '#f8fafc', border: 'none', borderRadius: 8, width: 32, height: 32, display: 'inline-grid', placeItems: 'center', cursor: 'pointer', color: '#94a3b8' }}>
-                      <Copy size={16} />
-                    </button>
+                    <ActionMenu />
                   </td>
                 </tr>
 
                 {/* Linha da Chave Teste */}
                 <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.88rem', fontFamily: 'monospace' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      {visible ? keyData.api_key_test : maskedKey(keyData.api_key_test)}
-                      <button onClick={() => setVisible(!visible)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
-                        {visible ? <EyeOff size={14} /> : <Eye size={14} />}
-                      </button>
-                    </div>
+                    <ClickableKey apiKey={keyData.api_key_test} />
                   </td>
-                  <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.88rem', fontWeight: 600 }}>Testes (Sandbox)</td>
+                  <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.88rem', fontWeight: 600 }}>API TICKET (TESTE)</td>
                   <td style={{ padding: '1.2rem 1.5rem' }}>
                     <span style={{ background: '#f1f5f9', color: '#475569', padding: '0.25rem 0.6rem', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700 }}>API A1</span>
                   </td>
                   <td style={{ padding: '1.2rem 1.5rem' }}>
-                    <div style={{ background: '#fef3c7', color: '#d97706', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.25rem 0.6rem', borderRadius: 99, fontSize: '0.75rem', fontWeight: 800 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b' }} /> Ativo
+                    <div style={{ background: '#dcfce7', color: '#166534', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.25rem 0.6rem', borderRadius: 99, fontSize: '0.75rem', fontWeight: 800 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} /> Ativo
                     </div>
                   </td>
                   <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>Hoje</td>
                   <td style={{ padding: '1.2rem 1.5rem', textAlign: 'right' }}>
-                    <button onClick={() => { navigator.clipboard.writeText(keyData.api_key_test); alert("Chave Sandbox copiada!"); }} style={{ background: '#f8fafc', border: 'none', borderRadius: 8, width: 32, height: 32, display: 'inline-grid', placeItems: 'center', cursor: 'pointer', color: '#94a3b8' }}>
-                      <Copy size={16} />
-                    </button>
+                    <ActionMenu />
                   </td>
                 </tr>
               </>
