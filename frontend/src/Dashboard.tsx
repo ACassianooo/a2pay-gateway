@@ -24,6 +24,7 @@ import { AdminIntegrations } from './admin/integrations/AdminIntegrations';
 import { AdminAudit } from './admin/audit/AdminAudit';
 import { AdminAccessControl } from './admin/settings/AdminAccessControl';
 import DemoStore from './DemoStore';
+import AssinaturasTab from './AssinaturasTab';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Transaction {
@@ -1691,6 +1692,7 @@ export default function Dashboard() {
         <div style={{ padding: '2rem 2.5rem', maxWidth: '1400px' }}>
           {/* Merchant Tabs */}
           {activeTab === 'overview'   && <OverviewTab data={data} />}
+          {activeTab === 'assinaturas' && <AssinaturasTab />}
           {activeTab === 'produtos'   && <ProdutosTab />}
           {activeTab === 'cupons'     && <CuponsTab />}
           {activeTab === 'clientes'   && <ClientesTab />}

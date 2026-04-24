@@ -1,0 +1,66 @@
+package handler
+
+import (
+	"encoding/json"
+	"net/http"
+
+	"github.com/gato-gateway/internal/dto"
+	"github.com/gato-gateway/internal/service"
+)
+
+type SubscriptionHandler struct {
+	subService *service.SubscriptionService
+}
+
+func NewSubscriptionHandler(subService *service.SubscriptionService) *SubscriptionHandler {
+	return &SubscriptionHandler{subService: subService}
+}
+
+func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
+	merchantID, ok := r.Context().Value("merchant_id").(int)
+	if !ok || merchantID == 0 {
+		http.Error(w, "Não autorizado", http.StatusUnauthorized)
+		return
+	}
+	isSandbox, _ := r.Context().Value("is_sandbox").(bool)
+
+	var req dto.CreateSubscriptionRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Requisição inválida", http.StatusBadRequest)
+		return
+	}
+
+	if req.IntervaloDias <= 0 {
+		req.IntervaloDias = 30 // Padrão mensal
+	}
+
+	resp, _, err := h.subService.CreateSubscription(merchantID, req, isSandbox)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+func (h *SubscriptionHandler) List(w http.ResponseWriter, r *http.Request) {
+	merchantID, ok := r.Context().Value("merchant_id").(int)
+	if !ok || merchantID == 0 {
+		http.Error(w, "Não autorizado", http.StatusUnauthorized)
+		return
+	}
+
+	subs, err := h.subService.ListSubscriptions(merchantID)
+	if err != nil {
+		http.Error(w, "Erro ao buscar assinaturas", http.StatusInternalServerError)
+		return
+	}
+
+	if subs == nil {
+		subs = []dto.SubscriptionResponse{} // garante array vazio no JSON em vez de null
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(subs)
+}

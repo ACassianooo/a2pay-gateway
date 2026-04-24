@@ -19,6 +19,7 @@ import (
 	"github.com/gato-gateway/internal/repository"
 	"github.com/gato-gateway/internal/service"
 	"github.com/gato-gateway/internal/integration/pix"
+	"github.com/gato-gateway/internal/worker"
 )
 
 // Server encapsula o roteador e todas as dependências
@@ -36,6 +37,8 @@ func New(cfg *config.Config, db *database.DB) *Server {
 	walRepo  := repository.NewWalletRepository(db.Conn)
 	adminRepo := repository.NewAdminRepository(db.Conn)
 	custRepo := repository.NewCustomerRepository(db.Conn)
+
+	subRepo := repository.NewSubscriptionRepository(db.Conn)
 
 	// ── Serviços ─────────────────────────────────────────────────────────
 	cryptoSvc := service.MustNewCryptoService(fmt.Sprintf("%x", cfg.AESKey))
@@ -78,6 +81,13 @@ func New(cfg *config.Config, db *database.DB) *Server {
 	fraudSvc := service.NewFraudService(txRepo, walRepo)
 	pixSvc := service.NewPIXService(pixLive, pixTest, txRepo, custRepo)
 	paymentSvc := service.NewPaymentService(txRepo, pixSvc, walletSvc, fraudSvc)
+	subSvc := service.NewSubscriptionService(subRepo, pixSvc)
+
+	// Inicia o Worker de Assinaturas em Background (roda uma vez por hora)
+	// OBS: Em Produção, você pode querer passar isSandbox=false ou puxar da configuração.
+	// Por enquanto, usaremos false.
+	subWorker := worker.NewSubscriptionWorker(subSvc, false)
+	subWorker.Start()
 
 	// ── Handlers ─────────────────────────────────────────────────────────
 	authH := handler.NewAuthHandler(userRepo, cryptoSvc, cfg.JWTSecret)
@@ -88,6 +98,7 @@ func New(cfg *config.Config, db *database.DB) *Server {
 	webhookH := handler.NewWebhookHandler(txRepo, walRepo, db.Conn, cfg.WebhookSecret)
 	adminH := handler.NewAdminHandler(adminRepo)
 	custH := handler.NewCustomerHandler(custRepo)
+	subH := handler.NewSubscriptionHandler(subSvc)
 
 	// ── Router ───────────────────────────────────────────────────────────
 	r := chi.NewRouter()
@@ -136,6 +147,10 @@ func New(cfg *config.Config, db *database.DB) *Server {
 			r.Post("/merchants/withdraw", merchantH.Withdraw)
 			r.Get("/merchants/withdrawals", merchantH.GetWithdrawals)
 			r.Get("/merchants/customers", custH.GetCustomers)
+
+			// Rotas de Assinaturas
+			r.Post("/subscriptions", subH.Create)
+			r.Get("/subscriptions", subH.List)
 		})
 
 		// Rotas exclusivas do Master Dashboard
