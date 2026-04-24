@@ -1232,31 +1232,63 @@ function APITab() {
 						</tr>
 					</thead>
 					<tbody>
-						<tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-							<td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.88rem', fontFamily: 'monospace' }}>
-								<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-									{visible ? keyData?.api_key : maskedKey(keyData?.api_key || 'abc_dev_xxxxxxxxxxxxxxCR2')}
-									<button onClick={() => setVisible(!visible)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
-										{visible ? <EyeOff size={14} /> : <Eye size={14} />}
-									</button>
-								</div>
-							</td>
-							<td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.88rem', fontWeight: 600 }}>API TICKET</td>
-							<td style={{ padding: '1.2rem 1.5rem' }}>
-								<span style={{ background: '#f1f5f9', color: '#475569', padding: '0.25rem 0.6rem', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700 }}>API A1</span>
-							</td>
-							<td style={{ padding: '1.2rem 1.5rem' }}>
-								<div style={{ background: '#dcfce7', color: '#166534', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.25rem 0.6rem', borderRadius: 99, fontSize: '0.75rem', fontWeight: 800 }}>
-									<div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} /> Ativo
-								</div>
-							</td>
-							<td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>31 mar. 2026, 22:19</td>
-							<td style={{ padding: '1.2rem 1.5rem', textAlign: 'right' }}>
-								<button style={{ background: '#f8fafc', border: 'none', borderRadius: 8, width: 32, height: 32, display: 'inline-grid', placeItems: 'center', cursor: 'pointer', color: '#94a3b8' }}>
-									<MoreHorizontal size={18} />
-								</button>
-							</td>
-						</tr>
+            {keyData && (
+              <>
+                {/* Linha da Chave Live */}
+                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.88rem', fontFamily: 'monospace' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {visible ? keyData.api_key : maskedKey(keyData.api_key)}
+                      <button onClick={() => setVisible(!visible)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
+                        {visible ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                  </td>
+                  <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.88rem', fontWeight: 600 }}>Produção</td>
+                  <td style={{ padding: '1.2rem 1.5rem' }}>
+                    <span style={{ background: '#f1f5f9', color: '#475569', padding: '0.25rem 0.6rem', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700 }}>API A1</span>
+                  </td>
+                  <td style={{ padding: '1.2rem 1.5rem' }}>
+                    <div style={{ background: '#dcfce7', color: '#166534', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.25rem 0.6rem', borderRadius: 99, fontSize: '0.75rem', fontWeight: 800 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} /> Ativo
+                    </div>
+                  </td>
+                  <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>Hoje</td>
+                  <td style={{ padding: '1.2rem 1.5rem', textAlign: 'right' }}>
+                    <button onClick={() => { navigator.clipboard.writeText(keyData.api_key); alert("Chave Live copiada!"); }} style={{ background: '#f8fafc', border: 'none', borderRadius: 8, width: 32, height: 32, display: 'inline-grid', placeItems: 'center', cursor: 'pointer', color: '#94a3b8' }}>
+                      <Copy size={16} />
+                    </button>
+                  </td>
+                </tr>
+
+                {/* Linha da Chave Teste */}
+                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.88rem', fontFamily: 'monospace' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {visible ? keyData.api_key_test : maskedKey(keyData.api_key_test)}
+                      <button onClick={() => setVisible(!visible)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
+                        {visible ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                  </td>
+                  <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.88rem', fontWeight: 600 }}>Testes (Sandbox)</td>
+                  <td style={{ padding: '1.2rem 1.5rem' }}>
+                    <span style={{ background: '#f1f5f9', color: '#475569', padding: '0.25rem 0.6rem', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700 }}>API A1</span>
+                  </td>
+                  <td style={{ padding: '1.2rem 1.5rem' }}>
+                    <div style={{ background: '#fef3c7', color: '#d97706', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.25rem 0.6rem', borderRadius: 99, fontSize: '0.75rem', fontWeight: 800 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b' }} /> Ativo
+                    </div>
+                  </td>
+                  <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>Hoje</td>
+                  <td style={{ padding: '1.2rem 1.5rem', textAlign: 'right' }}>
+                    <button onClick={() => { navigator.clipboard.writeText(keyData.api_key_test); alert("Chave Sandbox copiada!"); }} style={{ background: '#f8fafc', border: 'none', borderRadius: 8, width: 32, height: 32, display: 'inline-grid', placeItems: 'center', cursor: 'pointer', color: '#94a3b8' }}>
+                      <Copy size={16} />
+                    </button>
+                  </td>
+                </tr>
+              </>
+            )}
 					</tbody>
 				</table>
 			</Card>
