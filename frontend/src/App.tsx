@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { API_BASE_URL } from './api';
 import { Shield, LogOut } from 'lucide-react';
 import Dashboard from './Dashboard';
 import Checkout from './Checkout';
@@ -52,6 +53,13 @@ function AppContent() {
   const location = useLocation();
   const isDashboard = location.pathname.startsWith('/dashboard');
   const isCheckout = location.pathname.startsWith('/checkout');
+
+  // Ping invisível para acordar o servidor Render (Free Tier)
+  React.useEffect(() => {
+    fetch(`${API_BASE_URL}/health`)
+      .then(() => console.log('[A2Pay] Servidor acordado e pronto.'))
+      .catch(() => console.log('[A2Pay] Aguardando servidor...'));
+  }, []);
 
   return (
     <div className={isDashboard ? "dashboard-layout" : "app-container"}>
