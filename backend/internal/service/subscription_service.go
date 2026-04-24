@@ -19,8 +19,18 @@ func NewSubscriptionService(repo *repository.SubscriptionRepository, pix *PIXSer
 
 // CreateSubscription inicia uma nova assinatura e gera a primeira fatura
 func (s *SubscriptionService) CreateSubscription(merchantID int, req dto.CreateSubscriptionRequest, isSandbox bool) (*dto.SubscriptionResponse, *PIXResult, error) {
-	// 1. O próximo vencimento será a data atual + intervalo_dias
-	nextBilling := time.Now().AddDate(0, 0, req.IntervaloDias)
+	// 1. O próximo vencimento será calculado inteligentemente
+	var nextBilling time.Time
+	if req.IntervaloDias == 30 {
+		// Considera exatamente 1 mês (para resolver meses com 28, 29, 31 dias)
+		nextBilling = time.Now().AddDate(0, 1, 0)
+	} else if req.IntervaloDias == 365 {
+		// Considera exatamente 1 ano
+		nextBilling = time.Now().AddDate(1, 0, 0)
+	} else {
+		// Dias exatos
+		nextBilling = time.Now().AddDate(0, 0, req.IntervaloDias)
+	}
 
 	// 2. Gerar a primeira cobrança usando o PIX Service
 	extReq := ExternalPixRequest{
@@ -95,7 +105,14 @@ func (s *SubscriptionService) ProcessDueSubscriptions(isSandbox bool) error {
 		}
 
 		// Atualiza a próxima data de cobrança
-		nextBilling := time.Now().AddDate(0, 0, sub.IntervaloDias)
+		var nextBilling time.Time
+		if sub.IntervaloDias == 30 {
+			nextBilling = time.Now().AddDate(0, 1, 0)
+		} else if sub.IntervaloDias == 365 {
+			nextBilling = time.Now().AddDate(1, 0, 0)
+		} else {
+			nextBilling = time.Now().AddDate(0, 0, sub.IntervaloDias)
+		}
 		err = s.repo.UpdateNextBilling(sub.ID, nextBilling, pixResult.ChargeID)
 		if err != nil {
 			fmt.Printf("[Subscription Worker] Erro ao atualizar assinatura %d: %v\n", sub.ID, err)
