@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.22-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ RUN go mod download
 # Copiar todo o código da pasta backend
 COPY . .
 
-# Compilar o binário (ajustar o caminho do main se necessário)
+# Compilar o binário
 RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/api/main.go
 
 # Run stage
@@ -22,7 +22,6 @@ WORKDIR /root/
 # Copiar o binário do builder
 COPY --from=builder /app/main .
 
-# O Railway configura a porta dinamicamente via ENV
 EXPOSE 8080
 
 CMD ["./main"]
