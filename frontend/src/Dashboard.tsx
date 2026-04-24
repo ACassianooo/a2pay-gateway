@@ -1159,6 +1159,7 @@ function APITab() {
 	const [loading, setLoading] = useState(true);
 	const [visible, setVisible] = useState(false);
 	const [copied, setCopied] = useState(false);
+	const [isModalOpen, setIsModalOpen] = useState(false);
 
 	const fetchKey = () => {
 		fetch(`${API}/api/merchants/apikey`, { headers: { 'Authorization': `Bearer ${token()}` } })
@@ -1212,7 +1213,7 @@ function APITab() {
 						style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '0.75rem 1rem 0.75rem 2.8rem', fontSize: '0.9rem', outline: 'none' }} 
 					/>
 				</div>
-				<button style={{ background: '#bbf7d0', color: '#166534', border: 'none', borderRadius: 10, padding: '0.7rem 1.4rem', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s' }}>
+				<button onClick={() => setIsModalOpen(true)} style={{ background: '#c084fc', color: '#4c1d95', border: 'none', borderRadius: 10, padding: '0.7rem 1.4rem', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s' }}>
 					<Plus size={20} strokeWidth={3} /> Nova chave
 				</button>
 			</div>
@@ -1259,8 +1260,114 @@ function APITab() {
 					</tbody>
 				</table>
 			</Card>
+
+			{isModalOpen && <CreateApiKeyModal onClose={() => setIsModalOpen(false)} onSuccess={() => { fetchKey(); setIsModalOpen(false); }} />}
 		</div>
 	);
+}
+
+function CreateApiKeyModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const [version, setVersion] = useState<'v1' | 'v2'>('v2');
+  const [environment, setEnvironment] = useState('live');
+  const [permissions, setPermissions] = useState('pix,card');
+  const [description, setDescription] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleCreate = () => {
+    setLoading(true);
+    fetch(`${API}/api/merchants/apikey/rotate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token()}` },
+      body: JSON.stringify({ environment, capabilities: permissions })
+    })
+    .then(r => r.ok ? r.json() : r.json().then(e => { throw e; }))
+    .then(() => onSuccess())
+    .catch(e => alert(e.error || 'Erro ao gerar chave API'))
+    .finally(() => setLoading(false));
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.3)', backdropFilter: 'blur(8px)', display: 'grid', placeItems: 'center', zIndex: 1000, animation: 'fadeIn 0.2s ease-out' }}>
+      <Card style={{ width: '100%', maxWidth: '480px', padding: 0, overflow: 'hidden', border: '1px solid #f1f5f9', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+        <div style={{ padding: '1.5rem', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex' }}><ArrowLeft size={20} /></button>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#111827', margin: 0 }}>Nova chave</h3>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex' }}><XCircle size={20} /></button>
+        </div>
+
+        <div style={{ padding: '2rem 1.5rem', background: '#fcfcfd' }}>
+          {/* Versão da API */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '0.75rem' }}>Versão da API</label>
+            <div style={{ display: 'flex', background: '#f1f5f9', padding: '4px', borderRadius: 8, marginBottom: '0.5rem' }}>
+              <button 
+                onClick={() => setVersion('v1')}
+                style={{ flex: 1, background: version === 'v1' ? '#fff' : 'transparent', border: 'none', borderRadius: 6, padding: '0.6rem', fontWeight: 700, fontSize: '0.85rem', color: version === 'v1' ? '#111827' : '#64748b', cursor: 'pointer', boxShadow: version === 'v1' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}>
+                API v1
+              </button>
+              <button 
+                onClick={() => setVersion('v2')}
+                style={{ flex: 1, background: version === 'v2' ? '#8942FC' : 'transparent', border: 'none', borderRadius: 6, padding: '0.6rem', fontWeight: 700, fontSize: '0.85rem', color: version === 'v2' ? '#fff' : '#64748b', cursor: 'pointer', boxShadow: version === 'v2' ? '0 2px 5px rgba(137,66,252,0.3)' : 'none', transition: 'all 0.2s' }}>
+                API v2
+              </button>
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>v2: Checkout, Assinaturas, Transparente e recursos compartilhados.</div>
+          </div>
+
+          {/* Escopo */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Escopo</label>
+            <div style={{ position: 'relative' }}>
+              <select value={environment} onChange={e => setEnvironment(e.target.value)} style={{ width: '100%', appearance: 'none', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '0.8rem 1rem', fontSize: '0.95rem', color: '#111827', outline: 'none' }}>
+                <option value="live">Produção (Live)</option>
+                <option value="test">Teste (Sandbox)</option>
+              </select>
+              <ChevronDown size={18} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
+            </div>
+          </div>
+
+          {/* Permissões */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Permissões</label>
+            <div style={{ position: 'relative' }}>
+              <select value={permissions} onChange={e => setPermissions(e.target.value)} style={{ width: '100%', appearance: 'none', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '0.8rem 1rem', fontSize: '0.95rem', color: '#111827', outline: 'none' }}>
+                <option value="pix,card,subscriptions">Acesso Total (PIX, Cartão, Assinaturas)</option>
+                <option value="pix">Apenas PIX</option>
+                <option value="card">Apenas Cartão</option>
+              </select>
+              <ChevronDown size={18} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
+            </div>
+          </div>
+
+          {/* Descrição */}
+          <div style={{ marginBottom: '2rem' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Descrição</label>
+            <input 
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Digite a descrição (ex: Integração WooCommerce)" 
+              style={{ width: '100%', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '0.8rem 1rem', fontSize: '0.95rem', color: '#111827', outline: 'none' }} 
+            />
+          </div>
+
+          {/* Botões */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+            <button onClick={onClose} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '0.7rem 1.4rem', color: '#374151', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem' }}>
+              Voltar
+            </button>
+            <button 
+              onClick={handleCreate}
+              disabled={loading}
+              style={{ background: '#8942FC', border: 'none', borderRadius: 10, padding: '0.7rem 1.4rem', color: '#fff', fontWeight: 800, cursor: 'pointer', fontSize: '0.9rem', opacity: loading ? 0.7 : 1 }}>
+              {loading ? 'Criando...' : 'Criar'}
+            </button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
 }
 
 
