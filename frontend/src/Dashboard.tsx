@@ -1150,184 +1150,119 @@ function AntifraudeTab({ data }: { data: DashboardData }) {
 // ══════════════════════════════════════════════════════════════════════════════
 // TAB: DESENVOLVEDOR (API & WEBHOOKS)
 // ══════════════════════════════════════════════════════════════════════════════
-function DesenvolvedorTab() {
-  const [keyData, setKeyData] = useState<APIKeyData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [rotating, setRotating] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [visible, setVisible] = useState(false);
+// ══════════════════════════════════════════════════════════════════════════════
+// TAB: API INTEGRATION
+// ══════════════════════════════════════════════════════════════════════════════
+function APITab() {
+	const [keyData, setKeyData] = useState<APIKeyData | null>(null);
+	const [loading, setLoading] = useState(true);
+	const [visible, setVisible] = useState(false);
+	const [copied, setCopied] = useState(false);
 
-  const fetchKey = () => {
-    fetch(`${API}/api/merchants/apikey`, { headers: { 'Authorization': `Bearer ${token()}` } })
-      .then(r => r.json()).then((d: APIKeyData) => { setKeyData(d); setLoading(false); });
-  };
-  useEffect(() => { fetchKey(); }, []);
+	const fetchKey = () => {
+		fetch(`${API}/api/merchants/apikey`, { headers: { 'Authorization': `Bearer ${token()}` } })
+			.then(r => r.json()).then((d: APIKeyData) => { setKeyData(d); setLoading(false); });
+	};
+	useEffect(() => { fetchKey(); }, []);
 
-  const handleRotate = async (environment: 'live' | 'test') => {
-    if (!confirm(`Isso invalidará sua chave de ${environment === 'test' ? 'Sandbox' : 'Produção'} atual. Confirmar?`)) return;
-    setRotating(true);
-    const r = await fetch(`${API}/api/merchants/apikey/rotate`, { 
-      headers: { 'Authorization': `Bearer ${token()}`, 'Content-Type': 'application/json' },
-      method: 'POST', 
-      body: JSON.stringify({ environment })
-    });
-    const d = await r.json();
-    setKeyData(prev => prev ? { ...prev, api_key: d.api_key, api_key_test: d.api_key_test } : prev);
-    setRotating(false);
-    setVisible(true);
-  };
+	const maskedKey = (k: string) => k.split('_').slice(0, 2).join('_') + '_' + '•'.repeat(12) + k.slice(-4);
 
-  const maskedKey = (k: string) => k.split('_').slice(0, 2).join('_') + '_' + '•'.repeat(20) + k.slice(-6);
-  
-  const currentKey = keyData ? (localStorage.getItem('a2pay_env') === 'test' ? keyData.api_key_test : keyData.api_key) : '';
+	if (loading) return <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>Carregando dados da API...</div>;
 
-  const codeExample = currentKey ? `curl -X POST ${keyData?.endpoint} \\
-  -H "Authorization: Bearer ${currentKey}" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "valor": 99.90,
-    "descricao": "Pedido #123",
-    "customer_name": "João Silva",
-    "customer_email": "joao@email.com",
-    "customer_cpf": "12345678909"
-  }'` : '';
+	return (
+		<div style={{ animation: 'fadeIn 0.3s ease-out' }}>
+			<h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#111827', marginBottom: '1.8rem', letterSpacing: '-0.02em' }}>Integração com API</h2>
 
-  if (loading) return <div style={{ textAlign: 'center', padding: '4rem', color: '#6b7280' }}>Carregando...</div>;
+			{/* Stats Cards Row */}
+			<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.25rem', marginBottom: '2rem' }}>
+				<Card style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem' }}>
+					<div>
+						<div style={{ color: '#94a3b8', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Suas Chamadas</div>
+						<div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827' }}>--</div>
+					</div>
+					<ChevronRight size={20} color="#e2e8f0" />
+				</Card>
 
-  return (
-    <div>
-      <SectionHeader icon={<Terminal size={22} />} title="Desenvolvedor" sub="API Keys, Webhooks e Ambiente de Teste Sandbox." />
+				<Card style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem' }}>
+					<div>
+						<div style={{ color: '#94a3b8', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Uptime</div>
+						<div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827' }}>99.98%</div>
+					</div>
+					<Info size={18} color="#e2e8f0" />
+				</Card>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
-        {/* Card das chaves */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {/* LIVE KEY */}
-          <Card>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
-              <div>
-                <div style={{ color: '#111827', fontWeight: 700, fontSize: '0.9rem' }}>Chave de Produção (Live)</div>
-                <div style={{ color: '#6b7280', fontSize: '0.72rem' }}>Use para receber pagamentos reais</div>
-              </div>
-              <span style={{ background: 'rgba(34,197,94,0.1)', color: '#15803d', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 99, padding: '0.2rem 0.6rem', fontSize: '0.65rem', fontWeight: 800 }}>LIVE</span>
-            </div>
-            
-            <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '1rem', fontFamily: 'monospace', fontSize: '0.8rem', color: '#111827' }}>
-              <span style={{ wordBreak: 'break-all', flex: 1, color: '#15803d' }}>{visible ? keyData?.api_key : maskedKey(keyData?.api_key || '')}</span>
-              <div style={{ display: 'flex', gap: '0.3rem' }}>
-                <button onClick={() => setVisible(!visible)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b7280' }}>{visible ? <EyeOff size={15} /> : <Eye size={15} />}</button>
-                <button onClick={() => { navigator.clipboard.writeText(keyData?.api_key || ''); setCopied(true); setTimeout(() => setCopied(false), 2000); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: copied ? '#22c55e' : '#6b7280' }}>
-                  {copied ? <Check size={15} /> : <Copy size={15} />}
-                </button>
-              </div>
-            </div>
+				<Card style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem' }}>
+					<div>
+						<div style={{ color: '#94a3b8', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Status atual</div>
+						<div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+							Ativo
+						</div>
+					</div>
+					<div style={{ width: 10, height: 10, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 12px rgba(34,197,94,0.4)' }} />
+				</Card>
+			</div>
 
-            <button onClick={() => handleRotate('live')} disabled={rotating} style={{ background: 'transparent', border: '1px solid #e5e7eb', color: '#6b7280', borderRadius: 6, padding: '0.4rem 0.8rem', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>
-              Rotacionar Live Key
-            </button>
-          </Card>
+			{/* Controls Row */}
+			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+				<div style={{ position: 'relative', width: '320px' }}>
+					<Search size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+					<input 
+						placeholder="Pesquisar por ID, valor" 
+						style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '0.75rem 1rem 0.75rem 2.8rem', fontSize: '0.9rem', outline: 'none' }} 
+					/>
+				</div>
+				<button style={{ background: '#bbf7d0', color: '#166534', border: 'none', borderRadius: 10, padding: '0.7rem 1.4rem', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.2s' }}>
+					<Plus size={20} strokeWidth={3} /> Nova chave
+				</button>
+			</div>
 
-          {/* SANDBOX KEY */}
-          <Card style={{ border: '1px solid rgba(137,66,252,0.2)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
-              <div>
-                <div style={{ color: '#111827', fontWeight: 700, fontSize: '0.9rem' }}>Chave de Testes (Sandbox)</div>
-                <div style={{ color: '#6b7280', fontSize: '0.72rem' }}>Exclusiva para simulações</div>
-              </div>
-              <span style={{ background: 'rgba(245,158,11,0.1)', color: '#d97706', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 99, padding: '0.2rem 0.6rem', fontSize: '0.65rem', fontWeight: 800 }}>TEST</span>
-            </div>
-            
-            <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '1rem', fontFamily: 'monospace', fontSize: '0.8rem', color: '#111827' }}>
-              <span style={{ wordBreak: 'break-all', flex: 1, color: '#d97706' }}>{visible ? keyData?.api_key_test : maskedKey(keyData?.api_key_test || '')}</span>
-              <div style={{ display: 'flex', gap: '0.3rem' }}>
-                <button onClick={() => setVisible(!visible)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b7280' }}>{visible ? <EyeOff size={15} /> : <Eye size={15} />}</button>
-                <button onClick={() => { navigator.clipboard.writeText(keyData?.api_key_test || ''); setCopied(true); setTimeout(() => setCopied(false), 2000); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: copied ? '#22c55e' : '#6b7280' }}>
-                  {copied ? <Check size={15} /> : <Copy size={15} />}
-                </button>
-              </div>
-            </div>
+			{/* Keys Table */}
+			<Card style={{ padding: 0, overflow: 'hidden' }}>
+				<table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+					<thead>
+						<tr style={{ background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
+							<th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>Chave</th>
+							<th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>Desc.</th>
+							<th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>Versão</th>
+							<th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>Status</th>
+							<th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>Criação</th>
+							<th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', textAlign: 'right' }}>Ações</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+							<td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.88rem', fontFamily: 'monospace' }}>
+								<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+									{visible ? keyData?.api_key : maskedKey(keyData?.api_key || 'abc_dev_xxxxxxxxxxxxxxCR2')}
+									<button onClick={() => setVisible(!visible)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
+										{visible ? <EyeOff size={14} /> : <Eye size={14} />}
+									</button>
+								</div>
+							</td>
+							<td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.88rem', fontWeight: 600 }}>API TICKET</td>
+							<td style={{ padding: '1.2rem 1.5rem' }}>
+								<span style={{ background: '#f1f5f9', color: '#475569', padding: '0.25rem 0.6rem', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700 }}>API v1</span>
+							</td>
+							<td style={{ padding: '1.2rem 1.5rem' }}>
+								<div style={{ background: '#dcfce7', color: '#166534', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.25rem 0.6rem', borderRadius: 99, fontSize: '0.75rem', fontWeight: 800 }}>
+									<div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} /> Ativo
+								</div>
+							</td>
+							<td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>31 mar. 2026, 22:19</td>
+							<td style={{ padding: '1.2rem 1.5rem', textAlign: 'right' }}>
+								<button style={{ background: '#f8fafc', border: 'none', borderRadius: 8, width: 32, height: 32, display: 'inline-grid', placeItems: 'center', cursor: 'pointer', color: '#94a3b8' }}>
+									<MoreHorizontal size={18} />
+								</button>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</Card>
+		</div>
+	);
+}
 
-            <button onClick={() => handleRotate('test')} disabled={rotating} style={{ background: 'transparent', border: '1px solid #e5e7eb', color: '#6b7280', borderRadius: 6, padding: '0.4rem 0.8rem', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>
-              Rotacionar Sandbox Key
-            </button>
-          </Card>
-        </div>
-
-          {/* Exemplo de integração */}
-        <Card>
-          <div style={{ color: '#111827', fontWeight: 700, fontSize: '0.9rem', marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Zap size={15} color="#8942FC" /> Exemplo de Integração (cURL)
-          </div>
-          <div style={{ background: '#1e293b', borderRadius: 12, padding: '1.2rem', position: 'relative', overflowX: 'auto', border: '1px solid #334155' }}>
-            <pre style={{ margin: 0, color: '#f8fafc', fontSize: '0.8rem', lineHeight: 1.5, fontFamily: 'monospace' }}>
-              {codeExample}
-            </pre>
-            <button onClick={() => { navigator.clipboard.writeText(codeExample); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-              style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: 6, padding: '0.3rem 0.6rem', fontSize: '0.7rem', cursor: 'pointer' }}>
-              {copied ? 'Copiado!' : 'Copiar Exemplo'}
-            </button>
-          </div>
-          <p style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '1rem', lineHeight: 1.4 }}>
-            Substitua os dados do cliente e o valor conforme sua necessidade. Este endpoint retorna um link de checkout ou payload PIX Copia e Cola.
-          </p>
-        </Card>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-        {/* Webhooks */}
-        <Card>
-          <h3 style={{ color: '#111827', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
-            <RefreshCw size={16} color="#8942FC" /> Webhooks (Notificações)
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-            <div>
-              <label style={{ display: 'block', color: '#6b7280', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.4rem' }}>URL DE NOTIFICAÇÃO</label>
-              <input defaultValue="https://sualoja.com/api/webhooks/a2pay" style={{ width: '100%', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '0.75rem', color: '#111827', fontSize: '0.9rem', outline: 'none' }} />
-            </div>
-            
-            <div>
-              <div style={{ color: '#111827', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.6rem' }}>Eventos Monitorados (Notificações Geradas):</div>
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                {['Pagamento Recebido', 'Falha no PIX', 'Saque Enviado', 'Fraude Detectada'].map(e => (
-                  <span key={e} style={{ background: 'rgba(137,66,252,0.1)', color: '#8942FC', padding: '0.3rem 0.6rem', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600 }}>{e}</span>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ background: '#f9fafb', borderRadius: 8, padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e5e7eb' }}>
-              <div>
-                <div style={{ color: '#111827', fontSize: '0.85rem', fontWeight: 600 }}>Status do último disparo</div>
-                <div style={{ color: '#22c55e', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.2rem' }}>
-                  <CheckCircle2 size={12} /> 200 OK — Há 5 minutos
-                </div>
-              </div>
-              <button style={{ background: '#ffffff', border: '1px solid #e5e7eb', color: '#111827', borderRadius: 6, padding: '0.5rem 0.9rem', fontSize: '0.8rem', cursor: 'pointer' }}>Re-processar Eventos</button>
-            </div>
-          </div>
-        </Card>
-
-        {/* Ambiente de Teste / Sandbox */}
-        <Card>
-          <h3 style={{ color: '#111827', fontWeight: 700, marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem' }}>
-            <Activity size={16} color="#f59e0b" /> Ambiente de Teste (Sandbox)
-          </h3>
-          <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 8, padding: '1rem', marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
-              <strong style={{ color: '#f59e0b', fontSize: '0.88rem' }}>Modo Sandbox Ativo</strong>
-              <div style={{ width: 44, height: 24, borderRadius: 99, background: '#f59e0b', position: 'relative' }}>
-                <div style={{ width: 18, height: 18, borderRadius: 99, background: '#fff', position: 'absolute', top: 3, left: 23 }} />
-              </div>
-            </div>
-            <p style={{ color: '#d97706', fontSize: '0.8rem', margin: 0, lineHeight: 1.5 }}>
-              Use este ambiente para simular pagamentos, aprovações, estornos e falhas.<br/><br/>
-              <strong>Métricas financeiras reais não serão afetadas.</strong>
-            </p>
-          </div>
-          <button style={{ width: '100%', background: 'transparent', border: '1px dashed #f59e0b', color: '#f59e0b', borderRadius: 8, padding: '0.8rem', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'background .2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(245,158,11,0.1)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-            Gerar Transação Fake (Teste)
-          </button>
-          <button style={{ width: '100%', background: 'transparent', border: '1px dashed #ef4444', color: '#ef4444', borderRadius: 8, padding: '0.8rem', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'background .2s', marginTop: '0.7rem' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-            Simular Erro (Chargeback)
-          </button>
+function ContaTab({ data }: { data: any }) {
         </Card>
       </div>
     </div>
@@ -1767,7 +1702,7 @@ export default function Dashboard() {
           {activeTab === 'financeiro' && <SaquesTab data={data} />}
           {activeTab === 'pagamentos' && <PagamentosTab data={data} />}
           {activeTab === 'antifraude' && <AntifraudeTab data={data} />}
-          {activeTab === 'desenvolvedor' && <DesenvolvedorTab />}
+          {activeTab === 'api-keys'    && <APITab />}
           {activeTab === 'conta'      && <ContaTab data={data} />}
 
           {/* Admin Tabs */}
