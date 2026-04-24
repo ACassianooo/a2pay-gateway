@@ -1303,17 +1303,11 @@ function CreateApiKeyModal({ onClose, onSuccess }: { onClose: () => void; onSucc
             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '0.75rem' }}>Versão da API</label>
             <div style={{ display: 'flex', background: '#f1f5f9', padding: '4px', borderRadius: 8, marginBottom: '0.5rem' }}>
               <button 
-                onClick={() => setVersion('v1')}
-                style={{ flex: 1, background: version === 'v1' ? '#fff' : 'transparent', border: 'none', borderRadius: 6, padding: '0.6rem', fontWeight: 700, fontSize: '0.85rem', color: version === 'v1' ? '#111827' : '#64748b', cursor: 'pointer', boxShadow: version === 'v1' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}>
+                style={{ flex: 1, background: '#8942FC', border: 'none', borderRadius: 6, padding: '0.6rem', fontWeight: 700, fontSize: '0.85rem', color: '#fff', cursor: 'default', boxShadow: '0 2px 5px rgba(137,66,252,0.3)' }}>
                 API A1
               </button>
-              <button 
-                onClick={() => setVersion('v2')}
-                style={{ flex: 1, background: version === 'v2' ? '#8942FC' : 'transparent', border: 'none', borderRadius: 6, padding: '0.6rem', fontWeight: 700, fontSize: '0.85rem', color: version === 'v2' ? '#fff' : '#64748b', cursor: 'pointer', boxShadow: version === 'v2' ? '0 2px 5px rgba(137,66,252,0.3)' : 'none', transition: 'all 0.2s' }}>
-                API A2
-              </button>
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>A2: Checkout, Assinaturas, Transparente e recursos compartilhados.</div>
+            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>A1: Checkout, Assinaturas, Transparente e recursos compartilhados.</div>
           </div>
 
           {/* Escopo */}
