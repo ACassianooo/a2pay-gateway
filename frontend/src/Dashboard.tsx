@@ -264,7 +264,8 @@ function OverviewTab({ data }: { data: DashboardData }) {
 // TAB: CLIENTES
 
 // ══════════════════════════════════════════════════════════════════════════════
-function CreateProductModal({ onClose }: { onClose: () => void }) {
+function CreateProductModal({ onClose, initialData }: { onClose: () => void, initialData?: any }) {
+  const isEditing = !!initialData;
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(255, 255, 255, 0.4)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
       <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 500, boxShadow: '0 20px 40px rgba(0,0,0,0.1)', overflow: 'hidden', animation: 'scaleIn 0.2s ease-out', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
@@ -274,7 +275,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
             <ArrowLeft size={20} />
           </button>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#111827', margin: 0 }}>Criar produto</h2>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#111827', margin: 0 }}>{isEditing ? 'Editar produto' : 'Criar produto'}</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
             <XCircle size={20} />
           </button>
@@ -288,7 +289,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
               Id do Produto <Info size={14} color="#94a3b8" />
             </label>
-            <input placeholder="Id do Produto" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '0.9rem', color: '#111827' }} />
+            <input defaultValue={isEditing ? `prod_${initialData.id}` : ''} readOnly={isEditing} placeholder="Id do Produto" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '0.9rem', color: '#111827' }} />
           </div>
 
           {/* Nome do Produto */}
@@ -296,7 +297,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
               Nome do Produto <span style={{ color: '#ef4444' }}>*</span> <Info size={14} color="#94a3b8" />
             </label>
-            <input placeholder="Digite o nome do produto" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.9rem', color: '#111827' }} />
+            <input defaultValue={isEditing ? initialData.name : ''} placeholder="Digite o nome do produto" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.9rem', color: '#111827' }} />
           </div>
 
           {/* Ciclo de pagamento */}
@@ -305,7 +306,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
               Ciclo de pagamento
             </label>
             <div style={{ position: 'relative' }}>
-              <select style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.9rem', color: '#111827', appearance: 'none', cursor: 'pointer' }}>
+              <select defaultValue={isEditing ? (initialData.cycle === 'recorrente' ? 'Recorrente' : 'Uma vez') : 'Uma vez'} style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.9rem', color: '#111827', appearance: 'none', cursor: 'pointer' }}>
                 <option>Uma vez</option>
                 <option>Recorrente</option>
               </select>
@@ -318,7 +319,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
               Descrição <span style={{ color: '#ef4444' }}>*</span> <Info size={14} color="#94a3b8" />
             </label>
-            <textarea placeholder="Digite a descrição do produto" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '0.9rem', color: '#111827', minHeight: '80px', resize: 'vertical' }} />
+            <textarea defaultValue={isEditing ? (initialData.description || initialData.cycle || '') : ''} placeholder="Digite a descrição do produto" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '0.9rem', color: '#111827', minHeight: '80px', resize: 'vertical' }} />
           </div>
 
           {/* Valor */}
@@ -326,7 +327,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
               Valor <span style={{ color: '#ef4444' }}>*</span> <Info size={14} color="#94a3b8" />
             </label>
-            <input placeholder="R$ 0,00" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '0.9rem', color: '#111827' }} />
+            <input defaultValue={isEditing ? `R$ ${initialData.price.toFixed(2).replace('.', ',')}` : ''} readOnly={isEditing} placeholder="R$ 0,00" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '0.9rem', color: '#111827' }} />
           </div>
 
           {/* Imagem */}
@@ -345,7 +346,7 @@ function CreateProductModal({ onClose }: { onClose: () => void }) {
         {/* Footer */}
         <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', background: '#fff' }}>
           <button onClick={onClose} style={{ background: '#fff', border: '1px solid #e2e8f0', color: '#475569', padding: '0.6rem 1.5rem', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}>Voltar</button>
-          <button style={{ background: '#84cc16', color: '#fff', border: 'none', padding: '0.6rem 1.5rem', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#65a30d'} onMouseLeave={e => e.currentTarget.style.background = '#84cc16'}>Salvar</button>
+          <button style={{ background: '#8942FC', color: '#fff', border: 'none', padding: '0.6rem 1.5rem', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#7c3aed'} onMouseLeave={e => e.currentTarget.style.background = '#8942FC'}>Salvar</button>
         </div>
 
       </div>
@@ -386,81 +387,9 @@ function ProdutosTab() {
     { id: 'tabelas', label: 'Tabelas de preços' },
   ];
 
-  if (editingProduct) {
-    return (
-      <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
-        <button 
-          onClick={() => setEditingProduct(null)}
-          style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', fontWeight: 600, fontSize: '0.9rem' }}>
-          <ArrowLeft size={18} /> Voltar para lista
-        </button>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#111827', margin: 0 }}>Detalhes do produto</h1>
-          <button style={{ background: '#fff', border: '1px solid #e2e8f0', color: '#334155', borderRadius: 8, padding: '0.4rem 1.2rem', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>
-            Editar
-          </button>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
-          {/* Left Column: Info */}
-          <Card style={{ padding: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
-              <div style={{ background: '#f8fafc', width: 32, height: 32, borderRadius: 8, display: 'grid', placeItems: 'center', border: '1px solid #e2e8f0' }}>
-                <Pencil size={16} color="#64748b" />
-              </div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111827', margin: 0 }}>Informações básicas</h2>
-            </div>
-
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.5rem' }}>ID do produto: <span style={{ fontWeight: 400, color: '#64748b', marginLeft: 4 }}>prod_{editingProduct.id}</span></label>
-            </div>
-
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Nome do produto</label>
-              <input 
-                defaultValue={editingProduct.name}
-                style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '0.8rem 1rem', fontSize: '0.95rem', color: '#111827' }} 
-              />
-            </div>
-
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Preço</label>
-              <input 
-                defaultValue={`R$ ${editingProduct.price.toFixed(2).replace('.', ',')}`}
-                style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '0.8rem 1rem', fontSize: '0.95rem', color: '#64748b' }} 
-              />
-              <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.5rem' }}>O preço não pode ser alterado após a criação do produto</p>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Descrição</label>
-              <textarea 
-                defaultValue={editingProduct.description || editingProduct.cycle || ''}
-                style={{ width: '100%', minHeight: '150px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '0.8rem 1rem', fontSize: '0.95rem', color: '#111827', resize: 'vertical' }} 
-              />
-            </div>
-          </Card>
-
-          {/* Right Column: Image */}
-          <Card style={{ padding: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
-              <ImageIcon size={20} color="#64748b" />
-              <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#111827', margin: 0 }}>Imagem do produto</h2>
-            </div>
-
-            <div style={{ width: '100%', aspectRatio: '1/1', background: '#fef2f2', borderRadius: 12, border: '1px solid #fef2f2', display: 'grid', placeItems: 'center' }}>
-              <ImageIcon size={64} color="#ef4444" strokeWidth={2} />
-            </div>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
-      {isCreateModalOpen && <CreateProductModal onClose={() => setIsCreateModalOpen(false)} />}
+      {(isCreateModalOpen || editingProduct) && <CreateProductModal initialData={editingProduct} onClose={() => { setIsCreateModalOpen(false); setEditingProduct(null); }} />}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
@@ -515,7 +444,7 @@ function ProdutosTab() {
               <List size={18} color={viewMode === 'list' ? '#8942FC' : '#64748b'} />
             </button>
           </div>
-          <button onClick={() => setIsCreateModalOpen(true)} style={{ background: '#a3e635', color: '#166534', border: 'none', borderRadius: 10, padding: '0.6rem 1.2rem', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+          <button onClick={() => setIsCreateModalOpen(true)} style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 10, padding: '0.6rem 1.2rem', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#7c3aed'} onMouseLeave={e => e.currentTarget.style.background = '#8942FC'}>
             <Plus size={16} /> Novo
           </button>
         </div>
