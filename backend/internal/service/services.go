@@ -263,14 +263,15 @@ func (f *FraudService) Check(merchantID, intentID int, valor float64, ip string)
 
 // PaymentService orquestra o fluxo de pagamento
 type PaymentService struct {
-	txRepo  *repository.TransactionRepository
-	pix     *PIXService
-	wallet  *WalletService
-	fraud   *FraudService
+	txRepo   *repository.TransactionRepository
+	prodRepo *repository.ProductRepository
+	pix      *PIXService
+	wallet   *WalletService
+	fraud    *FraudService
 }
 
-func NewPaymentService(txRepo *repository.TransactionRepository, pix *PIXService, wallet *WalletService, fraud *FraudService) *PaymentService {
-	return &PaymentService{txRepo: txRepo, pix: pix, wallet: wallet, fraud: fraud}
+func NewPaymentService(txRepo *repository.TransactionRepository, prodRepo *repository.ProductRepository, pix *PIXService, wallet *WalletService, fraud *FraudService) *PaymentService {
+	return &PaymentService{txRepo: txRepo, prodRepo: prodRepo, pix: pix, wallet: wallet, fraud: fraud}
 }
 
 func (s *PaymentService) CreateIntent(merchantID int, itemName string, valor float64, isSandbox bool, metadata map[string]interface{}) (int64, error) {
@@ -279,6 +280,10 @@ func (s *PaymentService) CreateIntent(merchantID int, itemName string, valor flo
 	}
 	taxa := valor * TaxaPIXPorc
 	metaBytes, _ := json.Marshal(metadata)
+	
+	// Registro Automático de Produto
+	_ = s.prodRepo.EnsureExists(merchantID, itemName, valor, "uma_vez")
+	
 	return s.txRepo.Create(merchantID, itemName, valor, valor-taxa, taxa, isSandbox, metaBytes)
 }
 

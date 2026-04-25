@@ -11,17 +11,33 @@ import (
 	"github.com/gato-gateway/internal/service"
 )
 
-// MerchantHandler gerencia API Keys, exclusão de conta (LGPD) e saques
+// MerchantHandler gerencia API Keys, exclusão de conta (LGPD), saques e produtos
 type MerchantHandler struct {
 	userRepo *repository.UserRepository
 	walRepo  *repository.WalletRepository
+	prodRepo *repository.ProductRepository
 	db       *sql.DB
 	crypto   *service.CryptoService
 }
 
-func NewMerchantHandler(userRepo *repository.UserRepository, walRepo *repository.WalletRepository, db *sql.DB, crypto *service.CryptoService) *MerchantHandler {
-	return &MerchantHandler{userRepo: userRepo, walRepo: walRepo, db: db, crypto: crypto}
+func NewMerchantHandler(userRepo *repository.UserRepository, walRepo *repository.WalletRepository, prodRepo *repository.ProductRepository, db *sql.DB, crypto *service.CryptoService) *MerchantHandler {
+	return &MerchantHandler{userRepo: userRepo, walRepo: walRepo, prodRepo: prodRepo, db: db, crypto: crypto}
 }
+
+// GetProducts — GET /api/merchants/products
+func (h *MerchantHandler) GetProducts(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromContext(r)
+	
+	products, err := h.prodRepo.List(user.MerchantID)
+	if err != nil {
+		log.Printf("[MerchantHandler] Erro ao listar produtos para %d: %v", user.MerchantID, err)
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro interno ao buscar produtos"})
+		return
+	}
+
+	respondJSON(w, http.StatusOK, products)
+}
+
 
 // GetAPIKey — GET /api/merchants/apikey
 func (h *MerchantHandler) GetAPIKey(w http.ResponseWriter, r *http.Request) {

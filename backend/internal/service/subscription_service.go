@@ -9,16 +9,20 @@ import (
 )
 
 type SubscriptionService struct {
-	repo *repository.SubscriptionRepository
-	pix  *PIXService
+	repo     *repository.SubscriptionRepository
+	prodRepo *repository.ProductRepository
+	pix      *PIXService
 }
 
-func NewSubscriptionService(repo *repository.SubscriptionRepository, pix *PIXService) *SubscriptionService {
-	return &SubscriptionService{repo: repo, pix: pix}
+func NewSubscriptionService(repo *repository.SubscriptionRepository, prodRepo *repository.ProductRepository, pix *PIXService) *SubscriptionService {
+	return &SubscriptionService{repo: repo, prodRepo: prodRepo, pix: pix}
 }
 
 // CreateSubscription inicia uma nova assinatura e gera a primeira fatura
 func (s *SubscriptionService) CreateSubscription(merchantID int, req dto.CreateSubscriptionRequest, isSandbox bool) (*dto.SubscriptionResponse, *PIXResult, error) {
+	// Registro Automático de Produto (Plano)
+	_ = s.prodRepo.EnsureExists(merchantID, req.PlanoNome, req.Valor, "recorrente")
+
 	// 1. O próximo vencimento será calculado inteligentemente
 	var nextBilling time.Time
 	if req.IntervaloDias == 30 {

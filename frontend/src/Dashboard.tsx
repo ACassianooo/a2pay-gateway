@@ -360,8 +360,22 @@ function ProdutosTab() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const products: any[] = [];
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/merchants/products`, {
+      headers: { 'Authorization': `Bearer ${token()}` }
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setProducts(data);
+        }
+      })
+      .catch(err => console.error("Erro ao buscar produtos", err))
+      .finally(() => setLoading(false));
+  }, []);
 
   const subTabs = [
     { id: 'todos', label: 'Todos os produtos' },
@@ -514,15 +528,15 @@ function ProdutosTab() {
       }}>
         {products.map(p => (
           <Card key={p.id} onClick={() => setEditingProduct(p)} style={{ padding: 0, overflow: 'hidden', border: '1px solid #f1f5f9', transition: 'all 0.2s', cursor: 'pointer' }}>
-            <div style={{ height: '160px', background: `${p.color}10`, display: 'grid', placeItems: 'center', position: 'relative' }}>
-              <ImageIcon size={48} color={p.color} strokeWidth={1} />
+            <div style={{ height: '160px', background: `#84cc1610`, display: 'grid', placeItems: 'center', position: 'relative' }}>
+              <ImageIcon size={48} color="#84cc16" strokeWidth={1} />
               <div style={{ position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'grid', placeItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
                 <MoreHorizontal size={18} color="#64748b" />
               </div>
             </div>
             <div style={{ padding: '1.25rem' }}>
               <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#111827', marginBottom: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-              <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '1rem' }}>{p.sub}</div>
+              <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.description || p.cycle}</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontSize: '1rem', fontWeight: 800, color: '#111827' }}>R$ {p.price.toFixed(2).replace('.', ',')}</div>
                 <button 

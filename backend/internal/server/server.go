@@ -39,6 +39,7 @@ func New(cfg *config.Config, db *database.DB) *Server {
 	custRepo := repository.NewCustomerRepository(db.Conn)
 
 	subRepo := repository.NewSubscriptionRepository(db.Conn)
+	prodRepo := repository.NewProductRepository(db.Conn)
 
 	// ── Serviços ─────────────────────────────────────────────────────────
 	cryptoSvc := service.MustNewCryptoService(fmt.Sprintf("%x", cfg.AESKey))
@@ -68,20 +69,27 @@ func New(cfg *config.Config, db *database.DB) *Server {
 		)
 	}
 
-	// Adaptadores para o Service (Apenas Inter agora)
+	// Adaptadores para o Service (Inter com Fallback para Asaas)
 	var pixLive, pixTest *service.PixClientAdapter
 	if pixInterLive != nil {
 		pixLive = service.NewPixClientAdapter(pixInterLive)
+	} else if cfg.AsaasAPIKeyLive != "" {
+		asaasLive := pix.NewClient(cfg.AsaasAPIKeyLive, cfg.AsaasBaseURLReal)
+		pixLive = service.NewPixClientAdapter(asaasLive)
 	}
+
 	if pixInterTest != nil {
 		pixTest = service.NewPixClientAdapter(pixInterTest)
+	} else if cfg.AsaasAPIKeyTest != "" {
+		asaasTest := pix.NewClient(cfg.AsaasAPIKeyTest, cfg.AsaasBaseURLTest)
+		pixTest = service.NewPixClientAdapter(asaasTest)
 	}
 
 	walletSvc := service.NewWalletService()
 	fraudSvc := service.NewFraudService(txRepo, walRepo)
 	pixSvc := service.NewPIXService(pixLive, pixTest, txRepo, custRepo)
-	paymentSvc := service.NewPaymentService(txRepo, pixSvc, walletSvc, fraudSvc)
-	subSvc := service.NewSubscriptionService(subRepo, pixSvc)
+	paymentSvc := service.NewPaymentService(txRepo, prodRepo, pixSvc, walletSvc, fraudSvc)
+	subSvc := service.NewSubscriptionService(subRepo, prodRepo, pixSvc)
 
 	// Inicia o Worker de Assinaturas em Background (roda uma vez por hora)
 	// OBS: Em Produção, você pode querer passar isSandbox=false ou puxar da configuração.
@@ -93,7 +101,7 @@ func New(cfg *config.Config, db *database.DB) *Server {
 	authH := handler.NewAuthHandler(userRepo, cryptoSvc, cfg.JWTSecret)
 	payH := handler.NewPaymentHandler(paymentSvc, pixSvc, walletSvc, pixLive, pixTest)
 	dashH := handler.NewDashboardHandler(userRepo, txRepo, walRepo)
-	merchantH := handler.NewMerchantHandler(userRepo, walRepo, db.Conn, cryptoSvc)
+	merchantH := handler.NewMerchantHandler(userRepo, walRepo, prodRepo, db.Conn, cryptoSvc)
 	healthH := handler.NewHealthHandler(db)
 	webhookH := handler.NewWebhookHandler(txRepo, walRepo, db.Conn, cfg.WebhookSecret)
 	adminH := handler.NewAdminHandler(adminRepo)
@@ -144,6 +152,8 @@ func New(cfg *config.Config, db *database.DB) *Server {
 			r.Post("/merchants/apikey/rotate", merchantH.RotateAPIKey)
 			r.Delete("/merchants/apikey", merchantH.DeleteAPIKey)
 			r.Delete("/merchants/account", merchantH.DeleteAccount)
+
+			r.Get("/merchants/products", merchantH.GetProducts)
 
 			// Novas rotas de saque e auditoria financeira
 			r.Post("/merchants/withdraw", merchantH.Withdraw)
