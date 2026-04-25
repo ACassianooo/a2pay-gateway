@@ -264,11 +264,102 @@ function OverviewTab({ data }: { data: DashboardData }) {
 // TAB: CLIENTES
 
 // ══════════════════════════════════════════════════════════════════════════════
+function CreateProductModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(255, 255, 255, 0.4)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 500, boxShadow: '0 20px 40px rgba(0,0,0,0.1)', overflow: 'hidden', animation: 'scaleIn 0.2s ease-out', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
+        
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.2rem 1.5rem', borderBottom: '1px solid #f1f5f9' }}>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+            <ArrowLeft size={20} />
+          </button>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#111827', margin: 0 }}>Criar produto</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+            <XCircle size={20} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: '1.5rem', overflowY: 'auto' }}>
+          
+          {/* Id do Produto */}
+          <div style={{ marginBottom: '1.2rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
+              Id do Produto <Info size={14} color="#94a3b8" />
+            </label>
+            <input placeholder="Id do Produto" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '0.9rem', color: '#111827' }} />
+          </div>
+
+          {/* Nome do Produto */}
+          <div style={{ marginBottom: '1.2rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
+              Nome do Produto <span style={{ color: '#ef4444' }}>*</span> <Info size={14} color="#94a3b8" />
+            </label>
+            <input placeholder="Digite o nome do produto" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.9rem', color: '#111827' }} />
+          </div>
+
+          {/* Ciclo de pagamento */}
+          <div style={{ marginBottom: '1.2rem', position: 'relative' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
+              Ciclo de pagamento
+            </label>
+            <div style={{ position: 'relative' }}>
+              <select style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.9rem', color: '#111827', appearance: 'none', cursor: 'pointer' }}>
+                <option>Uma vez</option>
+                <option>Recorrente</option>
+              </select>
+              <ChevronDown size={16} color="#94a3b8" style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+            </div>
+          </div>
+
+          {/* Descrição */}
+          <div style={{ marginBottom: '1.2rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
+              Descrição <span style={{ color: '#ef4444' }}>*</span> <Info size={14} color="#94a3b8" />
+            </label>
+            <textarea placeholder="Digite a descrição do produto" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '0.9rem', color: '#111827', minHeight: '80px', resize: 'vertical' }} />
+          </div>
+
+          {/* Valor */}
+          <div style={{ marginBottom: '1.2rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
+              Valor <span style={{ color: '#ef4444' }}>*</span> <Info size={14} color="#94a3b8" />
+            </label>
+            <input placeholder="R$ 0,00" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '0.9rem', color: '#111827' }} />
+          </div>
+
+          {/* Imagem */}
+          <div style={{ marginBottom: '0.5rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
+              Imagem do Produto <Info size={14} color="#94a3b8" />
+            </label>
+            <div style={{ border: '2px dashed #cbd5e1', borderRadius: 12, padding: '2rem 1rem', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = '#84cc16'} onMouseLeave={e => e.currentTarget.style.borderColor = '#cbd5e1'}>
+              <Upload size={28} color="#94a3b8" style={{ marginBottom: '0.8rem', display: 'inline-block' }} />
+              <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' }}>Clique para fazer upload ou arraste o arquivo</div>
+              <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>JPG, PNG, WEBP (máx. 10MB)</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', background: '#fff' }}>
+          <button onClick={onClose} style={{ background: '#fff', border: '1px solid #e2e8f0', color: '#475569', padding: '0.6rem 1.5rem', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}>Voltar</button>
+          <button style={{ background: '#84cc16', color: '#fff', border: 'none', padding: '0.6rem 1.5rem', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#65a30d'} onMouseLeave={e => e.currentTarget.style.background = '#84cc16'}>Salvar</button>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 function ProdutosTab() {
   const [currentSubTab, setCurrentSubTab] = useState('todos');
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const products: any[] = [];
 
@@ -355,6 +446,7 @@ function ProdutosTab() {
 
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+      {isCreateModalOpen && <CreateProductModal onClose={() => setIsCreateModalOpen(false)} />}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
@@ -409,7 +501,9 @@ function ProdutosTab() {
               <List size={18} color={viewMode === 'list' ? '#8942FC' : '#64748b'} />
             </button>
           </div>
-          <button style={{ background: '#c084fc', color: '#4c1d95', border: 'none', borderRadius: 10, padding: '0.6rem 1.2rem', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>+ Novo</button>
+          <button onClick={() => setIsCreateModalOpen(true)} style={{ background: '#a3e635', color: '#166534', border: 'none', borderRadius: 10, padding: '0.6rem 1.2rem', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            <Plus size={16} /> Novo
+          </button>
         </div>
       </div>
 
