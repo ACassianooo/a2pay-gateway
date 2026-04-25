@@ -1173,7 +1173,7 @@ function ClickableKey({ apiKey }: { apiKey: string }) {
   );
 }
 
-function ActionMenu() {
+function ActionMenu({ env, onDelete }: { env: 'live' | 'test', onDelete: (env: 'live' | 'test') => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -1196,7 +1196,11 @@ function ActionMenu() {
             Ver Logs
           </button>
           <div style={{ height: '1px', background: '#f1f5f9', margin: '0.2rem 0' }} />
-          <button style={{ width: '100%', textAlign: 'left', padding: '0.6rem 0.8rem', background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', borderRadius: '6px', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+          <button 
+            onClick={() => { setIsOpen(false); onDelete(env); }}
+            style={{ width: '100%', textAlign: 'left', padding: '0.6rem 0.8rem', background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', borderRadius: '6px', transition: 'background 0.2s' }} 
+            onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'} 
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
             Excluir
           </button>
         </div>
@@ -1215,6 +1219,27 @@ function APITab() {
 			.then(r => r.json()).then((d: APIKeyData) => { setKeyData(d); setLoading(false); });
 	};
 	useEffect(() => { fetchKey(); }, []);
+
+  const handleDeleteKey = async (env: 'live' | 'test') => {
+    if (!window.confirm(`Tem certeza que deseja excluir sua chave de ${env === 'live' ? 'Produção' : 'Testes'}? Integrações usando essa chave vão parar de funcionar.`)) return;
+    
+    try {
+      const res = await fetch(`${API}/api/merchants/apikey`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ environment: env })
+      });
+      if (res.ok) {
+        alert("Chave excluída com sucesso.");
+        fetchKey();
+      } else {
+        const error = await res.json();
+        alert("Erro ao excluir chave: " + error.error);
+      }
+    } catch (err) {
+      alert("Erro de conexão ao excluir chave.");
+    }
+  };
 
 	if (loading) return <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>Carregando dados da API...</div>;
 
@@ -1297,7 +1322,7 @@ function APITab() {
                   </td>
                   <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>Hoje</td>
                   <td style={{ padding: '1.2rem 1.5rem', textAlign: 'right' }}>
-                    <ActionMenu />
+                    <ActionMenu env="live" onDelete={handleDeleteKey} />
                   </td>
                 </tr>
 
@@ -1317,7 +1342,7 @@ function APITab() {
                   </td>
                   <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>Hoje</td>
                   <td style={{ padding: '1.2rem 1.5rem', textAlign: 'right' }}>
-                    <ActionMenu />
+                    <ActionMenu env="test" onDelete={handleDeleteKey} />
                   </td>
                 </tr>
               </>

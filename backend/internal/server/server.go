@@ -142,6 +142,7 @@ func New(cfg *config.Config, db *database.DB) *Server {
 			r.Get("/pagamentos", dashH.Dashboard)
 			r.Get("/merchants/apikey", merchantH.GetAPIKey)
 			r.Post("/merchants/apikey/rotate", merchantH.RotateAPIKey)
+			r.Delete("/merchants/apikey", merchantH.DeleteAPIKey)
 			r.Delete("/merchants/account", merchantH.DeleteAccount)
 
 			// Novas rotas de saque e auditoria financeira

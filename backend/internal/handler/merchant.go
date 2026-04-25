@@ -85,6 +85,41 @@ func (h *MerchantHandler) RotateAPIKey(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// DeleteAPIKey — DELETE /api/merchants/apikey
+func (h *MerchantHandler) DeleteAPIKey(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromContext(r)
+	if user.Role == "master" {
+		respondJSON(w, http.StatusForbidden, map[string]string{"error": "Master não possui API Key"})
+		return
+	}
+
+	var req struct {
+		Environment string `json:"environment"` // "live" ou "test"
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "JSON inválido"})
+		return
+	}
+
+	live, test, caps, _ := h.userRepo.GetAPIKey(user.MerchantID)
+
+	if req.Environment == "test" {
+		test = ""
+	} else if req.Environment == "live" {
+		live = ""
+	} else {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "Environment deve ser 'live' ou 'test'"})
+		return
+	}
+
+	if err := h.userRepo.SetAPIKeys(user.MerchantID, live, test, caps); err != nil {
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao excluir chave"})
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]string{"message": "Chave excluída com sucesso."})
+}
+
 // DeleteAccount — DELETE /api/merchants/account (LGPD Art. 18)
 func (h *MerchantHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	user := GetUserFromContext(r)
