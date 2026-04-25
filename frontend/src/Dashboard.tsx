@@ -1266,16 +1266,16 @@ function APITab() {
 			</div>
 
 			{/* Keys Table */}
-			<Card style={{ padding: 0, overflow: 'hidden' }}>
+			<Card style={{ padding: 0, overflow: 'visible' }}>
 				<table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
 					<thead>
 						<tr style={{ background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
-							<th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>Chave</th>
+							<th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', borderTopLeftRadius: 16 }}>Chave</th>
 							<th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>Desc.</th>
 							<th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>Versão</th>
 							<th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>Status</th>
 							<th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>Criação</th>
-							<th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', textAlign: 'right' }}>Ações</th>
+							<th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', textAlign: 'right', borderTopRightRadius: 16 }}>Ações</th>
 						</tr>
 					</thead>
 					<tbody>
