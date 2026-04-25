@@ -397,7 +397,7 @@ function ProdutosTab() {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#111827', margin: 0 }}>Detalhes do produto</h1>
-          <button style={{ background: '#fff', border: '1px solid #8942FC', color: '#8942FC', borderRadius: 10, padding: '0.6rem 1.8rem', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem' }}>
+          <button style={{ background: '#fff', border: '1px solid #e2e8f0', color: '#334155', borderRadius: 8, padding: '0.4rem 1.2rem', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>
             Editar
           </button>
         </div>
@@ -413,7 +413,7 @@ function ProdutosTab() {
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#64748b', marginBottom: '0.5rem' }}>ID do produto: <span style={{ fontWeight: 500, color: '#94a3b8', marginLeft: 4 }}>{editingProduct.id}</span></label>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.5rem' }}>ID do produto: <span style={{ fontWeight: 400, color: '#64748b', marginLeft: 4 }}>prod_{editingProduct.id}</span></label>
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
@@ -436,7 +436,7 @@ function ProdutosTab() {
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Descrição</label>
               <textarea 
-                defaultValue={editingProduct.sub}
+                defaultValue={editingProduct.description || editingProduct.cycle || ''}
                 style={{ width: '100%', minHeight: '150px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '0.8rem 1rem', fontSize: '0.95rem', color: '#111827', resize: 'vertical' }} 
               />
             </div>
@@ -449,8 +449,8 @@ function ProdutosTab() {
               <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#111827', margin: 0 }}>Imagem do produto</h2>
             </div>
 
-            <div style={{ width: '100%', aspectRatio: '1/1', background: `${editingProduct.color}08`, borderRadius: 12, border: `1px solid ${editingProduct.color}15`, display: 'grid', placeItems: 'center' }}>
-              <ImageIcon size={64} color={editingProduct.color} strokeWidth={1} />
+            <div style={{ width: '100%', aspectRatio: '1/1', background: '#fef2f2', borderRadius: 12, border: '1px solid #fef2f2', display: 'grid', placeItems: 'center' }}>
+              <ImageIcon size={64} color="#ef4444" strokeWidth={2} />
             </div>
           </Card>
         </div>
