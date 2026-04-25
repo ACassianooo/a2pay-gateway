@@ -1681,9 +1681,6 @@ export default function Dashboard() {
     // Grupo INTEGRAÇÃO
     { id: 'docs',            icon: <BookOpen size={18} />,        label: 'Documentação', group: 'INTEGRAÇÃO' },
     { id: 'api-keys',        icon: <Key size={18} />,             label: 'API', group: 'INTEGRAÇÃO' },
-    { id: 'webhook',         icon: <Radio size={18} />,           label: 'Webhook', group: 'INTEGRAÇÃO' },
-    { id: 'plugins',         icon: <Puzzle size={18} />,          label: 'Plugins', group: 'INTEGRAÇÃO' },
-    { id: 'roadmap',         icon: <Layers size={18} />,          label: 'Roadmap', group: 'INTEGRAÇÃO' },
     
     { id: 'conta',           icon: <User size={18} />,            label: 'Configurações', group: 'CONTA' },
   ];
