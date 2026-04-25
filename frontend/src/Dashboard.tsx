@@ -1307,44 +1307,48 @@ function APITab() {
             {keyData && (
               <>
                 {/* Linha da Chave Live */}
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.88rem', fontFamily: 'monospace' }}>
-                    <ClickableKey apiKey={keyData.api_key} />
-                  </td>
-                  <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.88rem', fontWeight: 600 }}>API TICKET</td>
-                  <td style={{ padding: '1.2rem 1.5rem' }}>
-                    <span style={{ background: '#f1f5f9', color: '#475569', padding: '0.25rem 0.6rem', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700 }}>API A1</span>
-                  </td>
-                  <td style={{ padding: '1.2rem 1.5rem' }}>
-                    <div style={{ background: '#dcfce7', color: '#166534', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.25rem 0.6rem', borderRadius: 99, fontSize: '0.75rem', fontWeight: 800 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} /> Ativo
-                    </div>
-                  </td>
-                  <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>Hoje</td>
-                  <td style={{ padding: '1.2rem 1.5rem', textAlign: 'right' }}>
-                    <ActionMenu env="live" onDelete={handleDeleteKey} />
-                  </td>
-                </tr>
+                {keyData.api_key && keyData.api_key !== '' && (
+                  <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.88rem', fontFamily: 'monospace' }}>
+                      <ClickableKey apiKey={keyData.api_key} />
+                    </td>
+                    <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.88rem', fontWeight: 600 }}>API TICKET</td>
+                    <td style={{ padding: '1.2rem 1.5rem' }}>
+                      <span style={{ background: '#f1f5f9', color: '#475569', padding: '0.25rem 0.6rem', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700 }}>API A1</span>
+                    </td>
+                    <td style={{ padding: '1.2rem 1.5rem' }}>
+                      <div style={{ background: '#dcfce7', color: '#166534', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.25rem 0.6rem', borderRadius: 99, fontSize: '0.75rem', fontWeight: 800 }}>
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} /> Ativo
+                      </div>
+                    </td>
+                    <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>Hoje</td>
+                    <td style={{ padding: '1.2rem 1.5rem', textAlign: 'right' }}>
+                      <ActionMenu env="live" onDelete={handleDeleteKey} />
+                    </td>
+                  </tr>
+                )}
 
                 {/* Linha da Chave Teste */}
-                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.88rem', fontFamily: 'monospace' }}>
-                    <ClickableKey apiKey={keyData.api_key_test} />
-                  </td>
-                  <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.88rem', fontWeight: 600 }}>API TICKET (TESTE)</td>
-                  <td style={{ padding: '1.2rem 1.5rem' }}>
-                    <span style={{ background: '#f1f5f9', color: '#475569', padding: '0.25rem 0.6rem', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700 }}>API A1</span>
-                  </td>
-                  <td style={{ padding: '1.2rem 1.5rem' }}>
-                    <div style={{ background: '#dcfce7', color: '#166534', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.25rem 0.6rem', borderRadius: 99, fontSize: '0.75rem', fontWeight: 800 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e' }} /> Ativo
-                    </div>
-                  </td>
-                  <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>Hoje</td>
-                  <td style={{ padding: '1.2rem 1.5rem', textAlign: 'right' }}>
-                    <ActionMenu env="test" onDelete={handleDeleteKey} />
-                  </td>
-                </tr>
+                {keyData.api_key_test && keyData.api_key_test !== '' && (
+                  <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.88rem', fontFamily: 'monospace' }}>
+                      <ClickableKey apiKey={keyData.api_key_test} />
+                    </td>
+                    <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.88rem', fontWeight: 600 }}>API TICKET (TESTE)</td>
+                    <td style={{ padding: '1.2rem 1.5rem' }}>
+                      <span style={{ background: '#f1f5f9', color: '#475569', padding: '0.25rem 0.6rem', borderRadius: 8, fontSize: '0.75rem', fontWeight: 700 }}>API A1</span>
+                    </td>
+                    <td style={{ padding: '1.2rem 1.5rem' }}>
+                      <div style={{ background: '#fef3c7', color: '#d97706', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.25rem 0.6rem', borderRadius: 99, fontSize: '0.75rem', fontWeight: 800 }}>
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b' }} /> Ativo
+                      </div>
+                    </td>
+                    <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>Hoje</td>
+                    <td style={{ padding: '1.2rem 1.5rem', textAlign: 'right' }}>
+                      <ActionMenu env="test" onDelete={handleDeleteKey} />
+                    </td>
+                  </tr>
+                )}
               </>
             )}
 					</tbody>
