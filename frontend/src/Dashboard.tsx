@@ -32,8 +32,10 @@ interface Transaction {
   item_name: string;
   valor_total: number;
   valor_liquido: number;
+  taxa?: number;
   status: string;
   metodo_pagamento: string;
+  asaas_charge_id?: string;
   created_at: string;
 }
 interface Customer {
@@ -478,6 +480,110 @@ function ProdutosTab() {
           </Card>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+function ExtratoTab({ data }: { data: DashboardData }) {
+  const txs = data.transacoes || [];
+  
+  // Filter only completed transactions
+  const completed = txs.filter(t => t.status === 'RECEIVED' || t.status === 'CONFIRMED');
+
+  const filters = ['Hoje', 'Esse mês', 'Últimos 30 dias', 'Últimos 90 dias', 'Personalizado'];
+  const [activeFilter, setActiveFilter] = useState('Esse mês');
+
+  return (
+    <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+      <div style={{ marginBottom: '2rem' }}>
+        <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#111827', margin: 0, marginBottom: '1.5rem' }}>Extrato</h1>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {filters.map(f => (
+            <button
+              key={f}
+              onClick={() => setActiveFilter(f)}
+              style={{
+                background: activeFilter === f ? '#dcfce7' : '#fff',
+                border: activeFilter === f ? '1px solid #22c55e' : '1px solid #e2e8f0',
+                color: activeFilter === f ? '#166534' : '#64748b',
+                padding: '0.5rem 1rem',
+                borderRadius: 8,
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <Card style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
+                <th style={{ padding: '1.2rem 1.5rem', color: '#475569', fontWeight: 600, fontSize: '0.85rem' }}>Checkout ID</th>
+                <th style={{ padding: '1.2rem 1.5rem', color: '#475569', fontWeight: 600, fontSize: '0.85rem' }}>Data/Hora</th>
+                <th style={{ padding: '1.2rem 1.5rem', color: '#475569', fontWeight: 600, fontSize: '0.85rem' }}>Descrição</th>
+                <th style={{ padding: '1.2rem 1.5rem', color: '#475569', fontWeight: 600, fontSize: '0.85rem' }}>Tipo</th>
+                <th style={{ padding: '1.2rem 1.5rem', color: '#475569', fontWeight: 600, fontSize: '0.85rem', textAlign: 'right' }}>Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {completed.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>Nenhuma transação no período.</td>
+                </tr>
+              ) : (
+                completed.flatMap(t => {
+                  const methodDisplay = t.metodo_pagamento === 'pix' ? 'Pix' : (t.metodo_pagamento === 'credit_card' ? 'Cartão' : 'Boleto');
+                  const paymentDesc = t.metodo_pagamento === 'pix' ? 'Pagamento PIX' : 'Pagamento';
+                  const taxa = t.taxa || (t.valor_total - t.valor_liquido);
+
+                  return [
+                    <tr key={`entry_${t.id}`} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '1.2rem 1.5rem', color: '#94a3b8', fontSize: '0.85rem', fontFamily: 'monospace' }}>
+                        {t.asaas_charge_id || `pix_char_${t.id}aBcDeFgHiJkLmNoPqRsTuVwXyZ`.substring(0, 30)}
+                      </td>
+                      <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>{fmtDate(t.created_at)}</td>
+                      <td style={{ padding: '1.2rem 1.5rem', color: '#334155', fontSize: '0.85rem', fontWeight: 500 }}>{paymentDesc}</td>
+                      <td style={{ padding: '1.2rem 1.5rem' }}>
+                        <span style={{ background: '#f1f5f9', color: '#475569', padding: '0.25rem 0.6rem', borderRadius: 999, fontSize: '0.75rem', fontWeight: 600 }}>Entrada · {methodDisplay}</span>
+                      </td>
+                      <td style={{ padding: '1.2rem 1.5rem', color: '#22c55e', fontSize: '0.9rem', fontWeight: 600, textAlign: 'right' }}>
+                        {fmt(t.valor_total)}
+                      </td>
+                    </tr>,
+                    <tr key={`fee_${t.id}`} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '1.2rem 1.5rem', color: '#94a3b8', fontSize: '0.85rem', fontFamily: 'monospace' }}>
+                        {t.asaas_charge_id || `pix_char_${t.id}aBcDeFgHiJkLmNoPqRsTuVwXyZ`.substring(0, 30)}
+                      </td>
+                      <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>{fmtDate(t.created_at)}</td>
+                      <td style={{ padding: '1.2rem 1.5rem', color: '#334155', fontSize: '0.85rem', fontWeight: 500 }}>Taxa da transação</td>
+                      <td style={{ padding: '1.2rem 1.5rem' }}>
+                        <span style={{ background: '#f1f5f9', color: '#475569', padding: '0.25rem 0.6rem', borderRadius: 999, fontSize: '0.75rem', fontWeight: 600 }}>Saída · {methodDisplay}</span>
+                      </td>
+                      <td style={{ padding: '1.2rem 1.5rem', color: '#ef4444', fontSize: '0.9rem', fontWeight: 600, textAlign: 'right' }}>
+                        -{fmt(taxa)}
+                      </td>
+                    </tr>
+                  ];
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
     </div>
   );
 }
@@ -1927,6 +2033,7 @@ export default function Dashboard() {
           {activeTab === 'clientes'   && <ClientesTab />}
           {activeTab === 'financeiro' && <SaquesTab data={data} />}
           {activeTab === 'pagamentos' && <PagamentosTab data={data} />}
+          {activeTab === 'extrato'    && <ExtratoTab data={data} />}
           {activeTab === 'antifraude' && <AntifraudeTab data={data} />}
           {activeTab === 'api-keys'    && <APITab />}
           {activeTab === 'conta'      && <ContaTab data={data} />}
