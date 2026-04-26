@@ -709,7 +709,7 @@ function SaquesTab({ data }: { data: DashboardData }) {
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.2rem' }}>
                  <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#111827', letterSpacing: '-0.02em' }}>{fmt(saldo)}</div>
-                 <button onClick={() => setSaqueModal(true)} style={{ background: '#c084fc', color: '#4c1d95', border: 'none', borderRadius: 12, padding: '0.7rem 1.4rem', fontWeight: 800, fontSize: '0.88rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                 <button onClick={() => setSaqueModal(true)} style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 12, padding: '0.7rem 1.4rem', fontWeight: 800, fontSize: '0.88rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#7c3aed'} onMouseLeave={e => e.currentTarget.style.background = '#8942FC'}>
                     Sacar <ChevronRight size={18} strokeWidth={3} />
                  </button>
               </div>
@@ -747,25 +747,43 @@ function SaquesTab({ data }: { data: DashboardData }) {
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
                     <tr style={{ background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
-                        <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>ID de pagamento</th>
-                        <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>Valor</th>
-                        <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>Status</th>
-                        <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>Criação</th>
+                        <th style={{ padding: '1.2rem 1.5rem', color: '#475569', fontWeight: 600, fontSize: '0.85rem' }}>ID de Saque</th>
+                        <th style={{ padding: '1.2rem 1.5rem', color: '#475569', fontWeight: 600, fontSize: '0.85rem' }}>Data/Hora</th>
+                        <th style={{ padding: '1.2rem 1.5rem', color: '#475569', fontWeight: 600, fontSize: '0.85rem' }}>Descrição</th>
+                        <th style={{ padding: '1.2rem 1.5rem', color: '#475569', fontWeight: 600, fontSize: '0.85rem' }}>Status</th>
+                        <th style={{ padding: '1.2rem 1.5rem', color: '#475569', fontWeight: 600, fontSize: '0.85rem', textAlign: 'right' }}>Valor</th>
                     </tr>
                 </thead>
                 <tbody>
                     {loading ? (
-                         <tr><td colSpan={4} style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem' }}>Carregando histórico...</td></tr>
+                        <tr><td colSpan={5} style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem' }}>Carregando histórico...</td></tr>
                     ) : filtered.length === 0 ? (
-                        <tr><td colSpan={4} style={{ padding: '5rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.95rem' }}>Nenhum dado encontrado</td></tr>
-                    ) : filtered.map(w => (
-                        <tr key={w.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                            <td style={{ padding: '1.2rem 1.5rem', color: '#94a3b8', fontSize: '0.85rem' }}>#{w.id}</td>
-                            <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.9rem', fontWeight: 800 }}>{fmt(w.amount)}</td>
-                            <td style={{ padding: '1.2rem 1.5rem' }}><StatusBadge status={w.status} /></td>
-                            <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>{fmtDate(w.created_at)}</td>
-                        </tr>
-                    ))}
+                        <tr><td colSpan={5} style={{ padding: '5rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.95rem' }}>Nenhum dado encontrado</td></tr>
+                    ) : (
+                        filtered.flatMap(w => {
+                            const fee = 4.85; // Mock fee per withdrawal
+                            return [
+                                <tr key={`saque_${w.id}`} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                    <td style={{ padding: '1.2rem 1.5rem', color: '#94a3b8', fontSize: '0.85rem', fontFamily: 'monospace' }}>#SQ_{w.id}</td>
+                                    <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>{fmtDate(w.created_at)}</td>
+                                    <td style={{ padding: '1.2rem 1.5rem', color: '#334155', fontSize: '0.85rem', fontWeight: 500 }}>Saque solicitado</td>
+                                    <td style={{ padding: '1.2rem 1.5rem' }}><StatusBadge status={w.status} /></td>
+                                    <td style={{ padding: '1.2rem 1.5rem', color: '#ef4444', fontSize: '0.9rem', fontWeight: 600, textAlign: 'right' }}>
+                                        -{fmt(w.amount)}
+                                    </td>
+                                </tr>,
+                                <tr key={`taxa_${w.id}`} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                    <td style={{ padding: '1.2rem 1.5rem', color: '#94a3b8', fontSize: '0.85rem', fontFamily: 'monospace' }}>#SQ_{w.id}</td>
+                                    <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>{fmtDate(w.created_at)}</td>
+                                    <td style={{ padding: '1.2rem 1.5rem', color: '#334155', fontSize: '0.85rem', fontWeight: 500 }}>Tarifa de Saque</td>
+                                    <td style={{ padding: '1.2rem 1.5rem' }}><span style={{ background: '#f1f5f9', color: '#475569', padding: '0.25rem 0.6rem', borderRadius: 999, fontSize: '0.75rem', fontWeight: 600 }}>Saída · Tarifa</span></td>
+                                    <td style={{ padding: '1.2rem 1.5rem', color: '#ef4444', fontSize: '0.9rem', fontWeight: 600, textAlign: 'right' }}>
+                                        -{fmt(fee)}
+                                    </td>
+                                </tr>
+                            ];
+                        })
+                    )}
                 </tbody>
             </table>
         </Card>
@@ -881,9 +899,9 @@ function CuponsTab() {
           <h1 style={{ fontSize: '2.2rem', fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.04em' }}>Cupons</h1>
           <button 
             onClick={() => setIsModalOpen(true)}
-            style={{ background: '#c084fc', color: '#4c1d95', border: 'none', borderRadius: 12, padding: '0.85rem 1.8rem', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', boxShadow: '0 4px 14px rgba(192, 132, 252, 0.3)', transition: 'all 0.2s' }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(192, 132, 252, 0.4)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(192, 132, 252, 0.3)'; }}
+            style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 12, padding: '0.85rem 1.8rem', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', boxShadow: '0 4px 14px rgba(137, 66, 252, 0.2)', transition: 'all 0.2s' }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.background = '#7c3aed'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(137, 66, 252, 0.3)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.background = '#8942FC'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(137, 66, 252, 0.2)'; }}
           >
             <Plus size={20} strokeWidth={3} /> Criar cupom
           </button>
@@ -971,16 +989,16 @@ function CreateCouponModal({ onClose }: { onClose: () => void }) {
 
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 <label style={{ display: 'block', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, marginLeft: '4px' }}>Desconto</label>
-                <input placeholder="Desconto" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} />
+                <input type="number" step="any" min="0" placeholder="0.00" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} />
              </div>
 
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 <label style={{ display: 'block', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, marginLeft: '4px' }}>Quantidade máxima de utilizações</label>
-                <input placeholder="Quantidade máxima de utilizações (-1 = infinito)" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} />
+                <input type="number" placeholder="Ex: 100" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} />
              </div>
 
              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                <button onClick={onClose} style={{ background: '#c084fc', color: '#4c1d95', border: 'none', borderRadius: 12, padding: '1rem 3rem', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 14px rgba(192, 132, 252, 0.3)', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(192, 132, 252, 0.4)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(192, 132, 252, 0.3)'; }}>
+                <button onClick={onClose} style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 12, padding: '1rem 3rem', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 14px rgba(137, 66, 252, 0.2)', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.background = '#7c3aed'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(137, 66, 252, 0.3)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.background = '#8942FC'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(137, 66, 252, 0.2)'; }}>
                    Salvar
                 </button>
              </div>

@@ -129,3 +129,40 @@ func (r *AdminRepository) GetRiskTransactions() ([]GlobalTransactionRow, error) 
 	}
 	return txs, nil
 }
+// GlobalWithdrawalRow representa um saque com info do lojista
+type GlobalWithdrawalRow struct {
+	model.Withdrawal
+	MerchantName string `json:"merchant_name"`
+}
+
+// GetAllWithdrawals retorna todos os saques do sistema
+func (r *AdminRepository) GetAllWithdrawals() ([]GlobalWithdrawalRow, error) {
+	rows, err := r.db.Query(`
+		SELECT 
+			w.id, w.merchant_id, m.name as merchant_name, w.amount, w.pix_key, w.status, w.created_at, w.updated_at
+		FROM withdrawals w
+		JOIN merchants m ON w.merchant_id = m.id
+		ORDER BY w.created_at DESC
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("GetAllWithdrawals: %w", err)
+	}
+	defer rows.Close()
+
+	var list []GlobalWithdrawalRow
+	for rows.Next() {
+		var w GlobalWithdrawalRow
+		err := rows.Scan(&w.ID, &w.MerchantID, &w.MerchantName, &w.Amount, &w.PixKey, &w.Status, &w.CreatedAt, &w.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, w)
+	}
+	return list, nil
+}
+
+// UpdateWithdrawalStatus atualiza o status de um saque
+func (r *AdminRepository) UpdateWithdrawalStatus(withdrawID int, status string) error {
+	_, err := r.db.Exec("UPDATE withdrawals SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2", status, withdrawID)
+	return err
+}

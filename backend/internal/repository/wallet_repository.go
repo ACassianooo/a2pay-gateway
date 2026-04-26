@@ -97,10 +97,39 @@ func (r *WalletRepository) GetWithdrawals(merchantID int) ([]model.Withdrawal, e
 	var list []model.Withdrawal
 	for rows.Next() {
 		var w model.Withdrawal
-		rows.Scan(&w.ID, &w.MerchantID, &w.Amount, &w.PixKey, &w.Status, &w.CreatedAt, &w.UpdatedAt)
+		if err := rows.Scan(&w.ID, &w.MerchantID, &w.Amount, &w.PixKey, &w.Status, &w.CreatedAt, &w.UpdatedAt); err != nil {
+			return nil, err
+		}
 		list = append(list, w)
 	}
 	return list, nil
+}
+
+// GetAllWithdrawals lista todos os saques do sistema (Admin)
+func (r *WalletRepository) GetAllWithdrawals() ([]model.Withdrawal, error) {
+	rows, err := r.db.Query(`
+        SELECT id, merchant_id, amount, pix_key, status, created_at, updated_at 
+        FROM withdrawals ORDER BY created_at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []model.Withdrawal
+	for rows.Next() {
+		var w model.Withdrawal
+		if err := rows.Scan(&w.ID, &w.MerchantID, &w.Amount, &w.PixKey, &w.Status, &w.CreatedAt, &w.UpdatedAt); err != nil {
+			return nil, err
+		}
+		list = append(list, w)
+	}
+	return list, nil
+}
+
+// UpdateWithdrawalStatus atualiza o status de um saque
+func (r *WalletRepository) UpdateWithdrawalStatus(withdrawID int, status string) error {
+	_, err := r.db.Exec("UPDATE withdrawals SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2", status, withdrawID)
+	return err
 }
 
 func (r *WalletRepository) InsertFraudLog(merchantID, intentID int, ip string, score int, reasons string, bloqueado bool) {

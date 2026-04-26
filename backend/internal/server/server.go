@@ -173,6 +173,8 @@ func New(cfg *config.Config, db *database.DB) *Server {
 			r.Get("/admin/users", adminH.GetUsers)
 			r.Get("/admin/transactions", adminH.GetGlobalTransactions)
 			r.Get("/admin/fraud", adminH.GetFraudAlerts)
+			r.Get("/admin/withdrawals", adminH.GetWithdrawals)
+			r.Post("/admin/withdrawals/approve", adminH.ApproveWithdrawal)
 		})
 	})
 

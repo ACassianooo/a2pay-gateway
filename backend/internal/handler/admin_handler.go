@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gato-gateway/internal/repository"
@@ -59,4 +60,41 @@ func (h *AdminHandler) GetFraudAlerts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSON(w, http.StatusOK, txs)
+}
+// GetWithdrawals retorna todos os saques solicitados no sistema
+func (h *AdminHandler) GetWithdrawals(w http.ResponseWriter, r *http.Request) {
+	list, err := h.adminRepo.GetAllWithdrawals()
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	if list == nil {
+		list = []repository.GlobalWithdrawalRow{}
+	}
+	respondJSON(w, http.StatusOK, list)
+}
+
+// ApproveWithdrawal aprova ou rejeita um saque
+func (h *AdminHandler) ApproveWithdrawal(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ID     int    `json:"id"`
+		Status string `json:"status"` // "pago" ou "rejeitado"
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "JSON inválido"})
+		return
+	}
+
+	if req.Status != "pago" && req.Status != "rejeitado" {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "Status inválido"})
+		return
+	}
+
+	err := h.adminRepo.UpdateWithdrawalStatus(req.ID, req.Status)
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]string{"message": "Saque atualizado com sucesso"})
 }
