@@ -34,8 +34,8 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	hash, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	baasID := fmt.Sprintf("acc_%d", time.Now().UnixNano())
-	apiKeyLive := service.GenerateAPIKey("a2p_live_")
-	apiKeyTest := service.GenerateAPIKey("a2p_test_")
+	apiKeyLive := ""
+	apiKeyTest := ""
 
 	id, err := h.userRepo.Create(req.Name, h.crypto.Encrypt(req.Email), string(hash), baasID, apiKeyLive, apiKeyTest)
 	if err != nil {

@@ -1463,7 +1463,6 @@ function APITab() {
 							<th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>Criação</th>
 							<th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', textAlign: 'right', borderTopRightRadius: 16 }}>Ações</th>
 						</tr>
-					</thead>
 					<tbody>
             {keyData && (
               <>
@@ -1513,8 +1512,20 @@ function APITab() {
               </>
             )}
 					</tbody>
-				</table>
-			</Card>
+                </table>
+             </div>
+             {keyData && (!keyData.api_key || keyData.api_key === '') && (!keyData.api_key_test || keyData.api_key_test === '') && (
+                <div style={{ textAlign: 'center', padding: '5rem 2rem', borderTop: '1px solid #f1f5f9' }}>
+                   <div style={{ width: 64, height: 64, borderRadius: 20, background: '#f8fafc', display: 'grid', placeItems: 'center', margin: '0 auto 1.5rem', border: '1px solid #f1f5f9' }}>
+                      <Plus size={32} color="#94a3b8" />
+                   </div>
+                   <h3 style={{ color: '#111827', fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.5rem' }}>Nenhuma chave de API encontrada</h3>
+                   <p style={{ color: '#64748b', fontSize: '0.9rem', maxWidth: '300px', margin: '0 auto' }}>
+                      Gere sua primeira chave de integração para começar a receber pagamentos.
+                   </p>
+                </div>
+             )}
+          </Card>
 
 			{isModalOpen && <CreateApiKeyModal onClose={() => setIsModalOpen(false)} onSuccess={() => { fetchKey(); setIsModalOpen(false); }} />}
 		</div>

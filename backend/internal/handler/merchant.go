@@ -47,11 +47,9 @@ func (h *MerchantHandler) GetAPIKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	live, test, caps, err := h.userRepo.GetAPIKey(user.MerchantID)
-	if err != nil || live == "" {
-		live = service.GenerateAPIKey("a2p_live_")
-		test = service.GenerateAPIKey("a2p_test_")
-		caps = "pix,card"
-		h.userRepo.SetAPIKeys(user.MerchantID, live, test, caps)
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao buscar chaves"})
+		return
 	}
 	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"api_key":      live,
