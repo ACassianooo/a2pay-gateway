@@ -266,11 +266,16 @@ function OverviewTab({ data }: { data: DashboardData }) {
 // TAB: CLIENTES
 
 // ══════════════════════════════════════════════════════════════════════════════
-function CreateProductModal({ onClose, initialData }: { onClose: () => void, initialData?: any }) {
+function CreateProductModal({ onClose, initialData, onSuccess }: { onClose: () => void, initialData?: any, onSuccess?: () => void }) {
   const isEditing = !!initialData;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const cycleRef = useRef<HTMLSelectElement>(null);
+  const descRef = useRef<HTMLTextAreaElement>(null);
+  
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [price, setPrice] = useState(isEditing ? initialData.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '');
+  const [saving, setSaving] = useState(false);
 
   const formatCurrency = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -295,6 +300,50 @@ function CreateProductModal({ onClose, initialData }: { onClose: () => void, ini
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
+    }
+  };
+
+  const handleSave = async () => {
+    const name = nameRef.current?.value;
+    const cycle = cycleRef.current?.value;
+    const desc = descRef.current?.value;
+    const rawPrice = price.replace(/\D/g, '');
+    const numericPrice = Number(rawPrice) / 100;
+
+    if (!name || !numericPrice || !desc) {
+      alert("Por favor, preencha todos os campos obrigatórios.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/merchants/products`, {
+        method: isEditing ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token()}`
+        },
+        body: JSON.stringify({
+          id: initialData?.id,
+          name,
+          description: desc,
+          price: numericPrice,
+          cycle: cycle === 'Recorrente' ? 'recorrente' : 'uma_vez'
+        })
+      });
+
+      if (res.ok) {
+        if (onSuccess) onSuccess();
+        onClose();
+      } else {
+        const errData = await res.json();
+        alert(`Erro ao salvar: ${errData.error || 'Erro desconhecido'}`);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Erro de conexão com o servidor.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -329,7 +378,7 @@ function CreateProductModal({ onClose, initialData }: { onClose: () => void, ini
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
               Nome do Produto <span style={{ color: '#ef4444' }}>*</span> <Info size={14} color="#94a3b8" />
             </label>
-            <input defaultValue={isEditing ? initialData.name : ''} placeholder="Digite o nome do produto" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.9rem', color: '#111827' }} />
+            <input ref={nameRef} defaultValue={isEditing ? initialData.name : ''} placeholder="Digite o nome do produto" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.9rem', color: '#111827' }} />
           </div>
 
           {/* Ciclo de pagamento */}
@@ -338,7 +387,7 @@ function CreateProductModal({ onClose, initialData }: { onClose: () => void, ini
               Ciclo de pagamento
             </label>
             <div style={{ position: 'relative' }}>
-              <select defaultValue={isEditing ? (initialData.cycle === 'recorrente' ? 'Recorrente' : 'Uma vez') : 'Uma vez'} style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.9rem', color: '#111827', appearance: 'none', cursor: 'pointer' }}>
+              <select ref={cycleRef} defaultValue={isEditing ? (initialData.cycle === 'recorrente' ? 'Recorrente' : 'Uma vez') : 'Uma vez'} style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.9rem', color: '#111827', appearance: 'none', cursor: 'pointer' }}>
                 <option>Uma vez</option>
                 <option>Recorrente</option>
               </select>
@@ -351,7 +400,7 @@ function CreateProductModal({ onClose, initialData }: { onClose: () => void, ini
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
               Descrição <span style={{ color: '#ef4444' }}>*</span> <Info size={14} color="#94a3b8" />
             </label>
-            <textarea defaultValue={isEditing ? (initialData.description || initialData.cycle || '') : ''} placeholder="Digite a descrição do produto" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '0.9rem', color: '#111827', minHeight: '80px', resize: 'vertical' }} />
+            <textarea ref={descRef} defaultValue={isEditing ? (initialData.description || initialData.cycle || '') : ''} placeholder="Digite a descrição do produto" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '0.9rem', color: '#111827', minHeight: '80px', resize: 'vertical' }} />
           </div>
 
           {/* Valor */}
@@ -393,8 +442,10 @@ function CreateProductModal({ onClose, initialData }: { onClose: () => void, ini
 
         {/* Footer */}
         <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', background: '#fff' }}>
-          <button onClick={onClose} style={{ background: '#fff', border: '1px solid #e2e8f0', color: '#475569', padding: '0.6rem 1.5rem', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}>Voltar</button>
-          <button style={{ background: '#8942FC', color: '#fff', border: 'none', padding: '0.6rem 1.5rem', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#7c3aed'} onMouseLeave={e => e.currentTarget.style.background = '#8942FC'}>Salvar</button>
+          <button onClick={onClose} disabled={saving} style={{ background: '#fff', border: '1px solid #e2e8f0', color: '#475569', padding: '0.6rem 1.5rem', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', cursor: saving ? 'not-allowed' : 'pointer' }}>Voltar</button>
+          <button onClick={handleSave} disabled={saving} style={{ background: '#8942FC', color: '#fff', border: 'none', padding: '0.6rem 1.5rem', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', cursor: saving ? 'not-allowed' : 'pointer', transition: 'background 0.2s', opacity: saving ? 0.7 : 1 }} onMouseEnter={e => !saving && (e.currentTarget.style.background = '#7c3aed')} onMouseLeave={e => !saving && (e.currentTarget.style.background = '#8942FC')}>
+            {saving ? 'Salvando...' : 'Salvar'}
+          </button>
         </div>
 
       </div>
@@ -412,7 +463,8 @@ function ProdutosTab() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchProducts = () => {
+    setLoading(true);
     fetch(`${API_BASE_URL}/api/merchants/products`, {
       headers: { 'Authorization': `Bearer ${token()}` }
     })
@@ -424,6 +476,10 @@ function ProdutosTab() {
       })
       .catch(err => console.error("Erro ao buscar produtos", err))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchProducts();
   }, []);
 
   const subTabs = [
@@ -437,7 +493,7 @@ function ProdutosTab() {
 
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
-      {(isCreateModalOpen || editingProduct) && <CreateProductModal initialData={editingProduct} onClose={() => { setIsCreateModalOpen(false); setEditingProduct(null); }} />}
+      {(isCreateModalOpen || editingProduct) && <CreateProductModal initialData={editingProduct} onSuccess={fetchProducts} onClose={() => { setIsCreateModalOpen(false); setEditingProduct(null); }} />}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
