@@ -268,6 +268,23 @@ function OverviewTab({ data }: { data: DashboardData }) {
 // ══════════════════════════════════════════════════════════════════════════════
 function CreateProductModal({ onClose, initialData }: { onClose: () => void, initialData?: any }) {
   const isEditing = !!initialData;
+  const [price, setPrice] = useState(isEditing ? initialData.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '');
+
+  const formatCurrency = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    const amount = Number(digits) / 100;
+    return amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    if (raw === '') {
+      setPrice('');
+      return;
+    }
+    setPrice(formatCurrency(raw));
+  };
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(255, 255, 255, 0.4)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
       <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 500, boxShadow: '0 20px 40px rgba(0,0,0,0.1)', overflow: 'hidden', animation: 'scaleIn 0.2s ease-out', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
@@ -329,7 +346,7 @@ function CreateProductModal({ onClose, initialData }: { onClose: () => void, ini
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
               Valor <span style={{ color: '#ef4444' }}>*</span> <Info size={14} color="#94a3b8" />
             </label>
-            <input defaultValue={isEditing ? `R$ ${initialData.price.toFixed(2).replace('.', ',')}` : ''} readOnly={isEditing} placeholder="R$ 0,00" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '0.9rem', color: '#111827' }} />
+            <input value={price} onChange={handlePriceChange} placeholder="R$ 0,00" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.9rem', color: '#111827' }} />
           </div>
 
           {/* Imagem */}
