@@ -1463,6 +1463,7 @@ function APITab() {
 							<th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>Criação</th>
 							<th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', textAlign: 'right', borderTopRightRadius: 16 }}>Ações</th>
 						</tr>
+					</thead>
 					<tbody>
             {keyData && (
               <>
@@ -1512,8 +1513,7 @@ function APITab() {
               </>
             )}
 					</tbody>
-                </table>
-             </div>
+				</table>
              {keyData && (!keyData.api_key || keyData.api_key === '') && (!keyData.api_key_test || keyData.api_key_test === '') && (
                 <div style={{ textAlign: 'center', padding: '5rem 2rem', borderTop: '1px solid #f1f5f9' }}>
                    <div style={{ width: 64, height: 64, borderRadius: 20, background: '#f8fafc', display: 'grid', placeItems: 'center', margin: '0 auto 1.5rem', border: '1px solid #f1f5f9' }}>
