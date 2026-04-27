@@ -268,6 +268,8 @@ function OverviewTab({ data }: { data: DashboardData }) {
 // ══════════════════════════════════════════════════════════════════════════════
 function CreateProductModal({ onClose, initialData }: { onClose: () => void, initialData?: any }) {
   const isEditing = !!initialData;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [price, setPrice] = useState(isEditing ? initialData.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '');
 
   const formatCurrency = (value: string) => {
@@ -283,6 +285,17 @@ function CreateProductModal({ onClose, initialData }: { onClose: () => void, ini
       return;
     }
     setPrice(formatCurrency(raw));
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+    }
   };
 
   return (
@@ -354,10 +367,26 @@ function CreateProductModal({ onClose, initialData }: { onClose: () => void, ini
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
               Imagem do Produto <Info size={14} color="#94a3b8" />
             </label>
-            <div style={{ border: '2px dashed #cbd5e1', borderRadius: 12, padding: '2rem 1rem', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = '#84cc16'} onMouseLeave={e => e.currentTarget.style.borderColor = '#cbd5e1'}>
-              <Upload size={28} color="#94a3b8" style={{ marginBottom: '0.8rem', display: 'inline-block' }} />
-              <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' }}>Clique para fazer upload ou arraste o arquivo</div>
-              <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>JPG, PNG, WEBP (máx. 10MB)</div>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              accept="image/*" 
+              style={{ display: 'none' }} 
+            />
+            <div 
+              onClick={handleUploadClick}
+              style={{ border: '2px dashed #cbd5e1', borderRadius: 12, padding: '2rem 1rem', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s', background: selectedFile ? '#f0fdf4' : 'transparent', borderColor: selectedFile ? '#22c55e' : '#cbd5e1' }} 
+              onMouseEnter={e => !selectedFile && (e.currentTarget.style.borderColor = '#84cc16')} 
+              onMouseLeave={e => !selectedFile && (e.currentTarget.style.borderColor = '#cbd5e1')}
+            >
+              <Upload size={28} color={selectedFile ? "#22c55e" : "#94a3b8"} style={{ marginBottom: '0.8rem', display: 'inline-block' }} />
+              <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' }}>
+                {selectedFile ? selectedFile.name : 'Clique para fazer upload ou arraste o arquivo'}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                {selectedFile ? `${(selectedFile.size / 1024 / 1024).toFixed(2)} MB` : 'JPG, PNG, WEBP (máx. 10MB)'}
+              </div>
             </div>
           </div>
         </div>
