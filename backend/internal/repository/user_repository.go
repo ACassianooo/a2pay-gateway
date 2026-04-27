@@ -23,7 +23,7 @@ func (r *UserRepository) Create(name, emailEncrypted, passwordHash, baasID, apiK
 	var id int64
 	err := r.db.QueryRow(
 		`INSERT INTO merchants(name, email, password_hash, baas_account_id, role, api_key, api_key_test, created_at)
-		 VALUES($1, $2, $3, $4, 'lojista', $5, $6, $7) RETURNING id`,
+		 VALUES($1, $2, $3, $4, 'lojista', NULLIF($5, ''), NULLIF($6, ''), $7) RETURNING id`,
 		name, emailEncrypted, passwordHash, baasID, apiKeyLive, apiKeyTest, time.Now().Format(time.RFC3339),
 	).Scan(&id)
 	if err != nil {
@@ -41,7 +41,7 @@ func (r *UserRepository) GetAllForLogin() (*sql.Rows, error) {
 func (r *UserRepository) GetAPIKey(merchantID int) (string, string, string, error) {
 	var live, test, caps string
 	err := r.db.QueryRow(`
-		SELECT api_key, api_key_test, COALESCE(api_capabilities, 'pix,card') 
+		SELECT COALESCE(api_key, ''), COALESCE(api_key_test, ''), COALESCE(api_capabilities, 'pix,card') 
 		FROM merchants WHERE id = $1`, merchantID).Scan(&live, &test, &caps)
 	return live, test, caps, err
 }
