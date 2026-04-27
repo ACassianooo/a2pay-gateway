@@ -38,6 +38,55 @@ func (h *MerchantHandler) GetProducts(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, products)
 }
 
+// CreateProduct — POST /api/merchants/products
+func (h *MerchantHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromContext(r)
+	var req struct {
+		Name        string  `json:"name"`
+		Description string  `json:"description"`
+		Price       float64 `json:"price"`
+		Cycle       string  `json:"cycle"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "JSON inválido"})
+		return
+	}
+
+	id, err := h.prodRepo.Create(user.MerchantID, req.Name, req.Description, req.Price, req.Cycle)
+	if err != nil {
+		log.Printf("[MerchantHandler] Erro ao criar produto: %v", err)
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao criar produto"})
+		return
+	}
+
+	respondJSON(w, http.StatusCreated, map[string]interface{}{"id": id, "message": "Produto criado com sucesso"})
+}
+
+// UpdateProduct — PUT /api/merchants/products
+func (h *MerchantHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromContext(r)
+	var req struct {
+		ID          int     `json:"id"`
+		Name        string  `json:"name"`
+		Description string  `json:"description"`
+		Price       float64 `json:"price"`
+		Cycle       string  `json:"cycle"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "JSON inválido"})
+		return
+	}
+
+	err := h.prodRepo.Update(req.ID, user.MerchantID, req.Name, req.Description, req.Price, req.Cycle)
+	if err != nil {
+		log.Printf("[MerchantHandler] Erro ao atualizar produto: %v", err)
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao atualizar produto"})
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]string{"message": "Produto atualizado com sucesso"})
+}
+
 
 // GetAPIKey — GET /api/merchants/apikey
 func (h *MerchantHandler) GetAPIKey(w http.ResponseWriter, r *http.Request) {

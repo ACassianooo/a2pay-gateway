@@ -29,6 +29,29 @@ func (r *ProductRepository) EnsureExists(merchantID int, name string, price floa
 	return err
 }
 
+// Create insere um novo produto e retorna o ID gerado
+func (r *ProductRepository) Create(merchantID int, name, description string, price float64, cycle string) (int, error) {
+	var id int
+	query := `
+		INSERT INTO products (merchant_id, name, description, price, cycle)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id
+	`
+	err := r.db.QueryRow(query, merchantID, name, description, price, cycle).Scan(&id)
+	return id, err
+}
+
+// Update altera dados de um produto existente
+func (r *ProductRepository) Update(id, merchantID int, name, description string, price float64, cycle string) error {
+	query := `
+		UPDATE products 
+		SET name = $1, description = $2, price = $3, cycle = $4
+		WHERE id = $5 AND merchant_id = $6
+	`
+	_, err := r.db.Exec(query, name, description, price, cycle, id, merchantID)
+	return err
+}
+
 // List returns all products for a given merchant
 func (r *ProductRepository) List(merchantID int) ([]model.Product, error) {
 	query := `
