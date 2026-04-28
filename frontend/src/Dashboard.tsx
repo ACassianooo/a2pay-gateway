@@ -366,13 +366,11 @@ function CreateProductModal({ onClose, initialData, onSuccess }: { onClose: () =
 
     setSaving(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/merchants/products`, {
+      const res = await fetch(`${API_BASE_URL}/api/merchants/products/${initialData.id}`, {
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token()}`
-        },
-        body: JSON.stringify({ id: initialData.id })
+        }
       });
 
       if (res.ok) {
@@ -1109,6 +1107,26 @@ function CuponsTab() {
 }
 
 function CreateCouponModal({ onClose }: { onClose: () => void }) {
+  const [discountType, setDiscountType] = useState('Fixo');
+  const [discountValue, setDiscountValue] = useState('');
+
+  const formatDiscount = (value: string, type: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (!digits) return '';
+    const num = Number(digits);
+    
+    if (type === 'Percentual') {
+       return `${num > 100 ? 100 : num}%`;
+    } else {
+       const amount = num / 100;
+       return amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+  };
+
+  const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDiscountValue(formatDiscount(e.target.value, discountType));
+  };
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.3)', backdropFilter: 'blur(8px)', display: 'grid', placeItems: 'center', zIndex: 1000, animation: 'fadeIn 0.2s ease-out' }}>
        <Card style={{ width: '100%', maxWidth: '520px', padding: 0, overflow: 'hidden', animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)', border: '1px solid #f1f5f9' }}>
@@ -1134,13 +1152,20 @@ function CreateCouponModal({ onClose }: { onClose: () => void }) {
           <div style={{ padding: '2.5rem 2rem', display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 <label style={{ display: 'block', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, marginLeft: '4px' }}>Código</label>
-                <input placeholder="Nome do cupom" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} />
+                <input placeholder="Ex: VERAO20" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} />
              </div>
 
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 <label style={{ display: 'block', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, marginLeft: '4px' }}>Tipo de desconto</label>
                 <div style={{ position: 'relative' }}>
-                   <select style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', appearance: 'none', cursor: 'pointer', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'}>
+                   <select 
+                    value={discountType}
+                    onChange={e => {
+                        const newType = e.target.value;
+                        setDiscountType(newType);
+                        setDiscountValue(''); // Reseta o valor ao trocar o tipo
+                    }}
+                    style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', appearance: 'none', cursor: 'pointer', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'}>
                       <option>Fixo</option>
                       <option>Percentual</option>
                    </select>
@@ -1150,7 +1175,13 @@ function CreateCouponModal({ onClose }: { onClose: () => void }) {
 
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 <label style={{ display: 'block', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, marginLeft: '4px' }}>Desconto</label>
-                <input type="number" step="any" min="0" placeholder="0.00" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} />
+                <input 
+                  value={discountValue}
+                  onChange={handleDiscountChange}
+                  placeholder={discountType === 'Percentual' ? '0%' : 'R$ 0,00'} 
+                  style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} 
+                  onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} 
+                />
              </div>
 
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
