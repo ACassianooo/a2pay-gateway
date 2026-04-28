@@ -28,8 +28,10 @@ func (h *DashboardHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 			respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
+		name, _ := h.userRepo.GetName(user.MerchantID)
 		respondJSON(w, http.StatusOK, map[string]interface{}{
 			"role":        user.Role,
+			"name":        name,
 			"lucro_total": lucro,
 			"empresas":    empresas,
 			"is_sandbox":  isTest,
@@ -45,9 +47,11 @@ func (h *DashboardHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 
 	// Saldo real vindo da wallet protegida
 	saldo, _ := h.walRepo.GetBalance(user.MerchantID)
+	name, _ := h.userRepo.GetName(user.MerchantID)
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"role":          user.Role,
+		"name":          name,
 		"saldo_lojista": saldo,
 		"transacoes":    txs,
 		"is_sandbox":    isTest,

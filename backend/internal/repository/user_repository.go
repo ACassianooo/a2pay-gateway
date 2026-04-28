@@ -32,6 +32,12 @@ func (r *UserRepository) Create(name, emailEncrypted, passwordHash, baasID, apiK
 	return id, nil
 }
 
+func (r *UserRepository) GetName(id int) (string, error) {
+	var name string
+	err := r.db.QueryRow("SELECT name FROM merchants WHERE id = $1", id).Scan(&name)
+	return name, err
+}
+
 // GetAllForLogin retorna id, email, password_hash e role de todos os merchants
 // (necessário porque emails são criptografados e precisamos descriptografar em memória)
 func (r *UserRepository) GetAllForLogin() (*sql.Rows, error) {
