@@ -861,17 +861,6 @@ function CustomerDetails({ customer, onBack }: { customer: Customer, onBack: () 
 
   return (
     <div style={{ animation: 'fadeIn 0.4s ease-out', maxWidth: '1200px' }}>
-      {/* Breadcrumbs */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2.5rem', color: '#94a3b8', fontSize: '0.85rem', fontWeight: 600 }}>
-        <span style={{ cursor: 'pointer', transition: 'color 0.2s' }} onClick={onBack} onMouseEnter={e => e.currentTarget.style.color = '#8942FC'} onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}>Sua Loja</span>
-        <ChevronRight size={14} />
-        <span style={{ cursor: 'pointer', transition: 'color 0.2s' }} onClick={onBack} onMouseEnter={e => e.currentTarget.style.color = '#8942FC'} onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}>Clientes</span>
-        <ChevronRight size={14} />
-        <span style={{ color: '#64748b' }}>Detalhes do Cliente</span>
-        <ChevronRight size={14} />
-        <span style={{ color: '#8942FC', fontWeight: 800 }}>{customer.id}</span>
-      </div>
-
       {/* Header Section */}
       <div style={{ background: '#fff', padding: '2rem', borderRadius: 20, border: '1px solid #f1f5f9', marginBottom: '2rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.02)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
@@ -882,7 +871,7 @@ function CustomerDetails({ customer, onBack }: { customer: Customer, onBack: () 
             </div>
           </div>
           <button onClick={onBack} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '0.75rem 1.25rem', color: '#64748b', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#8942FC'; e.currentTarget.style.color = '#8942FC'; }}>
-            <ArrowLeft size={18} /> Voltar para lista
+            <ArrowLeft size={18} /> Voltar
           </button>
         </div>
 
@@ -945,12 +934,11 @@ function StatStat({ title, value }: { title: string, value: string | number }) {
   );
 }
 
-function ClientesTab() {
+function ClientesTab({ selectedCustomer, setSelectedCustomer }: { selectedCustomer: Customer | null, setSelectedCustomer: (c: Customer | null) => void }) {
   const [clientes, setClientes] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   const fetchClientes = () => {
     fetch(`${API}/api/merchants/customers`, {
@@ -2423,6 +2411,12 @@ export default function Dashboard() {
   const currentTabs = isMaster ? adminTabs : merchantTabs;
   const groups = isMaster ? ['GESTÃO', 'FINANCEIRO', 'SEGURANÇA', 'SISTEMA'] : ['PRINCIPAL', 'SUA LOJA', 'INTEGRAÇÃO', 'CONTA'];
 
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+
+  useEffect(() => {
+    setSelectedCustomer(null);
+  }, [activeTab]);
+
   const renderBreadcrumbs = () => {
     const currentTabObj = currentTabs.find(t => t.id === activeTab);
     if (!currentTabObj) return null;
@@ -2450,10 +2444,27 @@ export default function Dashboard() {
             <span style={{ color: '#e2e8f0', fontWeight: 400, fontSize: '1.2rem' }}>/</span>
           </>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#111827' }}>
+        
+        <div 
+          onClick={() => setSelectedCustomer(null)}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: selectedCustomer ? '#64748b' : '#111827', cursor: selectedCustomer ? 'pointer' : 'default', transition: 'color 0.2s' }}
+        >
           {React.cloneElement(currentTabObj.icon as React.ReactElement<any>, { size: 18, strokeWidth: 2.5 })}
           <span style={{ fontWeight: 700 }}>{currentTabObj.label}</span>
         </div>
+
+        {selectedCustomer && activeTab === 'clientes' && (
+          <>
+            <span style={{ color: '#e2e8f0', fontWeight: 400, fontSize: '1.2rem' }}>/</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#64748b' }}>
+              <span>Detalhes do Cliente</span>
+            </div>
+            <span style={{ color: '#e2e8f0', fontWeight: 400, fontSize: '1.2rem' }}>/</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#8942FC' }}>
+              <span style={{ fontWeight: 800 }}>{selectedCustomer.id}</span>
+            </div>
+          </>
+        )}
       </div>
     );
   };
@@ -2608,7 +2619,7 @@ export default function Dashboard() {
           {activeTab === 'assinaturas' && <AssinaturasTab />}
           {activeTab === 'produtos'   && <ProdutosTab />}
           {activeTab === 'cupons'     && <CuponsTab />}
-          {activeTab === 'clientes'   && <ClientesTab />}
+          {activeTab === 'clientes'   && <ClientesTab selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer} />}
           {activeTab === 'financeiro' && <SaquesTab data={data} />}
           {activeTab === 'pagamentos' && <PagamentosTab data={data} />}
           {activeTab === 'extrato'    && <ExtratoTab data={data} />}
