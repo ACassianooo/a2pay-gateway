@@ -44,7 +44,7 @@ func (h *CustomerHandler) PostCreateCustomer(w http.ResponseWriter, r *http.Requ
 
 	c.MerchantID = user.MerchantID
 	if c.ID == "" {
-		c.ID = fmt.Sprintf("cust_m_%d", time.Now().UnixNano())
+		c.ID = fmt.Sprintf("AC_%d", time.Now().UnixNano())
 	}
 
 	if err := h.repo.Create(c); err != nil {
