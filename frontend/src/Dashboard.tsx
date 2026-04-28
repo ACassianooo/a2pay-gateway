@@ -839,11 +839,107 @@ function CreateCustomerModal({ onClose, onSuccess }: { onClose: () => void, onSu
   );
 }
 
+function CustomerDetails({ customer, onBack }: { customer: Customer, onBack: () => void }) {
+  const [activeSubTab, setActiveSubTab] = useState<'cobrancas' | 'assinaturas'>('cobrancas');
+
+  const StatCard = ({ title, value, sub }: { title: string, value: string | number, sub?: string }) => (
+    <div style={{ background: '#fff', padding: '1.5rem', borderRadius: 16, border: '1px solid #f1f5f9', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+      <p style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>{title}</p>
+      <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', margin: 0 }}>{value}</h3>
+      {sub && <p style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '0.4rem' }}>{sub}</p>}
+    </div>
+  );
+
+  return (
+    <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem', color: '#64748b', fontSize: '0.85rem' }}>
+        <span style={{ cursor: 'pointer' }} onClick={onBack}>Sua Loja</span>
+        <ChevronRight size={14} />
+        <span style={{ cursor: 'pointer' }} onClick={onBack}>Clientes</span>
+        <ChevronRight size={14} />
+        <span style={{ color: '#111827', fontWeight: 700 }}>Detalhes do Cliente</span>
+        <ChevronRight size={14} />
+        <span style={{ color: '#94a3b8' }}>{customer.id}</span>
+      </div>
+
+      <div style={{ marginBottom: '2.5rem' }}>
+        <h2 style={{ fontSize: '2rem', fontWeight: 900, color: '#111827', marginBottom: '0.8rem', letterSpacing: '-0.03em' }}>{customer.name}</h2>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', color: '#64748b', fontSize: '0.9rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ fontWeight: 700 }}>ID:</span> <span style={{ fontFamily: 'monospace' }}>{customer.id}</span> <Copy size={14} style={{ cursor: 'pointer' }} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ fontWeight: 700 }}>E-mail:</span> {customer.email} <Copy size={14} style={{ cursor: 'pointer' }} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ fontWeight: 700 }}>CPF/CNPJ:</span> {customer.cpf} <Copy size={14} style={{ cursor: 'pointer' }} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ fontWeight: 700 }}>Telefone:</span> {customer.phone || 'Nenhum'} <Copy size={14} style={{ cursor: 'pointer' }} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ fontWeight: 700 }}>Criado em:</span> {fmtDate(customer.created_at)}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.2rem', marginBottom: '2.5rem' }}>
+        <StatCard title="Total faturado" value="R$ 0,00" />
+        <StatCard title="Pagamentos" value="0" />
+        <StatCard title="Reembolsos" value="0" />
+        <StatCard title="Disputas" value="0" />
+        <StatStat title="Assinaturas ativas" value="0" />
+        <StatCard title="Total de assinaturas" value="0" />
+        <StatCard title="Produto mais comprado" value="Nenhum" />
+        <div style={{ background: '#fff', padding: '1.5rem', borderRadius: 16, border: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <p style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Comportamento</p>
+          <div style={{ background: '#f0f9ff', color: '#0369a1', padding: '0.3rem 0.8rem', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 800, width: 'fit-content' }}>Compra única</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', borderBottom: '1px solid #f1f5f9', marginBottom: '2rem', gap: '2.5rem' }}>
+        <button 
+          onClick={() => setActiveSubTab('cobrancas')}
+          style={{ padding: '1rem 0.5rem', background: 'none', border: 'none', borderBottom: activeSubTab === 'cobrancas' ? '3px solid #8942FC' : '3px solid transparent', color: activeSubTab === 'cobrancas' ? '#111827' : '#94a3b8', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.95rem' }}>
+          Cobranças
+        </button>
+        <button 
+          onClick={() => setActiveSubTab('assinaturas')}
+          style={{ padding: '1rem 0.5rem', background: 'none', border: 'none', borderBottom: activeSubTab === 'assinaturas' ? '3px solid #8942FC' : '3px solid transparent', color: activeSubTab === 'assinaturas' ? '#111827' : '#94a3b8', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.95rem' }}>
+          Assinaturas
+        </button>
+      </div>
+
+      <Card style={{ padding: '4rem 2rem', textAlign: 'center' }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#f8fafc', color: '#cbd5e1', display: 'grid', placeItems: 'center', margin: '0 auto 1.5rem' }}>
+          <ShoppingBag size={32} />
+        </div>
+        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#111827', marginBottom: '0.5rem' }}>Nenhum registro encontrado</h3>
+        <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Este cliente ainda não possui histórico de {activeSubTab === 'cobrancas' ? 'cobranças' : 'assinaturas'}.</p>
+      </Card>
+      
+      <button onClick={onBack} style={{ marginTop: '2rem', background: 'none', border: '1px solid #e2e8f0', borderRadius: 10, padding: '0.6rem 1.2rem', color: '#64748b', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <ArrowLeft size={16} /> Voltar para lista
+      </button>
+    </div>
+  );
+}
+
+function StatStat({ title, value }: { title: string, value: string | number }) {
+  return (
+    <div style={{ background: '#fff', padding: '1.5rem', borderRadius: 16, border: '1px solid #f1f5f9' }}>
+      <p style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>{title}</p>
+      <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#111827', margin: 0 }}>{value}</h3>
+    </div>
+  );
+}
+
 function ClientesTab() {
   const [clientes, setClientes] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
   const fetchClientes = () => {
     fetch(`${API}/api/merchants/customers`, {
@@ -863,6 +959,10 @@ function ClientesTab() {
     (c.email || '').toLowerCase().includes(search.toLowerCase()) ||
     (c.id || '').toLowerCase().includes(search.toLowerCase())
   );
+
+  if (selectedCustomer) {
+    return <CustomerDetails customer={selectedCustomer} onBack={() => setSelectedCustomer(null)} />;
+  }
 
   return (
     <div style={{ animation: 'fadeIn 0.4s ease-out' }}>
@@ -907,7 +1007,13 @@ function ClientesTab() {
             ) : filtered.length === 0 ? (
               <tr><td colSpan={5} style={{ padding: '8rem 2rem', textAlign: 'center', color: '#94a3b8', fontSize: '1rem', fontWeight: 500 }}>Nenhum cliente encontrado.</td></tr>
             ) : filtered.map(c => (
-              <tr key={c.id} style={{ borderBottom: '1px solid #f8fafc', transition: 'background 0.2s' }}>
+              <tr 
+                key={c.id} 
+                onClick={() => setSelectedCustomer(c)}
+                style={{ borderBottom: '1px solid #f8fafc', transition: 'background 0.2s', cursor: 'pointer' }}
+                onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+              >
                 <td style={{ padding: '1.2rem 1.5rem', color: '#94a3b8', fontSize: '0.82rem', fontFamily: 'monospace' }}>{c.id}</td>
                 <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.9rem', fontWeight: 700 }}>{c.name}</td>
                 <td style={{ padding: '1.2rem 1.5rem', color: '#475569', fontSize: '0.9rem' }}>{c.email}</td>
