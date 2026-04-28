@@ -18,12 +18,13 @@ type MerchantHandler struct {
 	userRepo *repository.UserRepository
 	walRepo  *repository.WalletRepository
 	prodRepo *repository.ProductRepository
+	couRepo  *repository.CouponRepository
 	db       *sql.DB
 	crypto   *service.CryptoService
 }
 
-func NewMerchantHandler(userRepo *repository.UserRepository, walRepo *repository.WalletRepository, prodRepo *repository.ProductRepository, db *sql.DB, crypto *service.CryptoService) *MerchantHandler {
-	return &MerchantHandler{userRepo: userRepo, walRepo: walRepo, prodRepo: prodRepo, db: db, crypto: crypto}
+func NewMerchantHandler(userRepo *repository.UserRepository, walRepo *repository.WalletRepository, prodRepo *repository.ProductRepository, couRepo *repository.CouponRepository, db *sql.DB, crypto *service.CryptoService) *MerchantHandler {
+	return &MerchantHandler{userRepo: userRepo, walRepo: walRepo, prodRepo: prodRepo, couRepo: couRepo, db: db, crypto: crypto}
 }
 
 // GetProducts — GET /api/merchants/products
@@ -108,6 +109,60 @@ func (h *MerchantHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) 
 	}
 
 	respondJSON(w, http.StatusOK, map[string]string{"message": "Produto excluído com sucesso"})
+}
+
+// GetCoupons — GET /api/merchants/coupons
+func (h *MerchantHandler) GetCoupons(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromContext(r)
+	list, err := h.couRepo.List(user.MerchantID)
+	if err != nil {
+		log.Printf("[MerchantHandler] Erro ao listar cupons: %v", err)
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao buscar cupons"})
+		return
+	}
+	respondJSON(w, http.StatusOK, list)
+}
+
+// CreateCoupon — POST /api/merchants/coupons
+func (h *MerchantHandler) CreateCoupon(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromContext(r)
+	var req struct {
+		Code         string  `json:"code"`
+		DiscountType string  `json:"discount_type"` // "fixo", "percentual"
+		DiscountValue float64 `json:"discount_value"`
+		MaxUses      int     `json:"max_uses"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "JSON inválido"})
+		return
+	}
+
+	if err := h.couRepo.Create(user.MerchantID, req.Code, req.DiscountType, req.DiscountValue, req.MaxUses); err != nil {
+		log.Printf("[MerchantHandler] Erro ao criar cupom: %v", err)
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao criar cupom. Código já existe?"})
+		return
+	}
+	respondJSON(w, http.StatusCreated, map[string]string{"message": "Cupom criado com sucesso"})
+}
+
+// ToggleCouponStatus — POST /api/merchants/coupons/toggle
+func (h *MerchantHandler) ToggleCouponStatus(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromContext(r)
+	var req struct {
+		ID     int    `json:"id"`
+		Status string `json:"status"` // "ativo" ou "desativado"
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "JSON inválido"})
+		return
+	}
+
+	if err := h.couRepo.ToggleStatus(req.ID, user.MerchantID, req.Status); err != nil {
+		log.Printf("[MerchantHandler] Erro ao alterar status do cupom: %v", err)
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao alterar status"})
+		return
+	}
+	respondJSON(w, http.StatusOK, map[string]string{"message": "Status atualizado com sucesso"})
 }
 
 

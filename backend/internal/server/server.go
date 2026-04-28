@@ -40,6 +40,7 @@ func New(cfg *config.Config, db *database.DB) *Server {
 
 	subRepo := repository.NewSubscriptionRepository(db.Conn)
 	prodRepo := repository.NewProductRepository(db.Conn)
+	couRepo := repository.NewCouponRepository(db.Conn)
 
 	// ── Serviços ─────────────────────────────────────────────────────────
 	cryptoSvc := service.MustNewCryptoService(fmt.Sprintf("%x", cfg.AESKey))
@@ -101,7 +102,7 @@ func New(cfg *config.Config, db *database.DB) *Server {
 	authH := handler.NewAuthHandler(userRepo, cryptoSvc, cfg.JWTSecret)
 	payH := handler.NewPaymentHandler(paymentSvc, pixSvc, walletSvc, pixLive, pixTest)
 	dashH := handler.NewDashboardHandler(userRepo, txRepo, walRepo)
-	merchantH := handler.NewMerchantHandler(userRepo, walRepo, prodRepo, db.Conn, cryptoSvc)
+	merchantH := handler.NewMerchantHandler(userRepo, walRepo, prodRepo, couRepo, db.Conn, cryptoSvc)
 	healthH := handler.NewHealthHandler(db)
 	webhookH := handler.NewWebhookHandler(txRepo, walRepo, db.Conn, cfg.WebhookSecret)
 	adminH := handler.NewAdminHandler(adminRepo)
@@ -157,6 +158,10 @@ func New(cfg *config.Config, db *database.DB) *Server {
 			r.Post("/merchants/products", merchantH.CreateProduct)
 			r.Put("/merchants/products", merchantH.UpdateProduct)
 			r.Delete("/merchants/products/{id}", merchantH.DeleteProduct)
+
+			r.Get("/merchants/coupons", merchantH.GetCoupons)
+			r.Post("/merchants/coupons", merchantH.CreateCoupon)
+			r.Post("/merchants/coupons/toggle", merchantH.ToggleCouponStatus)
 
 			// Novas rotas de saque e auditoria financeira
 			r.Post("/merchants/withdraw", merchantH.Withdraw)
