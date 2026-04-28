@@ -7,7 +7,7 @@ import {
   ShieldCheck, Users, History, Lock, ShoppingBag, Clock, XCircle, Copy, Globe,
   AlertTriangle, Upload, Settings, Banknote, QrCode, Wallet, Plus, Info, ArrowRight,
   Ticket, Repeat, FileText, Link as LinkIcon, Undo2, BookOpen, Key, Radio, Puzzle, Layers, SlidersHorizontal,
-  Pencil, LayoutGrid, ListFilter, Image as ImageIcon, MoreHorizontal, ArrowLeft, Folder, Store
+  Pencil, LayoutGrid, ListFilter, Image as ImageIcon, MoreHorizontal, ArrowLeft, Folder, Store, Trash2
 } from 'lucide-react';
 import { MasterApp } from './admin/MasterApp';
 import { API_BASE_URL } from './api';
@@ -277,6 +277,13 @@ function CreateProductModal({ onClose, initialData, onSuccess }: { onClose: () =
   const [price, setPrice] = useState(isEditing ? initialData.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '');
   const [saving, setSaving] = useState(false);
 
+  const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+
   const formatCurrency = (value: string) => {
     const digits = value.replace(/\D/g, '');
     const amount = Number(digits) / 100;
@@ -317,6 +324,11 @@ function CreateProductModal({ onClose, initialData, onSuccess }: { onClose: () =
 
     setSaving(true);
     try {
+      let imageUrl = isEditing ? initialData.image_url : "";
+      if (selectedFile) {
+        imageUrl = await toBase64(selectedFile);
+      }
+
       const res = await fetch(`${API_BASE_URL}/api/merchants/products`, {
         method: isEditing ? 'PUT' : 'POST',
         headers: {
@@ -328,7 +340,8 @@ function CreateProductModal({ onClose, initialData, onSuccess }: { onClose: () =
           name,
           description: desc,
           price: numericPrice,
-          cycle: cycle === 'Recorrente' ? 'recorrente' : 'uma_vez'
+          cycle: cycle === 'Recorrente' ? 'recorrente' : 'uma_vez',
+          image_url: imageUrl
         })
       });
 
@@ -338,6 +351,36 @@ function CreateProductModal({ onClose, initialData, onSuccess }: { onClose: () =
       } else {
         const errData = await res.json();
         alert(`Erro ao salvar: ${errData.error || 'Erro desconhecido'}`);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Erro de conexão com o servidor.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!initialData?.id) return;
+    if (!confirm("Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.")) return;
+
+    setSaving(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/merchants/products`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token()}`
+        },
+        body: JSON.stringify({ id: initialData.id })
+      });
+
+      if (res.ok) {
+        if (onSuccess) onSuccess();
+        onClose();
+      } else {
+        const errData = await res.json();
+        alert(`Erro ao excluir: ${errData.error || 'Erro desconhecido'}`);
       }
     } catch (error) {
       console.error(error);
@@ -441,11 +484,20 @@ function CreateProductModal({ onClose, initialData, onSuccess }: { onClose: () =
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', background: '#fff' }}>
-          <button onClick={onClose} disabled={saving} style={{ background: '#fff', border: '1px solid #e2e8f0', color: '#475569', padding: '0.6rem 1.5rem', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', cursor: saving ? 'not-allowed' : 'pointer' }}>Voltar</button>
-          <button onClick={handleSave} disabled={saving} style={{ background: '#8942FC', color: '#fff', border: 'none', padding: '0.6rem 1.5rem', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', cursor: saving ? 'not-allowed' : 'pointer', transition: 'background 0.2s', opacity: saving ? 0.7 : 1 }} onMouseEnter={e => !saving && (e.currentTarget.style.background = '#7c3aed')} onMouseLeave={e => !saving && (e.currentTarget.style.background = '#8942FC')}>
-            {saving ? 'Salvando...' : 'Salvar'}
-          </button>
+        <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', background: '#fff' }}>
+          <div>
+            {isEditing && (
+              <button onClick={handleDelete} disabled={saving} style={{ background: '#fff', border: '1px solid #fee2e2', color: '#ef4444', padding: '0.6rem 1rem', borderRadius: 8, fontWeight: 700, fontSize: '0.85rem', cursor: saving ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <Trash2 size={16} /> Excluir Produto
+              </button>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button onClick={onClose} disabled={saving} style={{ background: '#fff', border: '1px solid #e2e8f0', color: '#475569', padding: '0.6rem 1.5rem', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', cursor: saving ? 'not-allowed' : 'pointer' }}>Voltar</button>
+            <button onClick={handleSave} disabled={saving} style={{ background: '#8942FC', color: '#fff', border: 'none', padding: '0.6rem 1.5rem', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', cursor: saving ? 'not-allowed' : 'pointer', transition: 'background 0.2s', opacity: saving ? 0.7 : 1 }} onMouseEnter={e => !saving && (e.currentTarget.style.background = '#7c3aed')} onMouseLeave={e => !saving && (e.currentTarget.style.background = '#8942FC')}>
+              {saving ? 'Salvando...' : 'Salvar'}
+            </button>
+          </div>
         </div>
 
       </div>
@@ -561,8 +613,15 @@ function ProdutosTab() {
       }}>
         {products.map(p => (
           <Card key={p.id} onClick={() => setEditingProduct(p)} style={{ padding: 0, overflow: 'hidden', border: '1px solid #f1f5f9', transition: 'all 0.2s', cursor: 'pointer' }}>
-            <div style={{ height: '160px', background: `#84cc1610`, display: 'grid', placeItems: 'center', position: 'relative' }}>
-              <ImageIcon size={48} color="#84cc16" strokeWidth={1} />
+            <div style={{ 
+              height: '160px', 
+              background: p.image_url ? `url(${p.image_url}) center/cover no-repeat` : '#8942FC10', 
+              display: 'grid', 
+              placeItems: 'center', 
+              position: 'relative',
+              borderBottom: '1px solid #f1f5f9'
+            }}>
+              {!p.image_url && <ImageIcon size={48} color="#8942FC" strokeWidth={1} />}
               <div style={{ position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'grid', placeItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
                 <MoreHorizontal size={18} color="#64748b" />
               </div>
