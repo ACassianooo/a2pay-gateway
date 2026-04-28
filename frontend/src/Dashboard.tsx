@@ -43,6 +43,7 @@ interface Customer {
   name: string;
   email: string;
   cpf: string;
+  phone?: string;
   created_at: string;
 }
 interface EmpresaInfo { nome: string; volume_girado: number; taxas_cobradas: number; }
