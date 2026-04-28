@@ -52,6 +52,13 @@ func (r *ProductRepository) Update(id, merchantID int, name, description string,
 	return err
 }
 
+// Delete remove um produto permanentemente
+func (r *ProductRepository) Delete(id, merchantID int) error {
+	query := `DELETE FROM products WHERE id = $1 AND merchant_id = $2`
+	_, err := r.db.Exec(query, id, merchantID)
+	return err
+}
+
 // List returns all products for a given merchant
 func (r *ProductRepository) List(merchantID int) ([]model.Product, error) {
 	query := `

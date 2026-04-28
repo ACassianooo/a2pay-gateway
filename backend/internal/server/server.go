@@ -156,6 +156,7 @@ func New(cfg *config.Config, db *database.DB) *Server {
 			r.Get("/merchants/products", merchantH.GetProducts)
 			r.Post("/merchants/products", merchantH.CreateProduct)
 			r.Put("/merchants/products", merchantH.UpdateProduct)
+			r.Delete("/merchants/products", merchantH.DeleteProduct)
 
 			// Novas rotas de saque e auditoria financeira
 			r.Post("/merchants/withdraw", merchantH.Withdraw)

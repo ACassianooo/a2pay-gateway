@@ -89,6 +89,31 @@ func (h *MerchantHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) 
 	respondJSON(w, http.StatusOK, map[string]string{"message": "Produto atualizado com sucesso"})
 }
 
+// DeleteProduct — DELETE /api/merchants/products/{id}
+func (h *MerchantHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromContext(r)
+	
+	// Extrair ID da URL usando Chi ou de query param se preferir.
+	// Vou assumir que o Chi está configurado para passar o ID.
+	// Na verdade, vou simplificar e receber via query param ou body.
+	// Vamos usar Body para manter consistência com o que o frontend costuma mandar.
+	var req struct {
+		ID int `json:"id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "JSON inválido"})
+		return
+	}
+
+	if err := h.prodRepo.Delete(req.ID, user.MerchantID); err != nil {
+		log.Printf("[MerchantHandler] Erro ao deletar produto: %v", err)
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao deletar produto"})
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]string{"message": "Produto excluído com sucesso"})
+}
+
 
 // GetAPIKey — GET /api/merchants/apikey
 func (h *MerchantHandler) GetAPIKey(w http.ResponseWriter, r *http.Request) {
