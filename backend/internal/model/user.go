@@ -27,5 +27,6 @@ type Customer struct {
 	Name       string `json:"name"`
 	Email      string `json:"email"`
 	CPF        string `json:"cpf"`
+	Phone      string `json:"phone,omitempty"`
 	CreatedAt  string `json:"created_at"`
 }

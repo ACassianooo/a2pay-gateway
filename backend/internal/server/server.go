@@ -167,6 +167,7 @@ func New(cfg *config.Config, db *database.DB) *Server {
 			r.Post("/merchants/withdraw", merchantH.Withdraw)
 			r.Get("/merchants/withdrawals", merchantH.GetWithdrawals)
 			r.Get("/merchants/customers", custH.GetCustomers)
+			r.Post("/merchants/customers", custH.PostCreateCustomer)
 
 			// Rotas de Assinaturas
 			r.Post("/subscriptions", subH.Create)
