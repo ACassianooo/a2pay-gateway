@@ -748,18 +748,113 @@ function ExtratoTab({ data }: { data: DashboardData }) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+function CreateCustomerModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ name: '', email: '', cpf: '', phone: '' });
+
+  const maskCPF = (v: string) => {
+    v = v.replace(/\D/g, "");
+    if (v.length <= 11) {
+      v = v.replace(/(\d{3})(\d)/, "$1.$2");
+      v = v.replace(/(\d{3})(\d)/, "$1.$2");
+      v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+    } else {
+      v = v.replace(/^(\d{2})(\d)/, "$1.$2");
+      v = v.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+      v = v.replace(/\.(\d{3})(\d)/, ".$1/$2");
+      v = v.replace(/(\d{4})(\d)/, "$1-$2");
+    }
+    return v;
+  };
+
+  const maskPhone = (v: string) => {
+    v = v.replace(/\D/g, "");
+    v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
+    v = v.replace(/(\d)(\d{4})$/, "$1-$2");
+    return v;
+  };
+
+  const handleSave = () => {
+    if (!formData.name || !formData.email || !formData.cpf) return alert("Preencha os campos obrigatórios");
+    setLoading(true);
+    fetch(`${API}/api/merchants/customers`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token()}` },
+      body: JSON.stringify(formData)
+    })
+    .then(r => r.ok ? r.json() : r.json().then(e => { throw e; }))
+    .then(() => { onSuccess(); onClose(); })
+    .catch(e => alert(e.error || 'Erro ao cadastrar cliente'))
+    .finally(() => setLoading(false));
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(8px)', display: 'grid', placeItems: 'center', zIndex: 1000, animation: 'fadeIn 0.2s ease-out' }}>
+       <Card style={{ width: '100%', maxWidth: '480px', padding: 0, overflow: 'hidden', animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)', border: '1px solid #f1f5f9' }}>
+          <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff' }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', padding: '0.5rem', borderRadius: '10px', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                   <ArrowLeft size={20} />
+                </button>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>Cadastrar cliente</h3>
+             </div>
+             <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '0.5rem', borderRadius: '10px', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.color = '#ef4444'; }}>
+                <XCircle size={22} />
+             </button>
+          </div>
+
+          <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>Nome completo</label>
+                <input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Digite o nome completo" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem', color: '#111827', outline: 'none' }} />
+             </div>
+
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>E-mail</label>
+                <input value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="email@exemplo.com" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem', color: '#111827', outline: 'none' }} />
+             </div>
+
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>CPF ou CNPJ</label>
+                <input value={formData.cpf} onChange={e => setFormData({ ...formData, cpf: maskCPF(e.target.value) })} placeholder="000.000.000-00 ou 00.000.000/0000-00" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem', color: '#111827', outline: 'none' }} />
+             </div>
+
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>Telefone</label>
+                <input value={formData.phone} onChange={e => setFormData({ ...formData, phone: maskPhone(e.target.value) })} placeholder="(00) 00000-0000" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem', color: '#111827', outline: 'none' }} />
+             </div>
+
+             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                <button 
+                  onClick={handleSave}
+                  disabled={loading}
+                  style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 12, padding: '1rem 3rem', fontWeight: 800, fontSize: '0.95rem', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 14px rgba(137, 66, 252, 0.2)', transition: 'all 0.2s', opacity: loading ? 0.7 : 1 }} onMouseEnter={e => !loading && (e.currentTarget.style.transform = 'scale(1.02)')} onMouseLeave={e => !loading && (e.currentTarget.style.transform = 'none')}>
+                   {loading ? 'Cadastrando...' : 'Cadastrar'}
+                </button>
+             </div>
+          </div>
+       </Card>
+    </div>
+  );
+}
+
 function ClientesTab() {
   const [clientes, setClientes] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useEffect(() => {
+  const fetchClientes = () => {
     fetch(`${API}/api/merchants/customers`, {
       headers: { 'Authorization': `Bearer ${token()}` }
     })
     .then(r => r.json())
     .then(d => { setClientes(d || []); setLoading(false); })
     .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchClientes();
   }, []);
 
   const filtered = (clientes || []).filter(c => 
@@ -769,50 +864,61 @@ function ClientesTab() {
   );
 
   return (
-    <div>
+    <div style={{ animation: 'fadeIn 0.4s ease-out' }}>
       <SectionHeader icon={<Users size={22} />} title="Clientes" sub="Gerenciamento de compradores e histórico de relacionamento." />
       
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <div style={{ position: 'relative', width: '320px' }}>
-          <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+        <div style={{ position: 'relative', width: '380px' }}>
+          <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
           <input 
             value={search} 
             onChange={e => setSearch(e.target.value)} 
             placeholder="Pesquisar por ID, e-mail, nome..." 
-            style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '0.8rem 1rem 0.8rem 2.8rem', color: '#111827', outline: 'none', fontSize: '0.9rem' }} 
+            style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 14, padding: '1rem 1rem 1rem 3.2rem', color: '#111827', outline: 'none', fontSize: '0.95rem', transition: 'all 0.2s' }} 
+            onFocus={e => e.currentTarget.style.borderColor = '#8942FC'}
+            onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'}
           />
         </div>
-        <button style={{ background: '#c084fc', color: '#4c1d95', border: 'none', borderRadius: 12, padding: '0.8rem 1.8rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.9rem', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-           <Plus size={18} strokeWidth={3} /> Cadastrar cliente
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 12, padding: '0.9rem 2.2rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.95rem', boxShadow: '0 4px 12px rgba(137, 66, 252, 0.2)', transition: 'all 0.2s' }}
+          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+          onMouseLeave={e => e.currentTarget.style.transform = 'none'}
+        >
+           <Plus size={20} strokeWidth={3} /> Cadastrar cliente
         </button>
       </div>
 
-      <Card style={{ padding: 0, overflow: 'hidden' }}>
+      <Card style={{ padding: 0, overflow: 'hidden', border: '1px solid #f1f5f9', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.02)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
-              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>ID</th>
-              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>Nome</th>
-              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>E-mail</th>
-              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>Data de Criação</th>
+              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>ID</th>
+              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>Nome</th>
+              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>E-mail</th>
+              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>Telefone</th>
+              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>Data de Criação</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={4} style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem' }}>Carregando clientes...</td></tr>
+              <tr><td colSpan={5} style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8', fontSize: '1rem' }}>Carregando clientes...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={4} style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem' }}>Nenhum cliente encontrado.</td></tr>
+              <tr><td colSpan={5} style={{ padding: '8rem 2rem', textAlign: 'center', color: '#94a3b8', fontSize: '1rem', fontWeight: 500 }}>Nenhum cliente encontrado.</td></tr>
             ) : filtered.map(c => (
-              <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                <td style={{ padding: '1.2rem 1.5rem', color: '#94a3b8', fontSize: '0.82rem' }}>{c.id}</td>
-                <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.88rem', fontWeight: 700 }}>{c.name}</td>
-                <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.88rem' }}>{c.email}</td>
+              <tr key={c.id} style={{ borderBottom: '1px solid #f8fafc', transition: 'background 0.2s' }}>
+                <td style={{ padding: '1.2rem 1.5rem', color: '#94a3b8', fontSize: '0.82rem', fontFamily: 'monospace' }}>{c.id}</td>
+                <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.9rem', fontWeight: 700 }}>{c.name}</td>
+                <td style={{ padding: '1.2rem 1.5rem', color: '#475569', fontSize: '0.9rem' }}>{c.email}</td>
+                <td style={{ padding: '1.2rem 1.5rem', color: '#475569', fontSize: '0.9rem' }}>{c.phone || '-'}</td>
                 <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>{fmtDate(c.created_at)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </Card>
+
+      {isModalOpen && <CreateCustomerModal onClose={() => setIsModalOpen(false)} onSuccess={fetchClientes} />}
     </div>
   );
 }
