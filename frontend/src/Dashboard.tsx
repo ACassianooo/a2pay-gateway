@@ -2345,6 +2345,12 @@ export default function Dashboard() {
     fetchData(newVal);
   };
 
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+
+  useEffect(() => {
+    setSelectedCustomer(null);
+  }, [activeTab]);
+
   if (loading) return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: '1rem' }}>
       <div style={{ width: 48, height: 48, border: '3px solid #f3f4f6', borderTopColor: '#8942FC', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -2411,25 +2417,20 @@ export default function Dashboard() {
   const currentTabs = isMaster ? adminTabs : merchantTabs;
   const groups = isMaster ? ['GESTÃO', 'FINANCEIRO', 'SEGURANÇA', 'SISTEMA'] : ['PRINCIPAL', 'SUA LOJA', 'INTEGRAÇÃO', 'CONTA'];
 
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-
-  useEffect(() => {
-    setSelectedCustomer(null);
-  }, [activeTab]);
-
   const renderBreadcrumbs = () => {
     const currentTabObj = currentTabs.find(t => t.id === activeTab);
     if (!currentTabObj) return null;
 
     const getGroupIcon = (group: string) => {
+      const props = { size: 18, strokeWidth: 2.5 };
       switch(group) {
-        case 'SUA LOJA': return <Store size={18} />;
-        case 'INTEGRAÇÃO': return <SlidersHorizontal size={18} />;
-        case 'GESTÃO': return <Shield size={18} />;
-        case 'FINANCEIRO': return <Banknote size={18} />;
-        case 'SEGURANÇA': return <Lock size={18} />;
-        case 'SISTEMA': return <Settings size={18} />;
-        default: return <Folder size={18} />;
+        case 'SUA LOJA': return <Store {...props} />;
+        case 'INTEGRAÇÃO': return <SlidersHorizontal {...props} />;
+        case 'GESTÃO': return <Shield {...props} />;
+        case 'FINANCEIRO': return <Banknote {...props} />;
+        case 'SEGURANÇA': return <Lock {...props} />;
+        case 'SISTEMA': return <Settings {...props} />;
+        default: return <Folder {...props} />;
       }
     };
 
@@ -2438,7 +2439,7 @@ export default function Dashboard() {
         {currentTabObj.group && currentTabObj.group !== 'PRINCIPAL' && (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#64748b' }}>
-               {React.cloneElement(getGroupIcon(currentTabObj.group) as React.ReactElement<any>, { strokeWidth: 2.5 })}
+               {getGroupIcon(currentTabObj.group)}
                <span>{currentTabObj.group === 'SUA LOJA' ? 'Sua Loja' : currentTabObj.group.charAt(0) + currentTabObj.group.slice(1).toLowerCase()}</span>
             </div>
             <span style={{ color: '#e2e8f0', fontWeight: 400, fontSize: '1.2rem' }}>/</span>
@@ -2449,7 +2450,7 @@ export default function Dashboard() {
           onClick={() => setSelectedCustomer(null)}
           style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: selectedCustomer ? '#64748b' : '#111827', cursor: selectedCustomer ? 'pointer' : 'default', transition: 'color 0.2s' }}
         >
-          {React.cloneElement(currentTabObj.icon as React.ReactElement<any>, { size: 18, strokeWidth: 2.5 })}
+          {currentTabObj.icon}
           <span style={{ fontWeight: 700 }}>{currentTabObj.label}</span>
         </div>
 
