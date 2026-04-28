@@ -46,13 +46,14 @@ func (h *MerchantHandler) CreateProduct(w http.ResponseWriter, r *http.Request) 
 		Description string  `json:"description"`
 		Price       float64 `json:"price"`
 		Cycle       string  `json:"cycle"`
+		ImageURL    string  `json:"image_url"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "JSON inválido"})
 		return
 	}
 
-	id, err := h.prodRepo.Create(user.MerchantID, req.Name, req.Description, req.Price, req.Cycle)
+	id, err := h.prodRepo.Create(user.MerchantID, req.Name, req.Description, req.Price, req.Cycle, req.ImageURL)
 	if err != nil {
 		log.Printf("[MerchantHandler] Erro ao criar produto: %v", err)
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao criar produto"})
@@ -71,13 +72,14 @@ func (h *MerchantHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) 
 		Description string  `json:"description"`
 		Price       float64 `json:"price"`
 		Cycle       string  `json:"cycle"`
+		ImageURL    string  `json:"image_url"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "JSON inválido"})
 		return
 	}
 
-	err := h.prodRepo.Update(req.ID, user.MerchantID, req.Name, req.Description, req.Price, req.Cycle)
+	err := h.prodRepo.Update(req.ID, user.MerchantID, req.Name, req.Description, req.Price, req.Cycle, req.ImageURL)
 	if err != nil {
 		log.Printf("[MerchantHandler] Erro ao atualizar produto: %v", err)
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao atualizar produto"})
