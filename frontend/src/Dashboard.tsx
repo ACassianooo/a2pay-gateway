@@ -754,7 +754,7 @@ function CreateCustomerModal({ onClose, onSuccess }: { onClose: () => void, onSu
   const [formData, setFormData] = useState({ name: '', email: '', cpf: '', phone: '' });
 
   const maskCPF = (v: string) => {
-    v = v.replace(/\D/g, "");
+    v = v.replace(/\D/g, "").slice(0, 14);
     if (v.length <= 11) {
       v = v.replace(/(\d{3})(\d)/, "$1.$2");
       v = v.replace(/(\d{3})(\d)/, "$1.$2");
@@ -769,7 +769,7 @@ function CreateCustomerModal({ onClose, onSuccess }: { onClose: () => void, onSu
   };
 
   const maskPhone = (v: string) => {
-    v = v.replace(/\D/g, "");
+    v = v.replace(/\D/g, "").slice(0, 11);
     v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
     v = v.replace(/(\d)(\d{4})$/, "$1-$2");
     return v;
@@ -817,12 +817,12 @@ function CreateCustomerModal({ onClose, onSuccess }: { onClose: () => void, onSu
 
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <label style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>CPF ou CNPJ</label>
-                <input value={formData.cpf} onChange={e => setFormData({ ...formData, cpf: maskCPF(e.target.value) })} placeholder="000.000.000-00 ou 00.000.000/0000-00" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem', color: '#111827', outline: 'none' }} />
+                <input maxLength={18} value={formData.cpf} onChange={e => setFormData({ ...formData, cpf: maskCPF(e.target.value) })} placeholder="000.000.000-00 ou 00.000.000/0000-00" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem', color: '#111827', outline: 'none' }} />
              </div>
 
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <label style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>Telefone</label>
-                <input value={formData.phone} onChange={e => setFormData({ ...formData, phone: maskPhone(e.target.value) })} placeholder="(00) 00000-0000" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem', color: '#111827', outline: 'none' }} />
+                <input maxLength={15} value={formData.phone} onChange={e => setFormData({ ...formData, phone: maskPhone(e.target.value) })} placeholder="(00) 00000-0000" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem', color: '#111827', outline: 'none' }} />
              </div>
 
              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
