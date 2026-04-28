@@ -1049,8 +1049,49 @@ function SaqueModal({ onClose, saldo, onSucess }: { onClose: () => void; saldo: 
 // TAB: CUPONS
 // ══════════════════════════════════════════════════════════════════════════════
 function CuponsTab() {
+  const [coupons, setCoupons] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  const fetchCoupons = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/merchants/coupons`, {
+        headers: { 'Authorization': `Bearer ${token()}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCoupons(data || []);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchCoupons(); }, []);
+
+  const toggleStatus = async (id: number, currentStatus: string) => {
+    const newStatus = currentStatus === 'ativo' ? 'desativado' : 'ativo';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/merchants/coupons/toggle`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token()}`
+        },
+        body: JSON.stringify({ id, status: newStatus })
+      });
+      if (res.ok) {
+        setCoupons(prev => prev.map(c => c.id === id ? { ...c, status: newStatus } : c));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const filtered = coupons.filter(c => !search || c.code.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div style={{ animation: 'fadeIn 0.4s ease-out' }}>
@@ -1082,33 +1123,80 @@ function CuponsTab() {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                <thead>
-                  <tr style={{ background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
-                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Código</th>
-                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Resgatados</th>
-                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Limites de Resgates</th>
-                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Desconto</th>
-                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Criação</th>
-                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
-                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ações</th>
+                  <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>Código</th>
+                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>Resgatados</th>
+                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>Limites de Resgates</th>
+                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>Desconto</th>
+                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>Criação</th>
+                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>Status</th>
+                     <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, textAlign: 'right' }}>Ações</th>
                   </tr>
                </thead>
                <tbody>
-                  <tr>
-                     <td colSpan={7} style={{ padding: '8rem 2rem', textAlign: 'center', color: '#94a3b8', fontSize: '1rem', fontWeight: 500 }}>Nenhum dado encontrado</td>
-                  </tr>
+                  {loading ? (
+                    <tr><td colSpan={7} style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8' }}>Carregando...</td></tr>
+                  ) : filtered.length === 0 ? (
+                    <tr>
+                       <td colSpan={7} style={{ padding: '8rem 2rem', textAlign: 'center', color: '#94a3b8', fontSize: '1rem', fontWeight: 500 }}>Nenhum dado encontrado</td>
+                    </tr>
+                  ) : filtered.map(c => (
+                    <tr key={c.id} style={{ borderBottom: '1px solid #f8fafc', transition: 'background 0.2s' }}>
+                      <td style={{ padding: '1.2rem 1.5rem', fontWeight: 600, color: '#111827' }}>{c.code}</td>
+                      <td style={{ padding: '1.2rem 1.5rem', color: '#475569' }}>{c.used_count}</td>
+                      <td style={{ padding: '1.2rem 1.5rem', color: '#475569' }}>{c.max_uses === 0 ? 'Ilimitado' : c.max_uses}</td>
+                      <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontWeight: 600 }}>
+                        {c.discount_type === 'percentual' ? `${c.discount_value}%` : c.discount_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </td>
+                      <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.9rem' }}>
+                        {new Date(c.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td style={{ padding: '1.2rem 1.5rem' }}>
+                        <div style={{ 
+                          display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.35rem 0.75rem', borderRadius: '50px',
+                          background: c.status === 'ativo' ? '#f5f3ff' : '#fef2f2',
+                          color: c.status === 'ativo' ? '#8942FC' : '#ef4444',
+                          fontSize: '0.8rem', fontWeight: 700
+                        }}>
+                          {c.status === 'ativo' ? <CheckCircle2 size={14} color="#8942FC" /> : <XCircle size={14} />}
+                          {c.status === 'ativo' ? 'Ativo' : 'Desativado'}
+                        </div>
+                      </td>
+                      <td style={{ padding: '1.2rem 1.5rem', textAlign: 'right' }}>
+                        <div 
+                          onClick={() => toggleStatus(c.id, c.status)}
+                          style={{ 
+                            width: '40px', height: '22px', background: c.status === 'ativo' ? '#8942FC' : '#e2e8f0', 
+                            borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s ease',
+                            display: 'inline-block', verticalAlign: 'middle'
+                          }}
+                        >
+                          <div style={{ 
+                            width: '16px', height: '16px', background: '#fff', borderRadius: '50%',
+                            position: 'absolute', top: '3px', left: c.status === 'ativo' ? '21px' : '3px',
+                            transition: 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                          }} />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                </tbody>
             </table>
           </div>
        </Card>
 
-       {isModalOpen && <CreateCouponModal onClose={() => setIsModalOpen(false)} />}
+       {isModalOpen && <CreateCouponModal onClose={() => setIsModalOpen(false)} onSuccess={fetchCoupons} />}
     </div>
   );
 }
 
-function CreateCouponModal({ onClose }: { onClose: () => void }) {
+function CreateCouponModal({ onClose, onSuccess }: { onClose: () => void, onSuccess?: () => void }) {
   const [discountType, setDiscountType] = useState('Fixo');
   const [discountValue, setDiscountValue] = useState('');
+  const [saving, setSaving] = useState(false);
+  const codeRef = useRef<HTMLInputElement>(null);
+  const maxUsesRef = useRef<HTMLInputElement>(null);
 
   const formatDiscount = (value: string, type: string) => {
     const digits = value.replace(/\D/g, '');
@@ -1125,6 +1213,48 @@ function CreateCouponModal({ onClose }: { onClose: () => void }) {
 
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDiscountValue(formatDiscount(e.target.value, discountType));
+  };
+
+  const handleSave = async () => {
+    const code = codeRef.current?.value;
+    if (!code || !discountValue) {
+      alert("Código e valor do desconto são obrigatórios.");
+      return;
+    }
+
+    const digits = discountValue.replace(/\D/g, '');
+    const numericValue = discountType === 'Percentual' ? Number(digits) : Number(digits) / 100;
+    const maxUses = Number(maxUsesRef.current?.value) || 0;
+
+    setSaving(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/merchants/coupons`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token()}`
+        },
+        body: JSON.stringify({
+          code,
+          discount_type: discountType.toLowerCase(),
+          discount_value: numericValue,
+          max_uses: maxUses
+        })
+      });
+
+      if (res.ok) {
+        if (onSuccess) onSuccess();
+        onClose();
+      } else {
+        const d = await res.json();
+        alert(d.error || "Erro ao criar cupom");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Erro de conexão");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -1152,7 +1282,7 @@ function CreateCouponModal({ onClose }: { onClose: () => void }) {
           <div style={{ padding: '2.5rem 2rem', display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 <label style={{ display: 'block', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, marginLeft: '4px' }}>Código</label>
-                <input placeholder="Ex: VERAO20" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} />
+                <input ref={codeRef} placeholder="Ex: VERAO20" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} />
              </div>
 
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
@@ -1186,12 +1316,15 @@ function CreateCouponModal({ onClose }: { onClose: () => void }) {
 
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 <label style={{ display: 'block', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, marginLeft: '4px' }}>Quantidade máxima de utilizações</label>
-                <input type="number" placeholder="Ex: 100" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} />
+                <input ref={maxUsesRef} type="number" placeholder="Ex: 100" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} />
              </div>
 
              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                <button onClick={onClose} style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 12, padding: '1rem 3rem', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 14px rgba(137, 66, 252, 0.2)', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.background = '#7c3aed'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(137, 66, 252, 0.3)'; }} onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.background = '#8942FC'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(137, 66, 252, 0.2)'; }}>
-                   Salvar
+                <button 
+                  onClick={handleSave} 
+                  disabled={saving}
+                  style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 12, padding: '1rem 3rem', fontWeight: 800, fontSize: '0.95rem', cursor: saving ? 'not-allowed' : 'pointer', boxShadow: '0 4px 14px rgba(137, 66, 252, 0.2)', transition: 'all 0.2s', opacity: saving ? 0.7 : 1 }} onMouseEnter={e => !saving && (e.currentTarget.style.transform = 'scale(1.02)')} onMouseLeave={e => !saving && (e.currentTarget.style.transform = 'none')}>
+                   {saving ? 'Salvando...' : 'Salvar'}
                 </button>
              </div>
           </div>
