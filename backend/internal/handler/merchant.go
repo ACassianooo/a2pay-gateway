@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/gato-gateway/internal/model"
 	"github.com/gato-gateway/internal/repository"
 	"github.com/gato-gateway/internal/service"
@@ -92,20 +94,14 @@ func (h *MerchantHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) 
 // DeleteProduct — DELETE /api/merchants/products/{id}
 func (h *MerchantHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	user := GetUserFromContext(r)
-	
-	// Extrair ID da URL usando Chi ou de query param se preferir.
-	// Vou assumir que o Chi está configurado para passar o ID.
-	// Na verdade, vou simplificar e receber via query param ou body.
-	// Vamos usar Body para manter consistência com o que o frontend costuma mandar.
-	var req struct {
-		ID int `json:"id"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "JSON inválido"})
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "ID inválido"})
 		return
 	}
 
-	if err := h.prodRepo.Delete(req.ID, user.MerchantID); err != nil {
+	if err := h.prodRepo.Delete(id, user.MerchantID); err != nil {
 		log.Printf("[MerchantHandler] Erro ao deletar produto: %v", err)
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao deletar produto"})
 		return
