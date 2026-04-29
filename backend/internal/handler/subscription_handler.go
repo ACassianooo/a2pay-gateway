@@ -38,7 +38,14 @@ func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	user := userVal.(model.UserContext)
 	merchantID := user.MerchantID
-	isSandbox := user.IsSandbox
+	
+	// Prioriza o header (dashboard) ou usa o claim do token (API Key)
+	isSandbox := r.Header.Get("x-a2pay-env") == "test"
+	if !isSandbox && user.IsSandbox {
+		isSandbox = true
+	}
+
+	fmt.Printf("[DEBUG] Criando assinatura: Merchant=%d Sandbox=%v\n", merchantID, isSandbox)
 
 	var req dto.CreateSubscriptionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

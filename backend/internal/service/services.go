@@ -138,6 +138,14 @@ func (s *PIXService) ExternalCharge(merchantID int, req ExternalPixRequest, isSa
 		client = s.clientTest
 	}
 
+	if client == nil {
+		envName := "PRODUÇÃO"
+		if isSandbox {
+			envName = "TESTE"
+		}
+		return 0, nil, fmt.Errorf("gateway PIX não configurado para ambiente de %s. Verifique suas credenciais (Inter ou Asaas)", envName)
+	}
+
 	intentID, err := s.txRepo.Create(merchantID, req.Descricao, req.Valor, liquido, taxa, "pix", isSandbox, nil)
 	if err != nil {
 		return 0, nil, err
