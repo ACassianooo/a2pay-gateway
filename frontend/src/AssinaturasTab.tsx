@@ -30,6 +30,7 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
   const [valor, setValor] = useState('');
   const [urlFinalizacao, setUrlFinalizacao] = useState('');
   const [urlRetorno, setUrlRetorno] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
 
   const [cupons, setCupons] = useState<any[]>([]);
   const [selectedCupom, setSelectedCupom] = useState('');
@@ -138,10 +139,16 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
   };
 
   const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
+
+    if (!clienteNome || !clienteEmail || !valor) {
+      alert("Por favor, preencha os campos obrigatórios (*) do cliente e o valor.");
+      return;
+    }
+
     try {
+      setIsCreating(true);
       const token = localStorage.getItem('token');
-      // Converte "1.250,50" -> "1250.50"
       const rawValue = valor.replace(/\./g, '').replace(',', '.');
       const payload = {
         plano_nome: planoNome || 'Plano Personalizado',
@@ -149,7 +156,7 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
         cliente_email: clienteEmail,
         cliente_cpf: clienteCpf,
         valor: parseFloat(rawValue),
-        intervalo_dias: 30, // fixo mensal por enquanto
+        intervalo_dias: 30,
         cupom: selectedCupom,
       };
 
@@ -167,7 +174,6 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
         fetchAssinaturas();
         const data = await res.json();
         
-        // Se for um novo cliente, redireciona para a aba de clientes
         if (isNewClient && onNavigateToClients) {
           onNavigateToClients();
         }
@@ -181,6 +187,9 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
       }
     } catch (error) {
       console.error(error);
+      alert("Erro de conexão com o servidor.");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -476,8 +485,14 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
               <button 
                 form="checkout-form"
                 type="submit" 
-                style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: '8px', padding: '0.65rem 1.5rem', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 10px rgba(137, 66, 252, 0.2)' }}>
-                Cadastrar
+                disabled={isCreating}
+                style={{ 
+                  background: isCreating ? '#cbd5e1' : '#8942FC', color: '#fff', border: 'none', borderRadius: '8px', 
+                  padding: '0.65rem 1.5rem', fontSize: '0.95rem', fontWeight: 600, 
+                  cursor: isCreating ? 'not-allowed' : 'pointer', 
+                  boxShadow: isCreating ? 'none' : '0 2px 10px rgba(137, 66, 252, 0.2)' 
+                }}>
+                {isCreating ? 'Processando...' : 'Cadastrar'}
               </button>
             </div>
 
