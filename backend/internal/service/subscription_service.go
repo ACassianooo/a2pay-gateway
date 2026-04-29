@@ -54,6 +54,10 @@ func (s *SubscriptionService) CreateSubscription(merchantID int, req dto.CreateS
 		nextBilling = time.Now().AddDate(0, 0, req.IntervaloDias)
 	}
 
+	if req.ClienteCPF == "" {
+		return nil, nil, fmt.Errorf("CPF do cliente é obrigatório para assinaturas")
+	}
+
 	// 2. Gerar a primeira cobrança usando o PIX Service
 	extReq := ExternalPixRequest{
 		Valor:         valorFinal,
@@ -69,7 +73,7 @@ func (s *SubscriptionService) CreateSubscription(merchantID int, req dto.CreateS
 	}
 
 	// 3. Salvar a assinatura no banco de dados
-	subID, err := s.repo.Create(merchantID, req, nextBilling, pixResult.ChargeID)
+	subID, err := s.repo.Create(merchantID, req, valorFinal, nextBilling, pixResult.ChargeID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("erro ao salvar assinatura no banco: %w", err)
 	}

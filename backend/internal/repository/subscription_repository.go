@@ -15,14 +15,14 @@ func NewSubscriptionRepository(db *sql.DB) *SubscriptionRepository {
 	return &SubscriptionRepository{db: db}
 }
 
-func (r *SubscriptionRepository) Create(merchantID int, req dto.CreateSubscriptionRequest, nextBilling time.Time, txid string) (int, error) {
+func (r *SubscriptionRepository) Create(merchantID int, req dto.CreateSubscriptionRequest, valor float64, nextBilling time.Time, txid string) (int, error) {
 	var id int
 	query := `
 		INSERT INTO subscriptions (merchant_id, cliente_nome, cliente_email, cliente_cpf, plano_nome, valor, intervalo_dias, status, next_billing_date, current_charge_txid)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, 'ativa', $8, $9)
 		RETURNING id
 	`
-	err := r.db.QueryRow(query, merchantID, req.ClienteNome, req.ClienteEmail, req.ClienteCPF, req.PlanoNome, req.Valor, req.IntervaloDias, nextBilling, txid).Scan(&id)
+	err := r.db.QueryRow(query, merchantID, req.ClienteNome, req.ClienteEmail, req.ClienteCPF, req.PlanoNome, valor, req.IntervaloDias, nextBilling, txid).Scan(&id)
 	return id, err
 }
 
