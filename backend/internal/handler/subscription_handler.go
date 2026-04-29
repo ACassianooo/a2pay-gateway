@@ -44,11 +44,15 @@ func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	resp, _, err := h.subService.CreateSubscription(merchantID, req, isSandbox)
 	if err != nil {
-		// Log detalhado no servidor
 		fmt.Printf("[Subscription Error] Merchant=%d Error=%v\n", merchantID, err)
-		
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		json.NewEncoder(w).Encode(map[string]string{"error": "Erro interno: " + err.Error()})
+		return
+	}
+
+	if resp == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Resposta do serviço está vazia"})
 		return
 	}
 
