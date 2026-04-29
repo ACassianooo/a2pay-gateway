@@ -2647,11 +2647,6 @@ export default function Dashboard() {
               </div>
             )}
             <button style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer' }}><Bell size={20} /></button>
-            <div style={{ width: '1px', height: '20px', background: '#e5e7eb' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-               <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>{data?.name || 'Minha Loja'}</div>
-               <ChevronDown size={14} color="#94a3b8" />
-            </div>
           </div>
         </header>
 
