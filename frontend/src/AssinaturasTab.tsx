@@ -75,16 +75,14 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
+      console.log("[fetchCupons] Data received:", data);
       if (Array.isArray(data)) {
-        setCupons(data.filter((c: any) => c.status === 'ativo'));
+        const ativos = data.filter((c: any) => c.status === 'ativo');
+        console.log("[fetchCupons] Active coupons:", ativos);
+        setCupons(ativos);
       }
     } catch (error) {
       console.error('Erro ao buscar cupons', error);
-    }
-  };
-      console.error('Erro ao buscar assinaturas', error);
-    } finally {
-      setLoading(false);
     }
   };
 
