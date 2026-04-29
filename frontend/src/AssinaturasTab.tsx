@@ -159,7 +159,7 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
         plano_nome: planoNome || 'Plano Personalizado',
         cliente_nome: clienteNome,
         cliente_email: clienteEmail,
-        cliente_cpf: clienteCpf,
+        cliente_cpf: clienteCpf.replace(/\D/g, ''),
         valor: parseFloat(rawValue),
         intervalo_dias: 30,
         cupom: selectedCupom,
