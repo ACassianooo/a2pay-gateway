@@ -174,21 +174,34 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
         body: JSON.stringify(payload)
       });
       
+      const responseText = await res.text();
+      console.log("[handleCreate] Response status:", res.status);
+      console.log("[handleCreate] Response text:", responseText);
+
+      let data: any = {};
+      try {
+        if (responseText) {
+          data = JSON.parse(responseText);
+        }
+      } catch (e) {
+        console.error("[handleCreate] JSON parse error:", e);
+      }
+
       if (res.ok) {
         setShowModal(false);
         fetchAssinaturas();
-        const data = await res.json();
         
         if (isNewClient && onNavigateToClients) {
           onNavigateToClients();
         }
 
-        if (data.pix_qr_code) {
+        if (data && data.pix_qr_code) {
           setShowPixModal(data);
+        } else {
+          console.warn("[handleCreate] Success but no PIX data found in response");
         }
       } else {
-        const errorData = await res.json();
-        alert("Erro ao criar assinatura: " + (errorData.error || "Erro desconhecido"));
+        alert("Erro ao criar assinatura: " + (data.error || responseText || "Erro desconhecido"));
       }
     } catch (error: any) {
       console.error("[handleCreate] Connection Error:", error);
