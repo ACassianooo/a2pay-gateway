@@ -49,6 +49,7 @@ interface Customer {
 interface EmpresaInfo { nome: string; volume_girado: number; taxas_cobradas: number; }
 interface DashboardData {
   role: string;
+  name?: string;
   saldo_lojista?: number;
   transacoes?: Transaction[];
   clientes?: Customer[];
@@ -2185,7 +2186,7 @@ function ContaTab({ data }: { data: any }) {
               {data.role === 'master' ? 'MA' : 'LJ'}
             </div>
             <div>
-              <h3 style={{ color: '#111827', fontWeight: 800, fontSize: '1.2rem' }}>{data.role === 'master' ? 'Master Admin' : 'Minha Loja'}</h3>
+              <h3 style={{ color: '#111827', fontWeight: 800, fontSize: '1.2rem' }}>{data.name || (data.role === 'master' ? 'Master Admin' : 'Minha Loja')}</h3>
               <div style={{ color: '#6b7280', fontSize: '0.88rem', marginTop: '0.2rem' }}>Cadastro Ativo</div>
             </div>
           </div>
@@ -2298,8 +2299,8 @@ export default function Dashboard() {
 
   const navigate = useNavigate();
 
-  const fetchData = (env: boolean) => {
-    setLoading(true);
+  const fetchData = (env: boolean, silent = false) => {
+    if (!silent) setLoading(true);
     fetch(`${API}/api/pagamentos`, { 
       headers: { 
         'Authorization': `Bearer ${token()}`,
@@ -2329,7 +2330,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchData(isSandbox);
-  }, [navigate]);
+    
+    // Atualização automática a cada 30 segundos (Silenciosa)
+    const interval = setInterval(() => {
+      fetchData(isSandbox, true);
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [navigate, isSandbox]);
 
   // Inicializa a tab ativa para admin (DEVE ficar antes dos early returns)
   useEffect(() => {
@@ -2492,7 +2500,7 @@ export default function Dashboard() {
             <div style={{ width: 24, height: 24, borderRadius: 6, background: '#f3f4f6', display: 'grid', placeItems: 'center' }}>
               {isMaster ? <Shield size={14} color="#8942FC" /> : <Building size={14} color="#6b7280" />}
             </div>
-            <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#374151' }}>{isMaster ? 'Admin Panel' : 'Minha Loja'}</span>
+            <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#374151' }}>{data?.name || (isMaster ? 'Admin Panel' : 'Minha Loja')}</span>
           </div>
           <ChevronDown size={16} color="#94a3b8" />
         </div>
@@ -2581,7 +2589,7 @@ export default function Dashboard() {
               {isMaster ? 'MA' : (data.role === 'admin' ? 'AD' : 'LJ')}
             </div>
             <div style={{ flex: 1, overflow: 'hidden' }}>
-              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{isMaster ? 'Master User' : 'Minha Loja'}</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{data?.name || (isMaster ? 'Master User' : 'Minha Loja')}</div>
               <div style={{ fontSize: '0.7rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{isMaster ? 'Sistema Master' : (data.role === 'admin' ? 'Administrador' : 'Lojista')}</div>
             </div>
             <button onClick={handleLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
@@ -2607,7 +2615,7 @@ export default function Dashboard() {
             <button style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer' }}><Bell size={20} /></button>
             <div style={{ width: '1px', height: '20px', background: '#e5e7eb' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-               <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>Minha Loja</div>
+               <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>{data?.name || 'Minha Loja'}</div>
                <ChevronDown size={14} color="#94a3b8" />
             </div>
           </div>
