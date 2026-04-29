@@ -8,7 +8,7 @@ const Card = ({ children, style = {} }: any) => (
   </div>
 );
 
-export default function AssinaturasTab() {
+export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToClients?: () => void }) {
   const [activeSubTab, setActiveSubTab] = useState<'assinaturas' | 'checkouts'>('assinaturas');
   const [assinaturas, setAssinaturas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,6 +101,12 @@ export default function AssinaturasTab() {
         setShowModal(false);
         fetchAssinaturas();
         const data = await res.json();
+        
+        // Se for um novo cliente, redireciona para a aba de clientes
+        if (isNewClient && onNavigateToClients) {
+          onNavigateToClients();
+        }
+
         if (data.pix_qr_code) {
           setShowPixModal(data);
         }

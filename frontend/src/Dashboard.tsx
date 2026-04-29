@@ -2654,7 +2654,7 @@ export default function Dashboard() {
         <div style={{ padding: '2rem 2.5rem', maxWidth: '1400px' }}>
           {/* Merchant Tabs */}
           {activeTab === 'overview'   && <OverviewTab data={data} />}
-          {activeTab === 'assinaturas' && <AssinaturasTab />}
+          {activeTab === 'assinaturas' && <AssinaturasTab onNavigateToClients={() => setActiveTab('clientes')} />}
           {activeTab === 'produtos'   && <ProdutosTab />}
           {activeTab === 'cupons'     && <CuponsTab />}
           {activeTab === 'clientes'   && <ClientesTab selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer} />}
