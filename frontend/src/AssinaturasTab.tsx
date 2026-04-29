@@ -33,6 +33,8 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
 
   const [cupons, setCupons] = useState<any[]>([]);
   const [selectedCupom, setSelectedCupom] = useState('');
+
+  const [clientes, setClientes] = useState<any[]>([]);
   
   // Modal de QRCode PIX
   const [showPixModal, setShowPixModal] = useState<any>(null);
@@ -40,6 +42,7 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
   useEffect(() => {
     fetchAssinaturas();
     fetchCupons();
+    fetchClientes();
 
     const handleClickOutside = (event: MouseEvent) => {
       if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
@@ -83,6 +86,32 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
       }
     } catch (error) {
       console.error('Erro ao buscar cupons', error);
+    }
+  };
+
+  const fetchClientes = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/merchants/customers`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setClientes(data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar clientes', error);
+    }
+  };
+
+  const handleSelectCliente = (id: string) => {
+    const selected = clientes.find(c => c.id === id);
+    if (selected) {
+      setClienteNome(selected.name || '');
+      setClienteEmail(selected.email || '');
+      setClienteTelefone(maskPhone(selected.phone || ''));
+      setClienteCpf(maskDoc(selected.cpf || ''));
+      setIsNewClient(false); // Garante que estamos usando os dados, mas ocultando o form de cadastro se necessário
     }
   };
 
@@ -346,8 +375,13 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
 
                 {!isNewClient ? (
                   <div style={{ marginBottom: '1.5rem' }}>
-                    <select style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem', appearance: 'none', color: '#64748b' }}>
-                      <option>Selecione uma opção</option>
+                    <select 
+                      onChange={e => handleSelectCliente(e.target.value)}
+                      style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem', appearance: 'none', color: '#0f172a' }}>
+                      <option value="">Selecione uma opção</option>
+                      {clientes.map(c => (
+                        <option key={c.id} value={c.id}>{c.name} ({c.email})</option>
+                      ))}
                     </select>
                   </div>
                 ) : (
