@@ -165,6 +165,8 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
         cupom: selectedCupom,
       };
 
+      console.log("[handleCreate] Sending Payload:", payload);
+
       const res = await fetch(`${API_BASE_URL}/api/subscriptions`, {
         method: 'POST',
         headers: {
