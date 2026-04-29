@@ -15,9 +15,11 @@ import (
 func RequireAuth(jwtSecret []byte) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
 			authHeader := r.Header.Get("Authorization")
 			if !strings.HasPrefix(authHeader, "Bearer ") {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				w.WriteHeader(http.StatusUnauthorized)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
 				return
 			}
 			tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
@@ -25,7 +27,8 @@ func RequireAuth(jwtSecret []byte) func(http.Handler) http.Handler {
 				return jwtSecret, nil
 			})
 			if err != nil || !token.Valid {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				w.WriteHeader(http.StatusUnauthorized)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
 				return
 			}
 			claims := token.Claims.(jwt.MapClaims)
@@ -44,12 +47,16 @@ func RequireRole(requiredRole string) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			userVal := r.Context().Value("user")
 			if userVal == nil {
-				http.Error(w, "Unauthorized Context", http.StatusUnauthorized)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusUnauthorized)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized Context"})
 				return
 			}
 			user, ok := userVal.(model.UserContext)
 			if !ok || user.Role != requiredRole {
-				http.Error(w, "Forbidden - Permissão Insuficiente", http.StatusForbidden)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusForbidden)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Forbidden - Permissão Insuficiente"})
 				return
 			}
 			next.ServeHTTP(w, r)
