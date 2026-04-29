@@ -196,7 +196,11 @@ function OverviewTab({ data }: { data: DashboardData }) {
   ];
 
   const stats = metodos.map(m => {
-    const val = pagas.filter(t => (t.metodo_pagamento || 'pix') === m.key).reduce((s, t) => s + t.valor_total, 0);
+    const val = pagas.filter(t => {
+      // Normaliza o método: se for 'N/A' ou vazio, tratamos como 'pix' para o gráfico
+      const metodo = (t.metodo_pagamento === 'N/A' || !t.metodo_pagamento) ? 'pix' : t.metodo_pagamento;
+      return metodo === m.key;
+    }).reduce((s, t) => s + t.valor_total, 0);
     return { ...m, value: val };
   });
 
