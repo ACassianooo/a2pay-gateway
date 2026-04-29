@@ -138,7 +138,7 @@ func (s *PIXService) ExternalCharge(merchantID int, req ExternalPixRequest, isSa
 		client = s.clientTest
 	}
 
-	intentID, err := s.txRepo.Create(merchantID, req.Descricao, req.Valor, liquido, taxa, isSandbox, nil)
+	intentID, err := s.txRepo.Create(merchantID, req.Descricao, req.Valor, liquido, taxa, "pix", isSandbox, nil)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -284,7 +284,7 @@ func (s *PaymentService) CreateIntent(merchantID int, itemName string, valor flo
 	// Registro Automático de Produto
 	_ = s.prodRepo.EnsureExists(merchantID, itemName, valor, "uma_vez")
 	
-	return s.txRepo.Create(merchantID, itemName, valor, valor-taxa, taxa, isSandbox, metaBytes)
+	return s.txRepo.Create(merchantID, itemName, valor, valor-taxa, taxa, "N/A", isSandbox, metaBytes)
 }
 
 func (s *PaymentService) GetIntent(id int) (map[string]interface{}, error) {

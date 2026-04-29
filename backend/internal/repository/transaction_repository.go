@@ -17,12 +17,12 @@ func NewTransactionRepository(db *sql.DB) *TransactionRepository {
 	return &TransactionRepository{db: db}
 }
 
-func (r *TransactionRepository) Create(merchantID int, itemName string, valorTotal, liquido, taxa float64, isTest bool, metadata []byte) (int64, error) {
+func (r *TransactionRepository) Create(merchantID int, itemName string, valorTotal, liquido, taxa float64, metodo string, isTest bool, metadata []byte) (int64, error) {
 	var id int64
 	err := r.db.QueryRow(
 		`INSERT INTO transactions(merchant_id, item_name, valor_total, valor_liquido, taxa, status, metodo_pagamento, asaas_charge_id, created_at, is_test, metadata)
-		 VALUES($1, $2, $3, $4, $5, 'pendente', 'N/A', '', $6, $7, $8) RETURNING id`,
-		merchantID, itemName, valorTotal, liquido, taxa, time.Now().Format(time.RFC3339), isTest, metadata,
+		 VALUES($1, $2, $3, $4, $5, 'pendente', $6, '', $7, $8, $9) RETURNING id`,
+		merchantID, itemName, valorTotal, liquido, taxa, metodo, time.Now().Format(time.RFC3339), isTest, metadata,
 	).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("TransactionRepository.Create: %w", err)
