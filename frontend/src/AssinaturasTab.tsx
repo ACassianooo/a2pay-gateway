@@ -79,11 +79,16 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
-      console.log("[fetchCupons] Data received:", data);
+      console.log("[fetchCupons] Raw data:", data);
       if (Array.isArray(data)) {
-        const ativos = data.filter((c: any) => c.status === 'ativo');
-        console.log("[fetchCupons] Active coupons:", ativos);
+        // Filtro mais flexível (case-insensitive e trim)
+        const ativos = data.filter((c: any) => 
+          c.status && c.status.toLowerCase().trim() === 'ativo'
+        );
+        console.log("[fetchCupons] Found coupons:", data.length, "Active:", ativos.length);
         setCupons(ativos);
+      } else {
+        console.warn("[fetchCupons] Data is not an array:", data);
       }
     } catch (error) {
       console.error('Erro ao buscar cupons', error);
