@@ -54,7 +54,10 @@ func (r *UserRepository) GetAPIKey(merchantID int) (string, string, string, erro
 
 func (r *UserRepository) SetAPIKeys(merchantID int, live, test, capabilities string) error {
 	_, err := r.db.Exec(`
-		UPDATE merchants SET api_key = $1, api_key_test = $2, api_capabilities = $3 
+		UPDATE merchants 
+		SET api_key = NULLIF($1, ''), 
+		    api_key_test = NULLIF($2, ''), 
+		    api_capabilities = $3 
 		WHERE id = $4`, live, test, capabilities, merchantID)
 	return err
 }

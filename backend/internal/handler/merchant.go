@@ -206,7 +206,11 @@ func (h *MerchantHandler) RotateAPIKey(w http.ResponseWriter, r *http.Request) {
 		req.Capabilities = "pix,card"
 	}
 
-	live, test, _, _ := h.userRepo.GetAPIKey(user.MerchantID)
+	live, test, _, err := h.userRepo.GetAPIKey(user.MerchantID)
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao recuperar chaves atuais"})
+		return
+	}
 
 	if req.Environment == "test" {
 		test = service.GenerateAPIKey("a2p_test_")
@@ -242,7 +246,11 @@ func (h *MerchantHandler) DeleteAPIKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	live, test, caps, _ := h.userRepo.GetAPIKey(user.MerchantID)
+	live, test, caps, err := h.userRepo.GetAPIKey(user.MerchantID)
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao recuperar chaves atuais"})
+		return
+	}
 
 	if req.Environment == "test" {
 		test = ""
