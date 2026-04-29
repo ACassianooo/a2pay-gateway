@@ -153,14 +153,44 @@ function Card({ children, style = {}, onClick }: { children: React.ReactNode; st
 function OverviewTab({ data }: { data: DashboardData }) {
   const [period, setPeriod] = useState('Hoje');
   const txs = data.transacoes || [];
-  const pagas = txs.filter(t => t.status === 'pago');
+
+  const filterByPeriod = (transactions: Transaction[], selectedPeriod: string) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    return transactions.filter(t => {
+      if (t.status !== 'pago') return false;
+      const date = new Date(t.created_at);
+      
+      switch (selectedPeriod) {
+        case 'Hoje':
+          return date >= today;
+        case 'Esse mês':
+          return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+        case 'Últimos 30 dias':
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(now.getDate() - 30);
+          return date >= thirtyDaysAgo;
+        case 'Últimos 90 dias':
+          const ninetyDaysAgo = new Date();
+          ninetyDaysAgo.setDate(now.getDate() - 90);
+          return date >= ninetyDaysAgo;
+        case 'Todo o período':
+          return true;
+        default:
+          return true;
+      }
+    });
+  };
+
+  const pagas = filterByPeriod(txs, period);
   const volume = pagas.reduce((s, t) => s + t.valor_total, 0);
   const ticketMedio = pagas.length > 0 ? volume / pagas.length : 0;
 
   const periods = ['Hoje', 'Esse mês', 'Últimos 30 dias', 'Últimos 90 dias', 'Todo o período', 'Personalizado'];
 
   const metodos = [
-    { name: 'Cartão de crédito', key: 'card', color: '#f97316', icon: <CreditCard size={15} /> },
+    { name: 'Cartão de crédito', key: 'cartao', color: '#f97316', icon: <CreditCard size={15} /> },
     { name: 'Pix', key: 'pix', color: '#a855f7', icon: <Zap size={15} /> },
     { name: 'Pix QR Code', key: 'pix_qr_code', color: '#14b8a6', icon: <QrCode size={15} /> },
   ];
