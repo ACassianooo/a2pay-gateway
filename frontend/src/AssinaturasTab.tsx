@@ -169,7 +169,8 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
+          'x-a2pay-env': localStorage.getItem('a2pay_env') || 'live'
         },
         body: JSON.stringify(payload)
       });
