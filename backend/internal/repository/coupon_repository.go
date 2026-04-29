@@ -52,3 +52,17 @@ func (r *CouponRepository) ToggleStatus(id, merchantID int, status string) error
 	_, err := r.db.Exec(query, status, id, merchantID)
 	return err
 }
+
+func (r *CouponRepository) GetByCode(merchantID int, code string) (*model.Coupon, error) {
+	query := `
+		SELECT id, merchant_id, code, discount_type, discount_value, max_uses, used_count, status, created_at
+		FROM coupons
+		WHERE merchant_id = $1 AND code = $2
+	`
+	var c model.Coupon
+	err := r.db.QueryRow(query, merchantID, code).Scan(&c.ID, &c.MerchantID, &c.Code, &c.DiscountType, &c.DiscountValue, &c.MaxUses, &c.UsedCount, &c.Status, &c.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
+}

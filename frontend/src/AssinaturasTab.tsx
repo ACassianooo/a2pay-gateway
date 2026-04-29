@@ -150,6 +150,7 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
         cliente_cpf: clienteCpf,
         valor: parseFloat(rawValue),
         intervalo_dias: 30, // fixo mensal por enquanto
+        cupom: selectedCupom,
       };
 
       const res = await fetch(`${API_BASE_URL}/api/subscriptions`, {
@@ -175,7 +176,8 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
           setShowPixModal(data);
         }
       } else {
-        alert("Erro ao criar assinatura");
+        const errorData = await res.json();
+        alert("Erro ao criar assinatura: " + (errorData.error || "Erro desconhecido"));
       }
     } catch (error) {
       console.error(error);

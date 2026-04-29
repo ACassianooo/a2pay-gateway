@@ -90,7 +90,7 @@ func New(cfg *config.Config, db *database.DB) *Server {
 	fraudSvc := service.NewFraudService(txRepo, walRepo)
 	pixSvc := service.NewPIXService(pixLive, pixTest, txRepo, custRepo)
 	paymentSvc := service.NewPaymentService(txRepo, prodRepo, pixSvc, walletSvc, fraudSvc)
-	subSvc := service.NewSubscriptionService(subRepo, prodRepo, pixSvc)
+	subSvc := service.NewSubscriptionService(subRepo, prodRepo, couRepo, pixSvc)
 
 	// Inicia o Worker de Assinaturas em Background (roda uma vez por hora)
 	// OBS: Em Produção, você pode querer passar isSandbox=false ou puxar da configuração.

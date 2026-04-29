@@ -9,19 +9,37 @@ import (
 )
 
 type SubscriptionService struct {
-	repo     *repository.SubscriptionRepository
-	prodRepo *repository.ProductRepository
-	pix      *PIXService
+	repo       *repository.SubscriptionRepository
+	prodRepo   *repository.ProductRepository
+	couponRepo *repository.CouponRepository
+	pix        *PIXService
 }
 
-func NewSubscriptionService(repo *repository.SubscriptionRepository, prodRepo *repository.ProductRepository, pix *PIXService) *SubscriptionService {
-	return &SubscriptionService{repo: repo, prodRepo: prodRepo, pix: pix}
+func NewSubscriptionService(repo *repository.SubscriptionRepository, prodRepo *repository.ProductRepository, couponRepo *repository.CouponRepository, pix *PIXService) *SubscriptionService {
+	return &SubscriptionService{repo: repo, prodRepo: prodRepo, couponRepo: couponRepo, pix: pix}
 }
 
 // CreateSubscription inicia uma nova assinatura e gera a primeira fatura
 func (s *SubscriptionService) CreateSubscription(merchantID int, req dto.CreateSubscriptionRequest, isSandbox bool) (*dto.SubscriptionResponse, *PIXResult, error) {
+	valorFinal := req.Valor
+
+	// Aplicar Cupom se existir
+	if req.Cupom != "" {
+		c, err := s.couponRepo.GetByCode(merchantID, req.Cupom)
+		if err == nil && c.Status == "ativo" {
+			if c.DiscountType == "percentual" {
+				valorFinal = req.Valor * (1 - c.DiscountValue/100)
+			} else {
+				valorFinal = req.Valor - c.DiscountValue
+			}
+			if valorFinal < 0 {
+				valorFinal = 0
+			}
+		}
+	}
+
 	// Registro Automático de Produto (Plano)
-	_ = s.prodRepo.EnsureExists(merchantID, req.PlanoNome, req.Valor, "recorrente")
+	_ = s.prodRepo.EnsureExists(merchantID, req.PlanoNome, valorFinal, "recorrente")
 
 	// 1. O próximo vencimento será calculado inteligentemente
 	var nextBilling time.Time
@@ -38,7 +56,7 @@ func (s *SubscriptionService) CreateSubscription(merchantID int, req dto.CreateS
 
 	// 2. Gerar a primeira cobrança usando o PIX Service
 	extReq := ExternalPixRequest{
-		Valor:         req.Valor,
+		Valor:         valorFinal,
 		Descricao:     fmt.Sprintf("Assinatura: %s", req.PlanoNome),
 		CustomerName:  req.ClienteNome,
 		CustomerEmail: req.ClienteEmail,
@@ -62,7 +80,7 @@ func (s *SubscriptionService) CreateSubscription(merchantID int, req dto.CreateS
 		ClienteNome:       req.ClienteNome,
 		ClienteEmail:      req.ClienteEmail,
 		PlanoNome:         req.PlanoNome,
-		Valor:             req.Valor,
+		Valor:             valorFinal,
 		Status:            "ativa",
 		IntervaloDias:     req.IntervaloDias,
 		NextBillingDate:   nextBilling,

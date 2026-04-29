@@ -9,6 +9,7 @@ type CreateSubscriptionRequest struct {
 	PlanoNome     string  `json:"plano_nome"`
 	Valor         float64 `json:"valor"`
 	IntervaloDias int     `json:"intervalo_dias"`
+	Cupom         string  `json:"cupom"`
 }
 
 type SubscriptionResponse struct {
