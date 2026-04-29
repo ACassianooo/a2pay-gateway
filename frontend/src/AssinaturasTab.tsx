@@ -31,11 +31,15 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
   const [urlFinalizacao, setUrlFinalizacao] = useState('');
   const [urlRetorno, setUrlRetorno] = useState('');
 
+  const [cupons, setCupons] = useState<any[]>([]);
+  const [selectedCupom, setSelectedCupom] = useState('');
+  
   // Modal de QRCode PIX
   const [showPixModal, setShowPixModal] = useState<any>(null);
 
   useEffect(() => {
     fetchAssinaturas();
+    fetchCupons();
 
     const handleClickOutside = (event: MouseEvent) => {
       if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
@@ -58,6 +62,26 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
         setAssinaturas(data);
       }
     } catch (error) {
+      console.error('Erro ao buscar assinaturas', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCupons = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/merchants/coupons`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setCupons(data.filter((c: any) => c.status === 'ativo'));
+      }
+    } catch (error) {
+      console.error('Erro ao buscar cupons', error);
+    }
+  };
       console.error('Erro ao buscar assinaturas', error);
     } finally {
       setLoading(false);
@@ -379,8 +403,14 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
                     Cupons <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>ⓘ</span>
                   </label>
                   <div style={{ position: 'relative' }}>
-                    <select style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem', appearance: 'none', color: '#64748b' }}>
-                      <option>Selecione uma opção</option>
+                    <select 
+                      value={selectedCupom}
+                      onChange={e => setSelectedCupom(e.target.value)}
+                      style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem', appearance: 'none', color: '#0f172a' }}>
+                      <option value="">Selecione uma opção</option>
+                      {cupons.map(c => (
+                        <option key={c.id} value={c.code}>{c.code} ({c.discount_type === 'percentual' ? `${c.discount_value}%` : `R$ ${c.discount_value}`})</option>
+                      ))}
                     </select>
                     <ChevronDown size={16} color="#94a3b8" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
                   </div>
