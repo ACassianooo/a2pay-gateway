@@ -201,7 +201,7 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
           console.warn("[handleCreate] Success but no PIX data found in response");
         }
       } else {
-        alert("Erro ao criar assinatura: " + (data.error || responseText || "Erro desconhecido"));
+        alert(`DEBUG - ERRO NA API (Status ${res.status}): ` + (data.error || responseText || "Causa Vazia"));
       }
     } catch (error: any) {
       console.error("[handleCreate] Connection Error:", error);
@@ -376,7 +376,7 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
                 <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center' }}>
                   <ArrowLeft size={20} />
                 </button>
-                <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>Criar Checkout</h2>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b' }}>Criar Checkout de Assinatura (v2.1)</h2>
               </div>
               <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#94a3b8' }}>&times;</button>
             </div>
