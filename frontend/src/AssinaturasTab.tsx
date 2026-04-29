@@ -190,9 +190,9 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
         const errorData = await res.json();
         alert("Erro ao criar assinatura: " + (errorData.error || "Erro desconhecido"));
       }
-    } catch (error) {
-      console.error(error);
-      alert("Erro de conexão com o servidor.");
+    } catch (error: any) {
+      console.error("[handleCreate] Connection Error:", error);
+      alert("Erro de conexão com o servidor: " + (error.message || "Verifique sua internet ou se o servidor está ativo."));
     } finally {
       setIsCreating(false);
     }
