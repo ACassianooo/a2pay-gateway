@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gato-gateway/internal/dto"
@@ -18,9 +19,12 @@ func NewSubscriptionHandler(subService *service.SubscriptionService) *Subscripti
 }
 
 func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	
 	userVal := r.Context().Value("user")
 	if userVal == nil {
-		http.Error(w, "Não autorizado", http.StatusUnauthorized)
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Não autorizado"})
 		return
 	}
 	user := userVal.(model.UserContext)
@@ -29,7 +33,8 @@ func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	var req dto.CreateSubscriptionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Requisição inválida", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Requisição inválida"})
 		return
 	}
 
@@ -39,13 +44,14 @@ func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	resp, _, err := h.subService.CreateSubscription(merchantID, req, isSandbox)
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
+		// Log detalhado no servidor
+		fmt.Printf("[Subscription Error] Merchant=%d Error=%v\n", merchantID, err)
+		
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }
 
@@ -60,7 +66,9 @@ func (h *SubscriptionHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	subs, err := h.subService.ListSubscriptions(merchantID)
 	if err != nil {
-		http.Error(w, "Erro ao buscar assinaturas", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Erro ao buscar assinaturas"})
 		return
 	}
 
