@@ -96,6 +96,7 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
+      console.log("[fetchClientes] Data received:", data);
       if (Array.isArray(data)) {
         setClientes(data);
       }
@@ -375,14 +376,18 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
 
                 {!isNewClient ? (
                   <div style={{ marginBottom: '1.5rem' }}>
-                    <select 
-                      onChange={e => handleSelectCliente(e.target.value)}
-                      style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem', appearance: 'none', color: '#0f172a' }}>
-                      <option value="">Selecione uma opção</option>
-                      {clientes.map(c => (
-                        <option key={c.id} value={c.id}>{c.name} ({c.email})</option>
-                      ))}
-                    </select>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.4rem' }}>Selecione o Cliente</label>
+                    <div style={{ position: 'relative' }}>
+                      <select 
+                        onChange={e => handleSelectCliente(e.target.value)}
+                        style={{ width: '100%', padding: '0.75rem 2.5rem 0.75rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem', appearance: 'none', color: '#0f172a', background: '#fff' }}>
+                        <option value="">Selecione uma opção</option>
+                        {clientes.map(c => (
+                          <option key={c.id} value={c.id}>{c.name} ({c.email})</option>
+                        ))}
+                      </select>
+                      <ChevronDown size={16} color="#94a3b8" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                    </div>
                   </div>
                 ) : (
                   <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid #f1f5f9' }}>
