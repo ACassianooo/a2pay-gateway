@@ -21,6 +21,15 @@ func NewSubscriptionHandler(subService *service.SubscriptionService) *Subscripti
 func (h *SubscriptionHandler) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	
+	// Recuperar de panics e retornar JSON
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("[PANIC] %v\n", r)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("Panic interno: %v", r)})
+		}
+	}()
+
 	userVal := r.Context().Value("user")
 	if userVal == nil {
 		w.WriteHeader(http.StatusUnauthorized)
