@@ -73,6 +73,18 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
     });
   };
 
+  const maskPhone = (val: string) => {
+    const v = val.replace(/\D/g, "").substring(0, 11);
+    if (v.length <= 10) return v.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3");
+    return v.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+  };
+
+  const maskDoc = (val: string) => {
+    const v = val.replace(/\D/g, "").substring(0, 14);
+    if (v.length <= 11) return v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+    return v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -328,11 +340,11 @@ export default function AssinaturasTab({ onNavigateToClients }: { onNavigateToCl
                     </div>
                     <div style={{ marginBottom: '1rem' }}>
                       <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.4rem' }}>Telefone *</label>
-                      <input required value={clienteTelefone} onChange={e => setClienteTelefone(e.target.value)} type="text" placeholder="(00) 00000-0000" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                      <input required value={clienteTelefone} onChange={e => setClienteTelefone(maskPhone(e.target.value))} type="text" placeholder="(00) 00000-0000" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
                     </div>
                     <div style={{ marginBottom: '0.5rem' }}>
                       <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.4rem' }}>CPF ou CNPJ *</label>
-                      <input required value={clienteCpf} onChange={e => setClienteCpf(e.target.value)} type="text" placeholder="000.000.000-00 ou 00.000.000/0000-00" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
+                      <input required value={clienteCpf} onChange={e => setClienteCpf(maskDoc(e.target.value))} type="text" placeholder="000.000.000-00 ou 00.000.000/0000-00" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem' }} />
                     </div>
                   </div>
                 )}
