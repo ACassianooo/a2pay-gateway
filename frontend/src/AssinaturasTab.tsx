@@ -64,16 +64,27 @@ export default function AssinaturasTab() {
     }
   };
 
+  const formatCurrency = (val: string) => {
+    const cleanValue = val.replace(/\D/g, '');
+    const cents = parseInt(cleanValue || '0');
+    return (cents / 100).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
+      // Converte "1.250,50" -> "1250.50"
+      const rawValue = valor.replace(/\./g, '').replace(',', '.');
       const payload = {
         plano_nome: planoNome || 'Plano Personalizado',
         cliente_nome: clienteNome,
         cliente_email: clienteEmail,
         cliente_cpf: clienteCpf,
-        valor: parseFloat(valor.replace(',', '.')),
+        valor: parseFloat(rawValue),
         intervalo_dias: 30, // fixo mensal por enquanto
       };
 
@@ -331,7 +342,7 @@ export default function AssinaturasTab() {
                   <label style={{ display: 'block', fontSize: '0.85rem', color: '#64748b', marginBottom: '0.2rem' }}>Valor</label>
                   <div style={{ position: 'relative' }}>
                     <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontWeight: 600, color: '#0f172a' }}>R$</span>
-                    <input required value={valor} onChange={e => setValor(e.target.value)} type="text" placeholder="0,00" style={{ width: '100%', padding: '0.75rem 1rem 0.75rem 2.2rem', borderRadius: '8px', border: 'none', background: 'transparent', fontSize: '1.1rem', fontWeight: 600, color: '#0f172a', outline: 'none' }} />
+                    <input required value={valor} onChange={e => setValor(formatCurrency(e.target.value))} type="text" placeholder="0,00" style={{ width: '100%', padding: '0.75rem 1rem 0.75rem 2.2rem', borderRadius: '8px', border: 'none', background: 'transparent', fontSize: '1.1rem', fontWeight: 600, color: '#0f172a', outline: 'none' }} />
                   </div>
                 </div>
 
