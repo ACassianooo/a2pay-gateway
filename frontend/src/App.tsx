@@ -61,9 +61,11 @@ function AppContent() {
       .catch(() => console.log('[A2Pay] Aguardando servidor...'));
   }, []);
 
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+
   return (
     <div className={isDashboard ? "dashboard-layout" : "app-container"}>
-      {!isDashboard && !isCheckout && (
+      {!isDashboard && !isCheckout && !isAuthPage && (
         <nav className="navbar">
           <Link to="/" className="navbar-brand">
             <Shield color="#8942FC" fill="#8942FC" size={28} />

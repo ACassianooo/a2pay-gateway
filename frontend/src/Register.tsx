@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { UserPlus, Shield, CheckCircle2, ArrowRight, Store, Mail, Lock, FileText, Phone } from 'lucide-react';
 import { API_BASE_URL } from './api';
@@ -12,6 +12,14 @@ export default function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const token = localStorage.getItem('token');
+
+  // Se já estiver logado, vai direto pro dashboard
+  useEffect(() => {
+    if (token) {
+      navigate('/dashboard');
+    }
+  }, [token, navigate]);
 
   // Helper for CPF/CNPJ Masking
   const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
