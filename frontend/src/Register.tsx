@@ -12,14 +12,12 @@ export default function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
 
-  // Se já estiver logado, vai direto pro dashboard
+  // Ao entrar na tela de registro, limpa qualquer sessão anterior
   useEffect(() => {
-    if (token) {
-      navigate('/dashboard');
-    }
-  }, [token, navigate]);
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+  }, []);
 
   // Helper for CPF/CNPJ Masking
   const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
