@@ -108,17 +108,32 @@ function Sparkline({ data, color = '#8942FC' }: { data: number[]; color?: string
 }
 
 // ── Metric Card ───────────────────────────────────────────────────────────────
-function MetricCard({ label, value, icon, sub, color }: {
-  label: string; value: string; icon?: React.ReactElement; sub?: string; color?: string;
+function MetricCard({ label, value, icon, sub, color, highlight }: {
+  label: string; value: string; icon?: React.ReactElement; sub?: string; color?: string; highlight?: boolean;
 }) {
   return (
-    <div style={{ background: '#ffffff', border: '1px solid #f1f5f9', borderRadius: '16px', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.2rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', flex: 1 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ color: '#94a3b8', fontSize: '0.82rem', fontWeight: 600 }}>{label}</div>
-        {icon && <div style={{ color: color || '#94a3b8' }}>{icon}</div>}
+    <div style={{ 
+      background: highlight ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%)' : 'var(--bg-card)', 
+      border: highlight ? 'none' : '1px solid var(--border)', 
+      borderRadius: 'var(--radius-lg)', 
+      padding: '1.8rem', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: '0.4rem', 
+      boxShadow: highlight ? '0 20px 40px -10px var(--primary-glow)' : 'var(--shadow-premium)', 
+      flex: 1,
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      {highlight && (
+        <div style={{ position: 'absolute', top: '-20%', right: '-10%', width: '150px', height: '150px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%', filter: 'blur(40px)' }} />
+      )}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 1 }}>
+        <div style={{ color: highlight ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.02em' }}>{label}</div>
+        {icon && <div style={{ color: highlight ? '#fff' : (color || 'var(--primary)') }}>{icon}</div>}
       </div>
-      <div style={{ fontSize: '1.85rem', fontWeight: 700, color: '#111827', letterSpacing: '-0.02em' }}>{value}</div>
-      {sub && <div style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 500 }}>{sub}</div>}
+      <div style={{ fontSize: '2.2rem', fontWeight: 900, color: highlight ? '#fff' : 'var(--text-main)', letterSpacing: '-0.03em', zIndex: 1 }}>{value}</div>
+      {sub && <div style={{ fontSize: '0.8rem', color: highlight ? 'rgba(255,255,255,0.6)' : 'var(--text-muted)', fontWeight: 600, zIndex: 1 }}>{sub}</div>}
     </div>
   );
 }
@@ -126,11 +141,11 @@ function MetricCard({ label, value, icon, sub, color }: {
 // ── Section header ────────────────────────────────────────────────────────────
 function SectionHeader({ icon, title, sub }: { icon: React.ReactElement; title: string; sub?: string }) {
   return (
-    <div style={{ marginBottom: '1.8rem' }}>
-      <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#111827', fontSize: '1.3rem', fontWeight: 800, marginBottom: '0.3rem' }}>
-        <span style={{ color: '#8942FC' }}>{icon}</span>{title}
+    <div style={{ marginBottom: '2.5rem' }}>
+      <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-main)', fontSize: '1.5rem', fontWeight: 900, marginBottom: '0.5rem', letterSpacing: '-0.03em' }}>
+        <span style={{ color: 'var(--primary)' }}>{icon}</span>{title}
       </h2>
-      {sub && <p style={{ color: '#6b7280', fontSize: '0.88rem' }}>{sub}</p>}
+      {sub && <p style={{ color: 'var(--text-muted)', fontSize: '1rem', fontWeight: 500 }}>{sub}</p>}
     </div>
   );
 }
@@ -140,7 +155,14 @@ function Card({ children, style = {}, onClick }: { children: React.ReactNode; st
   return (
     <div 
       onClick={onClick}
-      style={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 16, padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', ...style }}
+      style={{ 
+        background: 'var(--bg-card)', 
+        border: '1px solid var(--border)', 
+        borderRadius: 'var(--radius-lg)', 
+        padding: '1.5rem', 
+        boxShadow: 'var(--shadow-premium)', 
+        ...style 
+      }}
     >
       {children}
     </div>
@@ -183,6 +205,29 @@ function OverviewTab({ data }: { data: DashboardData }) {
     });
   };
 
+  const getPeriodLabel = (selectedPeriod: string) => {
+    const now = new Date();
+    const months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    
+    if (selectedPeriod === 'Hoje') {
+      return `${now.getDate()} de ${months[now.getMonth()]} de ${now.getFullYear()}`;
+    }
+    if (selectedPeriod === 'Esse mês') {
+      return `${months[now.getMonth()]} de ${now.getFullYear()}`;
+    }
+    if (selectedPeriod === 'Últimos 30 dias') {
+      const past = new Date();
+      past.setDate(now.getDate() - 30);
+      return `${past.getDate()} de ${months[past.getMonth()]} - ${now.getDate()} de ${months[now.getMonth()]}`;
+    }
+    if (selectedPeriod === 'Últimos 90 dias') {
+      const past = new Date();
+      past.setDate(now.getDate() - 90);
+      return `${past.getDate()} de ${months[past.getMonth()]} - ${now.getDate()} de ${months[now.getMonth()]}`;
+    }
+    return 'Todo o período';
+  };
+
   const pagas = filterByPeriod(txs, period);
   const volume = pagas.reduce((s, t) => s + t.valor_total, 0);
   const ticketMedio = pagas.length > 0 ? volume / pagas.length : 0;
@@ -197,7 +242,6 @@ function OverviewTab({ data }: { data: DashboardData }) {
 
   const stats = metodos.map(m => {
     const val = pagas.filter(t => {
-      // Normaliza o método: se for 'N/A' ou vazio, tratamos como 'pix' para o gráfico
       const metodo = (t.metodo_pagamento === 'N/A' || !t.metodo_pagamento) ? 'pix' : t.metodo_pagamento;
       return metodo === m.key;
     }).reduce((s, t) => s + t.valor_total, 0);
@@ -209,31 +253,52 @@ function OverviewTab({ data }: { data: DashboardData }) {
   return (
     <div>
       {/* Filtros de Período */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
-        {periods.map(p => (
-          <button key={p} onClick={() => setPeriod(p)}
-            style={{ 
-              padding: '0.6rem 1.2rem', 
-              borderRadius: '10px', 
-              border: period === p ? 'none' : '1px solid #e2e8f0', 
-              background: period === p ? '#c084fc' : '#fff', 
-              color: period === p ? '#4c1d95' : '#64748b', 
-              fontSize: '0.85rem', 
-              fontWeight: 700, 
-              cursor: 'pointer', 
-              transition: 'all .2s', 
-              whiteSpace: 'nowrap' 
-            }}>
-            {p}
-          </button>
-        ))}
+      <div style={{ marginBottom: '2.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+          {periods.map(p => (
+            <button key={p} onClick={() => setPeriod(p)}
+              style={{ 
+                padding: '0.75rem 1.4rem', 
+                borderRadius: 'var(--radius-md)', 
+                border: period === p ? 'none' : '1px solid var(--border)', 
+                background: period === p ? 'var(--primary)' : 'var(--bg-card)', 
+                color: period === p ? '#fff' : 'var(--text-muted)', 
+                fontSize: '0.85rem', 
+                fontWeight: 700, 
+                cursor: 'pointer', 
+                transition: 'all .2s cubic-bezier(0.4, 0, 0.2, 1)', 
+                whiteSpace: 'nowrap',
+                boxShadow: period === p ? '0 10px 15px -3px var(--primary-glow)' : 'none'
+              }}>
+              {p}
+            </button>
+          ))}
+        </div>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Clock size={14} /> {getPeriodLabel(period)}
+        </p>
       </div>
 
       {/* KPI Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '1.5rem' }}>
-        <MetricCard label="Total em vendas" value={fmt(volume)} />
-        <MetricCard label="Total de transações" value={String(pagas.length)} />
-        <MetricCard label="Ticket Médio" value={fmt(ticketMedio)} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+        <MetricCard 
+          label="Total em vendas" 
+          value={fmt(volume)} 
+          icon={<TrendingUp size={20} />} 
+          sub={`${getPeriodLabel(period)}`}
+        />
+        <MetricCard 
+          label="Total de transações" 
+          value={String(pagas.length)} 
+          icon={<List size={20} />} 
+          sub="Transações aprovadas"
+        />
+        <MetricCard 
+          label="Ticket Médio" 
+          value={fmt(ticketMedio)} 
+          icon={<Banknote size={20} />} 
+          sub="Média por checkout"
+        />
       </div>
 
       {/* Métodos de Pagamento */}
@@ -246,51 +311,47 @@ function OverviewTab({ data }: { data: DashboardData }) {
         </div>
 
         {/* Barra de Progresso Geral */}
-        <div style={{ width: '100%', height: '36px', background: '#f1f5f9', borderRadius: '10px', overflow: 'hidden', marginBottom: '2rem', position: 'relative' }}>
+        <div style={{ width: '100%', height: '32px', background: '#f1f5f9', borderRadius: '8px', overflow: 'hidden', marginBottom: '2.5rem', position: 'relative', display: 'flex' }}>
           {totalVolume > 0 ? (
-            <div style={{ display: 'flex', width: '100%', height: '100%' }}>
-              {stats.map((m, i) => (
-                <div key={i} style={{ 
-                  width: `${(m.value / totalVolume) * 100}%`, 
-                  height: '100%', 
-                  background: m.color, 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  color: '#fff',
-                  fontSize: '0.75rem',
-                  fontWeight: 800,
-                  transition: 'width .5s cubic-bezier(0.4, 0, 0.2, 1)'
-                }}>
-                  {((m.value / totalVolume) * 100) > 10 && `${Math.round((m.value / totalVolume) * 100)}%`}
-                </div>
-              ))}
-            </div>
+            stats.filter(m => m.value > 0).map((m, i) => (
+              <div key={i} style={{ 
+                width: `${(m.value / totalVolume) * 100}%`, 
+                height: '100%', 
+                background: 'var(--primary)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                color: '#fff',
+                fontSize: '0.8rem',
+                fontWeight: 800,
+                transition: 'width .5s ease'
+              }}>
+                {Math.round((m.value / totalVolume) * 100)}%
+              </div>
+            ))
           ) : (
              <div style={{ width: '100%', height: '100%', background: '#e2e8f0' }} />
           )}
         </div>
 
         {/* Lista de Métodos */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           {stats.sort((a,b) => b.value - a.value).map(m => (
-            <div key={m.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 0', borderTop: '1px solid #f8fafc' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ color: m.color }}>{m.icon}</div>
-                <span style={{ color: '#111827', fontSize: '0.9rem', fontWeight: 700 }}>{m.name}</span>
+            <div key={m.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.2rem 0', borderBottom: '1px solid #f8fafc' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ color: m.color, background: `${m.color}15`, width: 28, height: 28, borderRadius: 6, display: 'grid', placeItems: 'center' }}>{m.icon}</div>
+                <span style={{ color: '#111827', fontSize: '0.95rem', fontWeight: 700 }}>{m.name}</span>
               </div>
               <span style={{ color: '#111827', fontSize: '0.95rem', fontWeight: 700 }}>{fmt(m.value)}</span>
             </div>
           ))}
           
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.2rem 0', borderTop: '1px solid #f1f5f9', marginTop: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.5rem 0', marginTop: '0.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#16a34a', display: 'grid', placeItems: 'center' }}>
-                 <Check size={14} color="#fff" strokeWidth={3} />
-              </div>
-              <span style={{ color: '#111827', fontSize: '0.95rem', fontWeight: 800 }}>Total</span>
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 0 4px rgba(34,197,94,0.1)' }} />
+              <span style={{ color: '#111827', fontSize: '1rem', fontWeight: 800 }}>Total</span>
             </div>
-            <span style={{ color: '#111827', fontSize: '1.1rem', fontWeight: 900 }}>{fmt(totalVolume)}</span>
+            <span style={{ color: '#111827', fontSize: '1.2rem', fontWeight: 900 }}>{fmt(totalVolume)}</span>
           </div>
         </div>
       </Card>
@@ -2518,116 +2579,95 @@ export default function Dashboard() {
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: 'Inter, system-ui, sans-serif' }}>
       
       {/* SIDEBAR */}
-      <aside style={{ width: '280px', background: '#ffffff', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', zIndex: 100 }}>
+      <aside style={{ width: '280px', background: 'var(--bg-card)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', zIndex: 100 }}>
         
         {/* Sidebar Header */}
-        <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-          <div style={{ background: '#8942FC', width: '32px', height: '32px', borderRadius: '8px', display: 'grid', placeItems: 'center' }}>
-            <Shield size={18} color="#fff" fill="#fff" />
+        <div style={{ padding: '2rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+          <div style={{ background: 'var(--primary)', width: '40px', height: '40px', borderRadius: '12px', display: 'grid', placeItems: 'center', boxShadow: '0 8px 16px -4px var(--primary-glow)' }}>
+            <Shield size={22} color="#fff" fill="#fff" />
           </div>
-          <span style={{ fontWeight: 800, fontSize: '1.2rem', color: '#111827', letterSpacing: '-0.02em' }}>A2Pay</span>
-        </div>
-
-        {/* App Switcher (Simulado) */}
-        <div style={{ margin: '0 1rem 2rem', padding: '0.75rem', borderRadius: '12px', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
-            <div style={{ width: 24, height: 24, borderRadius: 6, background: '#f3f4f6', display: 'grid', placeItems: 'center' }}>
-              {isMaster ? <Shield size={14} color="#8942FC" /> : <Building size={14} color="#6b7280" />}
-            </div>
-            <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#374151' }}>{data?.name || (isMaster ? 'Admin Panel' : 'Minha Loja')}</span>
-          </div>
-          <ChevronDown size={16} color="#94a3b8" />
+          <span style={{ fontWeight: 900, fontSize: '1.4rem', color: 'var(--text-main)', letterSpacing: '-0.04em' }}>A2Pay</span>
         </div>
 
         {/* Navigation Groups */}
-        <div style={{ flex: 1, padding: '0 0.75rem', overflowY: 'auto' }}>
+        <div style={{ flex: 1, padding: '0 1rem', overflowY: 'auto', marginTop: '1rem' }}>
           {groups.map(group => {
             const isExpanded = expandedGroups.includes(group);
-            const isCollapsible = group === 'SUA LOJA' || group === 'INTEGRAÇÃO';
             const groupTabs = currentTabs.filter(t => t.group === group);
             const isAnyTabActive = groupTabs.some(t => t.id === activeTab);
 
             return (
-              <div key={group} style={{ marginBottom: '0.75rem' }}>
-                {group !== 'PRINCIPAL' && (
-                  <div 
-                    onClick={() => isCollapsible && toggleGroup(group)}
-                    style={{ 
-                      padding: '0.7rem 0.75rem', 
-                      fontSize: '0.88rem', 
-                      fontWeight: 700, 
-                      color: isAnyTabActive ? '#111827' : '#64748b', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'space-between',
-                      cursor: isCollapsible ? 'pointer' : 'default',
-                      borderRadius: '10px',
-                      border: (isCollapsible && isAnyTabActive) ? '1px solid #8942FC' : '1px solid transparent',
-                      background: (isCollapsible && isAnyTabActive && !isExpanded) ? 'rgba(137,66,252,0.05)' : 'transparent',
-                      marginBottom: '0.25rem'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      {group === 'SUA LOJA' && <ShoppingBag size={18} color={isAnyTabActive ? '#8942FC' : '#94a3b8'} />}
-                      {group === 'INTEGRAÇÃO' && <SlidersHorizontal size={18} color={isAnyTabActive ? '#8942FC' : '#94a3b8'} />}
-                      <span style={{ textTransform: 'capitalize', fontSize: '0.9rem' }}>{group.toLowerCase()}</span>
-                    </div>
-                    {isCollapsible && (
-                      isExpanded ? <ChevronDown size={16} color="#94a3b8" /> : <ChevronRight size={16} color="#94a3b8" />
-                    )}
-                  </div>
-                )}
+              <div key={group} style={{ marginBottom: '1.25rem' }}>
+                <div 
+                  style={{ 
+                    padding: '0 0.75rem', 
+                    fontSize: '0.75rem', 
+                    fontWeight: 800, 
+                    color: 'var(--text-muted)', 
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    marginBottom: '0.75rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                >
+                  {group}
+                </div>
 
-                {isExpanded && (
-                  <div style={{ marginLeft: isCollapsible ? '0.5rem' : '0', borderLeft: isCollapsible ? '1px solid #f1f5f9' : 'none', paddingLeft: isCollapsible ? '0.5rem' : '0' }}>
-                    {groupTabs.map(tab => (
-                      <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.7rem 0.75rem', borderRadius: '10px', border: 'none', cursor: 'pointer', fontSize: '0.88rem', fontWeight: 600, transition: 'all .2s', marginBottom: '2px',
-                          background: activeTab === tab.id ? 'rgba(137,66,252,0.08)' : 'transparent',
-                          color: activeTab === tab.id ? '#8942FC' : '#6b7280',
-                        }}>
-                        <span style={{ color: activeTab === tab.id ? '#8942FC' : '#94a3b8' }}>{tab.icon}</span>
-                        {tab.label}
-                        {activeTab === tab.id && <div style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: '#8942FC' }} />}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {groupTabs.map(tab => (
+                    <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                      style={{ 
+                        width: '100%', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '0.85rem', 
+                        padding: '0.85rem 1rem', 
+                        borderRadius: 'var(--radius-md)', 
+                        border: 'none', 
+                        cursor: 'pointer', 
+                        fontSize: '0.9rem', 
+                        fontWeight: activeTab === tab.id ? 700 : 600, 
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        background: activeTab === tab.id ? 'var(--primary)' : 'transparent',
+                        color: activeTab === tab.id ? '#fff' : 'var(--text-muted)',
+                        boxShadow: activeTab === tab.id ? '0 10px 15px -3px var(--primary-glow)' : 'none'
+                      }}>
+                      <span style={{ color: activeTab === tab.id ? '#fff' : 'inherit', transition: 'color 0.2s' }}>{tab.icon}</span>
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             );
           })}
         </div>
 
         {/* Sidebar Footer */}
-        <div style={{ padding: '1rem', borderTop: '1px solid #f3f4f6' }}>
+        <div style={{ padding: '1.5rem 1rem', borderTop: '1px solid var(--border)' }}>
           {/* Dev Mode Toggle */}
-          <div onClick={toggleEnv} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', borderRadius: '10px', cursor: 'pointer', marginBottom: '0.5rem' }}>
+          <div onClick={toggleEnv} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', marginBottom: '1rem', background: isSandbox ? 'rgba(245,158,11,0.08)' : 'transparent', border: `1px solid ${isSandbox ? 'rgba(245,158,11,0.2)' : 'transparent'}` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Code size={18} color="#6b7280" />
-              <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#374151' }}>Dev Mode</span>
+              <Zap size={18} color={isSandbox ? 'var(--warning)' : 'var(--text-muted)'} />
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isSandbox ? 'var(--warning)' : 'var(--text-main)' }}>Sandbox Mode</span>
             </div>
-            <div style={{ width: 36, height: 20, borderRadius: 99, background: isSandbox ? '#8942FC' : '#e5e7eb', position: 'relative', transition: 'background .3s' }}>
-              <div style={{ width: 14, height: 14, borderRadius: 99, background: '#fff', position: 'absolute', top: 3, left: isSandbox ? 19 : 3, transition: 'all .3s cubic-bezier(0.4, 0, 0.2, 1)' }} />
+            <div style={{ width: 36, height: 20, borderRadius: 99, background: isSandbox ? 'var(--warning)' : 'var(--border)', position: 'relative', transition: 'background .3s' }}>
+              <div style={{ width: 14, height: 14, borderRadius: 99, background: '#fff', position: 'absolute', top: 3, left: isSandbox ? 19 : 3, transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }} />
             </div>
-          </div>
-
-          {/* Support */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '10px', cursor: 'pointer', color: '#6b7280' }}>
-            <HelpCircle size={18} />
-            <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>Suporte</span>
           </div>
 
           {/* User Profile */}
-          <div style={{ marginTop: '0.5rem', padding: '0.75rem', borderRadius: '12px', background: '#f9fafb', display: 'flex', alignItems: 'center', gap: '0.75rem', border: '1px solid #f3f4f6' }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#8942FC', color: '#fff', fontSize: '0.8rem', fontWeight: 800, display: 'grid', placeItems: 'center' }}>
+          <div style={{ padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)', background: 'var(--bg-main)', display: 'flex', alignItems: 'center', gap: '0.75rem', border: '1px solid var(--border)' }}>
+            <div style={{ width: 36, height: 36, borderRadius: '10px', background: 'var(--primary)', color: '#fff', fontSize: '0.85rem', fontWeight: 800, display: 'grid', placeItems: 'center', boxShadow: '0 4px 10px var(--primary-glow)' }}>
               {isMaster ? 'MA' : (data.role === 'admin' ? 'AD' : 'LJ')}
             </div>
             <div style={{ flex: 1, overflow: 'hidden' }}>
-              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{data?.name || (isMaster ? 'Master User' : 'Minha Loja')}</div>
-              <div style={{ fontSize: '0.7rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{isMaster ? 'Sistema Master' : (data.role === 'admin' ? 'Administrador' : 'Lojista')}</div>
+              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{data?.name || (isMaster ? 'Master User' : 'Minha Loja')}</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>{isMaster ? 'A2Pay Master' : (data.role === 'admin' ? 'Administrador' : 'Lojista')}</div>
             </div>
-            <button onClick={handleLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
-              <LogOut size={16} />
+            <button onClick={handleLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--error)', opacity: 0.7 }} onMouseEnter={e => e.currentTarget.style.opacity = '1'} onMouseLeave={e => e.currentTarget.style.opacity = '0.7'}>
+              <LogOut size={18} />
             </button>
           </div>
         </div>
@@ -2637,16 +2677,18 @@ export default function Dashboard() {
       <main style={{ flex: 1, height: '100vh', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
         
         {/* TOP HEADER */}
-        <header style={{ height: '73px', background: '#ffffff', borderBottom: '1px solid #e5e7eb', padding: '0 2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 90 }}>
+        <header style={{ height: '80px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border)', padding: '0 2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 90 }}>
           {renderBreadcrumbs()}
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-            {isSandbox && (
-              <div style={{ background: 'rgba(245,158,11,0.1)', color: '#d97706', padding: '0.35rem 0.75rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, border: '1px solid rgba(245,158,11,0.2)', textTransform: 'uppercase' }}>
-                Ambiente Teste
-              </div>
-            )}
-            <button style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer' }}><Bell size={20} /></button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+            <div style={{ position: 'relative', width: '240px' }}>
+              <Search size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input 
+                placeholder="Pesquisar..." 
+                style={{ width: '100%', background: 'var(--bg-main)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '0.6rem 1rem 0.6rem 2.8rem', fontSize: '0.85rem', outline: 'none', transition: 'border-color 0.2s' }}
+              />
+            </div>
+            <button style={{ background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--text-muted)', width: 40, height: 40, borderRadius: '12px', display: 'grid', placeItems: 'center', cursor: 'pointer' }}><Bell size={20} /></button>
           </div>
         </header>
 

@@ -37,7 +37,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	apiKeyLive := ""
 	apiKeyTest := ""
 
-	id, err := h.userRepo.Create(req.Name, h.crypto.Encrypt(req.Email), string(hash), baasID, apiKeyLive, apiKeyTest)
+	id, err := h.userRepo.Create(req.Name, h.crypto.Encrypt(req.Email), string(hash), baasID, apiKeyLive, apiKeyTest, req.Document, req.Phone)
 	if err != nil {
 		fmt.Printf("[DEBUG] Erro em userRepo.Create: %v\n", err)
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})

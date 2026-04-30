@@ -19,12 +19,12 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-func (r *UserRepository) Create(name, emailEncrypted, passwordHash, baasID, apiKeyLive, apiKeyTest string) (int64, error) {
+func (r *UserRepository) Create(name, emailEncrypted, passwordHash, baasID, apiKeyLive, apiKeyTest, document, phone string) (int64, error) {
 	var id int64
 	err := r.db.QueryRow(
-		`INSERT INTO merchants(name, email, password_hash, baas_account_id, role, api_key, api_key_test, created_at)
-		 VALUES($1, $2, $3, $4, 'lojista', NULLIF($5, ''), NULLIF($6, ''), $7) RETURNING id`,
-		name, emailEncrypted, passwordHash, baasID, apiKeyLive, apiKeyTest, time.Now().Format(time.RFC3339),
+		`INSERT INTO merchants(name, email, password_hash, baas_account_id, role, api_key, api_key_test, document, phone, created_at)
+		 VALUES($1, $2, $3, $4, 'lojista', NULLIF($5, ''), NULLIF($6, ''), $7, $8, $9) RETURNING id`,
+		name, emailEncrypted, passwordHash, baasID, apiKeyLive, apiKeyTest, document, phone, time.Now().Format(time.RFC3339),
 	).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("UserRepository.Create: %w", err)
