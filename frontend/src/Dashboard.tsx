@@ -26,6 +26,8 @@ import { AdminAudit } from './admin/audit/AdminAudit';
 import { AdminAccessControl } from './admin/settings/AdminAccessControl';
 import DemoStore from './DemoStore';
 import AssinaturasTab from './AssinaturasTab';
+import CobrancasTab from './CobrancasTab';
+import AntecipacoesTab from './AntecipacoesTab';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Transaction {
@@ -2695,6 +2697,8 @@ export default function Dashboard() {
           {/* Merchant Tabs */}
           {activeTab === 'overview'   && <OverviewTab data={data} />}
           {activeTab === 'assinaturas' && <AssinaturasTab onNavigateToClients={() => setActiveTab('clientes')} />}
+          {activeTab === 'cobrancas'   && <CobrancasTab />}
+          {activeTab === 'antecipacoes'&& <AntecipacoesTab />}
           {activeTab === 'produtos'   && <ProdutosTab />}
           {activeTab === 'cupons'     && <CuponsTab />}
           {activeTab === 'clientes'   && <ClientesTab selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer} />}
