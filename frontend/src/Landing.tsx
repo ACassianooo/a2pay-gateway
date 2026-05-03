@@ -26,7 +26,7 @@ export default function Landing() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
           <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-            <img src="/logo.png" alt="A2Pay" style={{ height: '110px', objectFit: 'contain', mixBlendMode: 'multiply' }} />
+            <img src="/logo.png" alt="A2Pay" style={{ height: '60px', width: '220px', objectFit: 'contain', objectPosition: 'left center', mixBlendMode: 'multiply' }} />
           </Link>
           
           <div style={{ display: 'flex', gap: '2rem' }} className="nav-desktop-links">
@@ -202,7 +202,7 @@ export default function Landing() {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
-            <PricingCard title="Pix" price="0,99%" subtitle="por transação" icon={<Zap size={24} />} recommended />
+            <PricingCard title="Pix" price="R$0,99" subtitle="centavos por transação" icon={<Zap size={24} />} recommended />
             <PricingCard title="Cartão de Crédito" price="3,00%" subtitle="+ R$ 0,50 fixo" icon={<Check size={24} />} />
             <PricingCard title="Boleto Bancário" price="R$ 1,99" subtitle="por boleto pago" icon={<ArrowRight size={24} />} />
             <PricingCard title="Cartão de Débito" price="1,49%" subtitle="por transação" icon={<Check size={24} />} />
