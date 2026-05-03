@@ -26,7 +26,7 @@ export default function Landing() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
           <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-            <img src="/logo.png" alt="A2Pay" style={{ height: '110px', objectFit: 'contain' }} />
+            <img src="/logo.png" alt="A2Pay" style={{ height: '110px', objectFit: 'contain', mixBlendMode: 'multiply' }} />
           </Link>
           
           <div style={{ display: 'flex', gap: '2rem' }} className="nav-desktop-links">
@@ -256,7 +256,7 @@ export default function Landing() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '4rem', marginBottom: '4rem' }}>
             <div>
               <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', marginBottom: '1.5rem' }}>
-                <img src="/logo.png" alt="A2Pay" style={{ height: '28px', objectFit: 'contain' }} />
+                <img src="/logo.png" alt="A2Pay" style={{ height: '28px', objectFit: 'contain', mixBlendMode: 'multiply' }} />
               </Link>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                 A plataforma definitiva para <br /> negócios digitais modernos.

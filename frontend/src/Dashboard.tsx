@@ -2583,7 +2583,7 @@ export default function Dashboard() {
         
         {/* Sidebar Header */}
         <div style={{ padding: '1.5rem 1.5rem', display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-          <img src="/logo.png" alt="A2Pay" style={{ height: '90px', objectFit: 'contain' }} />
+          <img src="/logo.png" alt="A2Pay" style={{ height: '90px', objectFit: 'contain', mixBlendMode: 'multiply' }} />
         </div>
 
         {/* Navigation Groups */}
