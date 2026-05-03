@@ -28,6 +28,7 @@ import DemoStore from './DemoStore';
 import AssinaturasTab from './AssinaturasTab';
 import CobrancasTab from './CobrancasTab';
 import AntecipacoesTab from './AntecipacoesTab';
+import PaymentLinksTab from './PaymentLinksTab';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Transaction {
@@ -2699,6 +2700,7 @@ export default function Dashboard() {
           {activeTab === 'assinaturas' && <AssinaturasTab onNavigateToClients={() => setActiveTab('clientes')} />}
           {activeTab === 'cobrancas'   && <CobrancasTab />}
           {activeTab === 'antecipacoes'&& <AntecipacoesTab />}
+          {activeTab === 'link-pagamentos' && <PaymentLinksTab />}
           {activeTab === 'produtos'   && <ProdutosTab />}
           {activeTab === 'cupons'     && <CuponsTab />}
           {activeTab === 'clientes'   && <ClientesTab selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer} />}
