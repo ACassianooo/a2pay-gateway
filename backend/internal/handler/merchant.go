@@ -325,7 +325,7 @@ func (h *MerchantHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
 	// 3.5 Se for modo Sandbox, auto-aprovar o saque
 	msg := "Saque solicitado com sucesso. O valor foi reservado."
 	if user.IsSandbox {
-		if err := h.walRepo.UpdateWithdrawalStatus(withdrawID, "completed"); err == nil {
+		if err := h.walRepo.UpdateWithdrawalStatus(int(withdrawID), "completed"); err == nil {
 			msg = "Saque concluído instantaneamente (Modo Sandbox)."
 		}
 	}
