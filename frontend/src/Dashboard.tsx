@@ -2582,11 +2582,8 @@ export default function Dashboard() {
       <aside style={{ width: '280px', background: 'var(--bg-card)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', zIndex: 100 }}>
         
         {/* Sidebar Header */}
-        <div style={{ padding: '2rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-          <div style={{ background: 'var(--primary)', width: '40px', height: '40px', borderRadius: '12px', display: 'grid', placeItems: 'center', boxShadow: '0 8px 16px -4px var(--primary-glow)' }}>
-            <Shield size={22} color="#fff" fill="#fff" />
-          </div>
-          <span style={{ fontWeight: 900, fontSize: '1.4rem', color: 'var(--text-main)', letterSpacing: '-0.04em' }}>A2Pay</span>
+        <div style={{ padding: '2rem 1.5rem', display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+          <img src="/logo.png" alt="A2Pay" style={{ height: '36px', objectFit: 'contain' }} />
         </div>
 
         {/* Navigation Groups */}

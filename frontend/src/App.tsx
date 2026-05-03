@@ -68,8 +68,7 @@ function AppContent() {
       {!isDashboard && !isCheckout && !isAuthPage && (
         <nav className="navbar">
           <Link to="/" className="navbar-brand">
-            <Shield color="#8942FC" fill="#8942FC" size={28} />
-            <span>A2Pay</span>
+            <img src="/logo.png" alt="A2Pay" style={{ height: '32px', objectFit: 'contain' }} />
           </Link>
           <NavLinks />
         </nav>

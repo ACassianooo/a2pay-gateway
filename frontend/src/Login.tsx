@@ -83,11 +83,8 @@ export default function Login() {
       {/* FORM CONTAINER */}
       <div className="auth-form-container">
         <div className="auth-form-card">
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', marginBottom: '3rem' }}>
-            <div style={{ background: 'var(--primary)', width: '32px', height: '32px', borderRadius: '8px', display: 'grid', placeItems: 'center' }}>
-              <Shield size={18} color="#fff" fill="#fff" />
-            </div>
-            <span style={{ fontWeight: 900, fontSize: '1.2rem', color: 'var(--text-main)', letterSpacing: '-0.04em' }}>A2Pay</span>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', marginBottom: '3rem' }}>
+            <img src="/logo.png" alt="A2Pay" style={{ height: '30px', objectFit: 'contain' }} />
           </Link>
 
           <h2 style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>Bem-vindo de volta</h2>

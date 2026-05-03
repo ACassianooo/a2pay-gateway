@@ -25,11 +25,8 @@ export default function Landing() {
         borderBottom: '1px solid var(--border)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
-            <div style={{ background: 'var(--primary)', width: '36px', height: '36px', borderRadius: '10px', display: 'grid', placeItems: 'center', boxShadow: '0 8px 16px var(--primary-glow)' }}>
-              <Shield size={20} color="#fff" fill="#fff" />
-            </div>
-            <span style={{ fontWeight: 900, fontSize: '1.4rem', color: 'var(--text-main)', letterSpacing: '-0.04em' }}>A2Pay</span>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+            <img src="/logo.png" alt="A2Pay" style={{ height: '32px', objectFit: 'contain' }} />
           </Link>
           
           <div style={{ display: 'flex', gap: '2rem' }} className="nav-desktop-links">
@@ -258,11 +255,8 @@ export default function Landing() {
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 5%' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '4rem', marginBottom: '4rem' }}>
             <div>
-              <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', marginBottom: '1.5rem' }}>
-                <div style={{ background: 'var(--primary)', width: '32px', height: '32px', borderRadius: '8px', display: 'grid', placeItems: 'center' }}>
-                  <Shield size={18} color="#fff" fill="#fff" />
-                </div>
-                <span style={{ fontWeight: 900, fontSize: '1.2rem', color: 'var(--text-main)', letterSpacing: '-0.04em' }}>A2Pay</span>
+              <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', marginBottom: '1.5rem' }}>
+                <img src="/logo.png" alt="A2Pay" style={{ height: '28px', objectFit: 'contain' }} />
               </Link>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                 A plataforma definitiva para <br /> negócios digitais modernos.
