@@ -27,7 +27,7 @@ export default function Landing() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
           <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-            <img src="/logo.png" alt="A2Pay" style={{ height: '130px', objectFit: 'contain', mixBlendMode: 'multiply' }} />
+            <img src="/logo.png" alt="A2Pay" style={{ height: '38px', objectFit: 'contain', mixBlendMode: 'multiply' }} />
           </Link>
           
           <div style={{ display: 'flex', gap: '2rem' }} className="nav-desktop-links">
