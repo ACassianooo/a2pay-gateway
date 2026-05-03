@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link as LinkIcon, Plus, Copy, MoreHorizontal, CheckCircle2, FileText, QrCode } from 'lucide-react';
+import { API_BASE_URL } from './api';
 
 interface PaymentLink {
   id: string | number;
@@ -50,7 +51,7 @@ function CreatePaymentLinkModal({ onClose, onSuccess }: { onClose: () => void, o
         amount: tipoValor === 'fixo' ? numValue : null
       };
 
-      const res = await fetch(`http://localhost:8080/api/merchants/payment-links`, {
+      const res = await fetch(`${API_BASE_URL}/api/merchants/payment-links`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(payload)
@@ -130,7 +131,7 @@ export default function PaymentLinksTab() {
 
   const loadData = () => {
     const token = localStorage.getItem('token');
-    fetch(`http://localhost:8080/api/merchants/payment-links`, {
+    fetch(`${API_BASE_URL}/api/merchants/payment-links`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(res => res.json())
