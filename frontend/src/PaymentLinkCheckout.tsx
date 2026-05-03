@@ -41,6 +41,19 @@ export default function PaymentLinkCheckout() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(customerEmail)) {
+      alert("Por favor, insira um e-mail válido (exemplo: seuemail@dominio.com)");
+      return;
+    }
+
+    const docDigits = customerDocument.replace(/\D/g, '');
+    if (docDigits.length !== 11 && docDigits.length !== 14) {
+      alert("O CPF ou CNPJ está incompleto.");
+      return;
+    }
+
     if (!customerEmail || !customerDocument) {
       alert("Preencha email e CPF/CNPJ");
       return;
@@ -77,6 +90,24 @@ export default function PaymentLinkCheckout() {
         alert("Erro de conexão");
         setProcessing(false);
     });
+  };
+
+  const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 11) {
+      // CPF Mask
+      value = value.replace(/(\d{3})(\d)/, '$1.$2');
+      value = value.replace(/(\d{3})(\d)/, '$1.$2');
+      value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    } else {
+      // CNPJ Mask
+      value = value.substring(0, 14); // Limita em 14 digitos (CNPJ)
+      value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+      value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+      value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+      value = value.replace(/(\d{4})(\d)/, '$1-$2');
+    }
+    setCustomerDocument(value);
   };
 
   if (loading) return <div style={{ display: 'grid', placeItems: 'center', height: '100vh' }}>Carregando link...</div>;
@@ -119,7 +150,7 @@ export default function PaymentLinkCheckout() {
                 </div>
                 <div>
                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: '0.5rem' }}>CPF ou CNPJ</label>
-                    <input required value={customerDocument} onChange={e => setCustomerDocument(e.target.value)} placeholder="000.000.000-00" style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }} />
+                    <input required value={customerDocument} onChange={handleDocumentChange} placeholder="000.000.000-00" maxLength={18} style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }} />
                 </div>
 
                 <button disabled={processing} style={{ marginTop: '1rem', background: '#8942FC', color: '#fff', border: 'none', padding: '1rem', borderRadius: '16px', fontWeight: 800, fontSize: '1.1rem', cursor: processing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', transition: 'all 0.2s' }}>
