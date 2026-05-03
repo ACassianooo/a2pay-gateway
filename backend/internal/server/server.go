@@ -44,6 +44,7 @@ func New(cfg *config.Config, db *database.DB) *Server {
 	chargeRepo := repository.NewChargeRepository(db.Conn)
 	antRepo := repository.NewAnticipationRepository(db.Conn)
 	payLinkRepo := repository.NewPaymentLinkRepository(db.Conn)
+	disputeRepo := repository.NewDisputeRepository(db.Conn)
 	// ── Serviços ─────────────────────────────────────────────────────────
 	cryptoSvc := service.MustNewCryptoService(fmt.Sprintf("%x", cfg.AESKey))
 
@@ -113,6 +114,7 @@ func New(cfg *config.Config, db *database.DB) *Server {
 	chargeH := handler.NewChargeHandler(chargeRepo)
 	antH := handler.NewAnticipationHandler(antRepo, walRepo)
 	payLinkH := handler.NewPaymentLinkHandler(payLinkRepo)
+	disputeH := handler.NewDisputeHandler(disputeRepo)
 
 	// ── Router ───────────────────────────────────────────────────────────
 	r := chi.NewRouter()
@@ -194,6 +196,11 @@ func New(cfg *config.Config, db *database.DB) *Server {
 			r.Get("/merchants/payment-links", payLinkH.List)
 			r.Put("/merchants/payment-links/{id}", payLinkH.Update)
 			r.Delete("/merchants/payment-links/{id}", payLinkH.Delete)
+
+			// Disputas
+			r.Get("/merchants/disputes", disputeH.GetDisputes)
+			r.Get("/merchants/disputes/{id}", disputeH.GetDisputeDetails)
+			r.Post("/merchants/disputes/{id}/defend", disputeH.DefendDispute)
 		})
 
 		// Rotas exclusivas do Master Dashboard

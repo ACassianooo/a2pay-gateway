@@ -2010,7 +2010,224 @@ function PagamentosTab({ data }: { data: DashboardData }) {
 // ══════════════════════════════════════════════════════════════════════════════
 // TAB: ANTIFRAUDE
 // ══════════════════════════════════════════════════════════════════════════════
-function AntifraudeTab({ data }: { data: DashboardData }) {
+function DisputasTab() {
+  const [disputes, setDisputes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedDispute, setSelectedDispute] = useState<any>(null);
+
+  const fetchDisputes = () => {
+    setLoading(true);
+    fetch(`${API}/api/merchants/disputes`, { 
+      headers: { 
+        'Authorization': `Bearer ${token()}`,
+        'x-a2pay-env': isSandbox() ? 'test' : 'live'
+      } 
+    })
+    .then(r => r.json())
+    .then(d => {
+      setDisputes(Array.isArray(d) ? d : []);
+      setLoading(false);
+    })
+    .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchDisputes();
+  }, []);
+
+  const getStatusStyle = (status: string) => {
+    switch(status) {
+      case 'aberta': return { bg: '#fef3c7', text: '#d97706', label: 'Aberta' };
+      case 'em_revisao': return { bg: '#e0f2fe', text: '#0369a1', label: 'Em Revisão' };
+      case 'ganha': return { bg: '#dcfce7', text: '#166534', label: 'Ganha' };
+      case 'perdida': return { bg: '#fecaca', text: '#b91c1c', label: 'Perdida' };
+      default: return { bg: '#f1f5f9', text: '#475569', label: status };
+    }
+  };
+
+  return (
+    <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
+      <SectionHeader 
+        icon={<Undo2 size={22} />} 
+        title="Disputas" 
+        sub="Gerencie contestações de pagamento (chargebacks) e envie suas defesas." 
+      />
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.25rem', marginBottom: '2rem' }}>
+        <MetricCard 
+          icon={<AlertTriangle size={15} />} 
+          label="Disputas Abertas" 
+          value={String(disputes.filter(d => d.status === 'aberta').length)} 
+          sub="Aguardando defesa" 
+          color="#f59e0b" 
+        />
+        <MetricCard 
+          icon={<Activity size={15} />} 
+          label="Em Revisão" 
+          value={String(disputes.filter(d => d.status === 'em_revisao').length)} 
+          sub="Análise do banco" 
+          color="#0ea5e9" 
+        />
+        <MetricCard 
+          icon={<CheckCircle2 size={15} />} 
+          label="Taxa de Vitória" 
+          value={disputes.length > 0 ? `${Math.round((disputes.filter(d => d.status === 'ganha').length / disputes.length) * 100)}%` : '0%'} 
+          sub="Disputas ganhas" 
+          color="#22c55e" 
+        />
+      </div>
+
+      <Card style={{ padding: 0 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <thead>
+            <tr style={{ background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
+              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>ID / Data</th>
+              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>Valor</th>
+              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>Motivo</th>
+              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>Status</th>
+              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase' }}>Prazo</th>
+              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', textAlign: 'right' }}>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={6} style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8' }}>Carregando disputas...</td></tr>
+            ) : disputes.length === 0 ? (
+              <tr><td colSpan={6} style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8' }}>Nenhuma disputa encontrada.</td></tr>
+            ) : disputes.map(d => {
+              const style = getStatusStyle(d.status);
+              return (
+                <tr key={d.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '1.2rem 1.5rem' }}>
+                    <div style={{ color: '#111827', fontWeight: 700, fontSize: '0.88rem' }}>#{d.id}</div>
+                    <div style={{ color: '#64748b', fontSize: '0.75rem' }}>{new Date(d.created_at).toLocaleDateString('pt-BR')}</div>
+                  </td>
+                  <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontWeight: 700 }}>
+                    {d.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </td>
+                  <td style={{ padding: '1.2rem 1.5rem', color: '#475569', fontSize: '0.85rem' }}>
+                    {d.reason}
+                  </td>
+                  <td style={{ padding: '1.2rem 1.5rem' }}>
+                    <span style={{ background: style.bg, color: style.text, padding: '0.25rem 0.6rem', borderRadius: 8, fontSize: '0.75rem', fontWeight: 800 }}>
+                      {style.label}
+                    </span>
+                  </td>
+                  <td style={{ padding: '1.2rem 1.5rem', color: '#ef4444', fontSize: '0.85rem', fontWeight: 600 }}>
+                    {d.evidence_deadline ? new Date(d.evidence_deadline).toLocaleDateString('pt-BR') : '--'}
+                  </td>
+                  <td style={{ padding: '1.2rem 1.5rem', textAlign: 'right' }}>
+                    <button 
+                      onClick={() => setSelectedDispute(d)}
+                      style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.5rem 1rem', fontSize: '0.82rem', fontWeight: 700, color: '#475569', cursor: 'pointer', transition: 'all 0.2s' }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+                      onMouseLeave={e => e.currentTarget.style.background = '#f8fafc'}
+                    >
+                      Gerenciar
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </Card>
+
+      {selectedDispute && (
+        <DisputeDetailsModal 
+          dispute={selectedDispute} 
+          onClose={() => setSelectedDispute(null)} 
+          onSuccess={() => { fetchDisputes(); setSelectedDispute(null); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function DisputeDetailsModal({ dispute, onClose, onSuccess }: { dispute: any, onClose: () => void, onSuccess: () => void }) {
+  const [defending, setDefending] = useState(false);
+  const [evidence, setEvidence] = useState('');
+
+  const handleDefend = async () => {
+    if (!evidence) {
+      alert("Por favor, descreva sua defesa ou anexe documentos.");
+      return;
+    }
+    setDefending(true);
+    try {
+      const res = await fetch(`${API}/api/merchants/disputes/${dispute.id}/defend`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ evidence })
+      });
+      if (res.ok) {
+        onSuccess();
+      } else {
+        alert("Erro ao enviar defesa.");
+      }
+    } catch (err) {
+      alert("Erro de conexão.");
+    } finally {
+      setDefending(false);
+    }
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.3)', backdropFilter: 'blur(8px)', display: 'grid', placeItems: 'center', zIndex: 1000 }}>
+      <Card style={{ width: '100%', maxWidth: '550px', padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '1.5rem', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>Disputa #{dispute.id}</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><X size={20} /></button>
+        </div>
+        <div style={{ padding: '1.5rem' }}>
+          <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: 12, padding: '1rem', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#991b1b', fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.4rem' }}>
+              <AlertTriangle size={16} /> Atenção ao Prazo
+            </div>
+            <div style={{ color: '#b91c1c', fontSize: '0.85rem' }}>
+              Você tem até <strong>{new Date(dispute.evidence_deadline).toLocaleDateString('pt-BR')}</strong> para enviar sua defesa. Após esse prazo, a disputa será encerrada automaticamente em favor do cliente.
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Valor Contestação</label>
+              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#111827' }}>{dispute.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+            </div>
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Motivo</label>
+              <div style={{ fontSize: '1rem', fontWeight: 700, color: '#475569' }}>{dispute.reason}</div>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>Sua Defesa</label>
+            <textarea 
+              value={evidence}
+              onChange={e => setEvidence(e.target.value)}
+              placeholder="Descreva aqui por que este pagamento é legítimo. Inclua links para comprovantes de entrega, conversas com o cliente ou logs de acesso."
+              style={{ width: '100%', minHeight: '120px', padding: '1rem', borderRadius: 12, border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '0.9rem', outline: 'none', resize: 'vertical' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <button onClick={onClose} style={{ flex: 1, padding: '0.75rem', borderRadius: 12, border: '1px solid #e2e8f0', background: '#fff', fontWeight: 700, cursor: 'pointer' }}>Cancelar</button>
+            <button 
+              onClick={handleDefend}
+              disabled={defending || dispute.status !== 'aberta'}
+              style={{ flex: 2, padding: '0.75rem', borderRadius: 12, border: 'none', background: '#8942FC', color: '#fff', fontWeight: 800, cursor: 'pointer', opacity: (defending || dispute.status !== 'aberta') ? 0.6 : 1 }}
+            >
+              {defending ? 'Enviando...' : dispute.status === 'aberta' ? 'Enviar Defesa' : 'Em Revisão'}
+            </button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
   const txs = data.transacoes || [];
   const suspeitas = txs.filter(t => t.status === 'bloqueado' || t.status === 'falhou');
   const [limitValor, setLimitValor] = useState('5000');
@@ -2914,6 +3131,7 @@ export default function Dashboard() {
           {activeTab === 'financeiro' && <SaquesTab data={data} />}
           {activeTab === 'pagamentos' && <PagamentosTab data={data} />}
           {activeTab === 'extrato'    && <ExtratoTab data={data} />}
+          {activeTab === 'disputas'   && <DisputasTab />}
           {activeTab === 'antifraude' && <AntifraudeTab data={data} />}
           {activeTab === 'api-keys'    && <APITab />}
           {activeTab === 'conta'      && <ContaTab data={data} />}
