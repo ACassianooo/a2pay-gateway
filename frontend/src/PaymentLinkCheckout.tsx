@@ -14,6 +14,13 @@ export default function PaymentLinkCheckout() {
   const [customerDocument, setCustomerDocument] = useState('');
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalContent, setModalContent] = useState({ title: '', message: '', type: 'error' });
+
+  const showAlert = (title: string, message: string, type: 'error' | 'success' = 'error') => {
+    setModalContent({ title, message, type });
+    setModalOpen(true);
+  };
 
   useEffect(() => {
     // Busca dados do link (simulado aqui para a UI, depois criar endpoint real se precisar)
@@ -44,18 +51,18 @@ export default function PaymentLinkCheckout() {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(customerEmail)) {
-      alert("Por favor, insira um e-mail válido (exemplo: seuemail@dominio.com)");
+      showAlert("Atenção", "Por favor, insira um e-mail válido (exemplo: seuemail@dominio.com)", "error");
       return;
     }
 
     const docDigits = customerDocument.replace(/\D/g, '');
     if (docDigits.length !== 11 && docDigits.length !== 14) {
-      alert("O CPF ou CNPJ está incompleto.");
+      showAlert("Atenção", "O CPF ou CNPJ está incompleto.", "error");
       return;
     }
 
     if (!customerEmail || !customerDocument) {
-      alert("Preencha email e CPF/CNPJ");
+      showAlert("Campos obrigatórios", "Preencha email e CPF/CNPJ", "error");
       return;
     }
 
@@ -82,12 +89,12 @@ export default function PaymentLinkCheckout() {
         if (data.id) {
             navigate(`/checkout/${data.id}`);
         } else {
-            alert("Erro ao gerar pagamento");
+            showAlert("Erro", data.error || "Não foi possível gerar a transação. Verifique os dados e tente novamente.", "error");
             setProcessing(false);
         }
     })
     .catch(() => {
-        alert("Erro de conexão");
+        showAlert("Erro de Conexão", "Não foi possível conectar aos nossos servidores. Verifique sua internet.", "error");
         setProcessing(false);
     });
   };
@@ -158,6 +165,41 @@ export default function PaymentLinkCheckout() {
                 </button>
             </form>
         </div>
+
+        {/* Custom Alert Modal */}
+        {modalOpen && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', animation: 'fadeIn 0.2s ease-out' }}>
+                <div style={{ background: '#fff', borderRadius: 24, width: '100%', maxWidth: 400, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden', animation: 'scaleIn 0.2s ease-out', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ padding: '2rem 1.5rem 1.5rem', textAlign: 'center' }}>
+                        <div style={{ width: 64, height: 64, borderRadius: '50%', background: modalContent.type === 'error' ? '#fef2f2' : '#f0fdf4', color: modalContent.type === 'error' ? '#ef4444' : '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+                            {modalContent.type === 'error' ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                            )}
+                        </div>
+                        <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111827', margin: '0 0 0.5rem 0' }}>{modalContent.title}</h2>
+                        <p style={{ color: '#475569', fontSize: '1rem', lineHeight: 1.5, margin: 0 }}>{modalContent.message}</p>
+                    </div>
+                    <div style={{ padding: '1rem 1.5rem 1.5rem' }}>
+                        <button onClick={() => setModalOpen(false)} style={{ width: '100%', background: modalContent.type === 'error' ? '#ef4444' : '#22c55e', color: '#fff', border: 'none', padding: '0.8rem', borderRadius: 12, fontWeight: 700, fontSize: '1rem', cursor: 'pointer', transition: 'filter 0.2s' }} onMouseEnter={e => e.currentTarget.style.filter = 'brightness(0.9)'} onMouseLeave={e => e.currentTarget.style.filter = 'brightness(1)'}>
+                            Entendi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        <style>{`
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes scaleIn {
+                from { opacity: 0; transform: scale(0.95) translateY(10px); }
+                to { opacity: 1; transform: scale(1) translateY(0); }
+            }
+        `}</style>
     </div>
   );
 }
