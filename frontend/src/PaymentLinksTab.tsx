@@ -132,12 +132,41 @@ function CreatePaymentLinkModal({ onClose, onSuccess, initialData }: { onClose: 
   );
 }
 
+function ConfirmModal({ isOpen, title, message, onConfirm, onCancel, loading, error }: { isOpen: boolean, title: string, message: string, onConfirm: () => void, onCancel: () => void, loading: boolean, error: string | null }) {
+  if (!isOpen) return null;
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', animation: 'fadeIn 0.2s ease-out' }}>
+      <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 400, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden', animation: 'scaleIn 0.2s ease-out', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '1.5rem 1.5rem 0.5rem' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111827', margin: '0 0 0.5rem 0' }}>{title}</h2>
+          <p style={{ color: '#475569', fontSize: '0.95rem', lineHeight: 1.5, margin: 0 }}>{message}</p>
+          {error && (
+            <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#ef4444', fontSize: '0.85rem', fontWeight: 600 }}>
+              {error}
+            </div>
+          )}
+        </div>
+        <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+          <button onClick={onCancel} disabled={loading} style={{ background: '#f1f5f9', border: 'none', color: '#475569', padding: '0.6rem 1.2rem', borderRadius: 10, fontWeight: 700, fontSize: '0.9rem', cursor: loading ? 'not-allowed' : 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => { if(!loading) e.currentTarget.style.background = '#e2e8f0'; }} onMouseLeave={e => { if(!loading) e.currentTarget.style.background = '#f1f5f9'; }}>Cancelar</button>
+          <button onClick={onConfirm} disabled={loading} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '0.6rem 1.2rem', borderRadius: 10, fontWeight: 700, fontSize: '0.9rem', cursor: loading ? 'not-allowed' : 'pointer', transition: 'background 0.2s', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }} onMouseEnter={e => { if(!loading) e.currentTarget.style.background = '#dc2626'; }} onMouseLeave={e => { if(!loading) e.currentTarget.style.background = '#ef4444'; }}>
+            {loading ? 'Excluindo...' : 'Sim, excluir'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PaymentLinksTab() {
   const [links, setLinks] = useState<PaymentLink[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<PaymentLink | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState<string | number | null>(null);
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [linkToDelete, setLinkToDelete] = useState<string | number | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const loadData = () => {
     const token = localStorage.getItem('token');
@@ -162,22 +191,34 @@ export default function PaymentLinksTab() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleDelete = async (id: string | number) => {
-    if (!window.confirm("Deseja realmente excluir este link?")) return;
+  const confirmDelete = (id: string | number) => {
+    setLinkToDelete(id);
+    setDeleteError(null);
+    setDeleteModalOpen(true);
+    setDropdownOpen(null);
+  };
+
+  const handleDelete = async () => {
+    if (!linkToDelete) return;
+    setDeleteLoading(true);
+    setDeleteError(null);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE_URL}/api/merchants/payment-links/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/merchants/payment-links/${linkToDelete}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
+        setDeleteModalOpen(false);
+        setLinkToDelete(null);
         loadData();
       } else {
-        alert("Falha ao excluir link");
+        setDeleteError("Falha ao excluir link. Tente novamente.");
       }
     } catch(err) {
-      alert("Erro de conexão");
+      setDeleteError("Erro de conexão. Verifique sua internet.");
     }
+    setDeleteLoading(false);
   };
 
   const openEdit = (link: PaymentLink) => {
@@ -194,6 +235,17 @@ export default function PaymentLinksTab() {
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
       {isModalOpen && <CreatePaymentLinkModal initialData={editingLink} onSuccess={loadData} onClose={() => setIsModalOpen(false)} />}
+      
+      <ConfirmModal 
+        isOpen={deleteModalOpen} 
+        title="Excluir Link" 
+        message="Tem certeza que deseja excluir este link de pagamento? Esta ação não pode ser desfeita e os clientes não poderão mais pagar por ele." 
+        loading={deleteLoading} 
+        error={deleteError}
+        onConfirm={handleDelete} 
+        onCancel={() => setDeleteModalOpen(false)} 
+      />
+
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
@@ -256,7 +308,7 @@ export default function PaymentLinksTab() {
                         <button onClick={() => openEdit(l)} style={{ display: 'block', width: '100%', padding: '0.75rem 1rem', background: 'none', border: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#475569', cursor: 'pointer', fontWeight: 500 }} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
                           Editar
                         </button>
-                        <button onClick={() => handleDelete(l.id)} style={{ display: 'block', width: '100%', padding: '0.75rem 1rem', background: 'none', border: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#ef4444', cursor: 'pointer', fontWeight: 500 }} onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                        <button onClick={() => confirmDelete(l.id)} style={{ display: 'block', width: '100%', padding: '0.75rem 1rem', background: 'none', border: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#ef4444', cursor: 'pointer', fontWeight: 500 }} onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
                           Excluir
                         </button>
                       </div>
