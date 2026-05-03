@@ -13,18 +13,18 @@ func NewChargeRepository(db *sql.DB) *ChargeRepository {
 	return &ChargeRepository{db: db}
 }
 
-func (r *ChargeRepository) Create(merchantID int, customerEmail string, amount float64, dueDate string, description string) (int64, error) {
+func (r *ChargeRepository) Create(merchantID int, customerEmail string, amount float64, dueDate string, description string, isTest bool) (int64, error) {
 	var id int64
-	err := r.db.QueryRow(`INSERT INTO charges (merchant_id, customer_email, amount, due_date, description, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-		merchantID, customerEmail, amount, dueDate, description, "pendente").Scan(&id)
+	err := r.db.QueryRow(`INSERT INTO charges (merchant_id, customer_email, amount, due_date, description, status, is_test) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+		merchantID, customerEmail, amount, dueDate, description, "pendente", isTest).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
 	return id, nil
 }
 
-func (r *ChargeRepository) GetByMerchant(merchantID int) ([]model.Charge, error) {
-	rows, err := r.db.Query(`SELECT id, merchant_id, customer_email, amount, due_date, description, status, created_at FROM charges WHERE merchant_id = $1 ORDER BY id DESC`, merchantID)
+func (r *ChargeRepository) GetByMerchant(merchantID int, isTest bool) ([]model.Charge, error) {
+	rows, err := r.db.Query(`SELECT id, merchant_id, customer_email, amount, due_date, description, status, is_test, created_at FROM charges WHERE merchant_id = $1 AND is_test = $2 ORDER BY id DESC`, merchantID, isTest)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (r *ChargeRepository) GetByMerchant(merchantID int) ([]model.Charge, error)
 	var charges []model.Charge
 	for rows.Next() {
 		var c model.Charge
-		if err := rows.Scan(&c.ID, &c.MerchantID, &c.CustomerEmail, &c.Amount, &c.DueDate, &c.Description, &c.Status, &c.CreatedAt); err == nil {
+		if err := rows.Scan(&c.ID, &c.MerchantID, &c.CustomerEmail, &c.Amount, &c.DueDate, &c.Description, &c.Status, &c.IsTest, &c.CreatedAt); err == nil {
 			charges = append(charges, c)
 		}
 	}

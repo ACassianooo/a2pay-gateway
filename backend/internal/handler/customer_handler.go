@@ -22,7 +22,7 @@ func NewCustomerHandler(repo *repository.CustomerRepository) *CustomerHandler {
 // GetCustomers — GET /api/merchants/customers
 func (h *CustomerHandler) GetCustomers(w http.ResponseWriter, r *http.Request) {
 	user := GetUserFromContext(r)
-	customers, err := h.repo.GetByMerchant(user.MerchantID)
+	customers, err := h.repo.GetByMerchant(user.MerchantID, user.IsSandbox)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
@@ -43,6 +43,7 @@ func (h *CustomerHandler) PostCreateCustomer(w http.ResponseWriter, r *http.Requ
 	}
 
 	c.MerchantID = user.MerchantID
+	c.IsTest = user.IsSandbox
 	if c.ID == "" {
 		c.ID = fmt.Sprintf("AC_%d", time.Now().UnixNano())
 	}
@@ -54,4 +55,38 @@ func (h *CustomerHandler) PostCreateCustomer(w http.ResponseWriter, r *http.Requ
 	}
 
 	respondJSON(w, http.StatusCreated, c)
+}
+
+// Update — PUT /api/merchants/customers
+func (h *CustomerHandler) Update(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromContext(r)
+	var c model.Customer
+	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "JSON inválido"})
+		return
+	}
+
+	if err := h.repo.Update(c.ID, user.MerchantID, c.Name, c.Email, c.CPF, c.Phone); err != nil {
+		log.Printf("[CustomerHandler] Erro ao atualizar cliente: %v", err)
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao atualizar cliente"})
+		return
+	}
+	respondJSON(w, http.StatusOK, map[string]string{"message": "Cliente atualizado com sucesso"})
+}
+
+// Delete — DELETE /api/merchants/customers/{id}
+func (h *CustomerHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromContext(r)
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "ID ausente"})
+		return
+	}
+
+	if err := h.repo.Delete(id, user.MerchantID); err != nil {
+		log.Printf("[CustomerHandler] Erro ao deletar cliente: %v", err)
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao deletar cliente"})
+		return
+	}
+	respondJSON(w, http.StatusOK, map[string]string{"message": "Cliente excluído com sucesso"})
 }

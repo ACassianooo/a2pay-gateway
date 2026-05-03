@@ -14,6 +14,7 @@ type Transaction struct {
 	MetodoPagamento string  `json:"metodo_pagamento"`
 	AsaasChargeID   string          `json:"asaas_charge_id,omitempty"`
 	CreatedAt       string          `json:"created_at"`
+	IsTest          bool            `json:"is_test"`
 	Metadata        json.RawMessage `json:"metadata,omitempty"`
 }
 

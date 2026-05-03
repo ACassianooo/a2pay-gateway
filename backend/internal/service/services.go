@@ -93,6 +93,7 @@ func (s *PIXService) CreateCharge(intentID int, valor float64, itemName string, 
 		Name:       "Cliente A2Pay Gateway",
 		Email:      "cliente@a2pay.com",
 		CPF:        "24971563792",
+		IsTest:     isSandbox,
 	})
 
 	s.txRepo.UpdateToAguardandoPIX(intentID, taxa, liquido, chargeID)
@@ -176,9 +177,18 @@ func (s *PIXService) ExternalCharge(merchantID int, req ExternalPixRequest, isSa
 		Name:       req.CustomerName,
 		Email:      req.CustomerEmail,
 		CPF:        req.CustomerCPF,
+		IsTest:     isSandbox,
 	})
 
 	s.txRepo.SetChargeID(intentID, chargeID)
+
+	if isSandbox {
+		go func() {
+			time.Sleep(3 * time.Second)
+			s.txRepo.ConfirmPIX(chargeID)
+			log.Printf("[SANDBOX MOCK EXTERNAL] Pagamento PIX %s finalizado automaticamente.", chargeID)
+		}()
+	}
 
 	result := &PIXResult{ChargeID: chargeID, Valor: req.Valor, Taxa: taxa, Liquido: liquido}
 	if qr, err := client.GetPixQRCode(chargeID); err == nil && qr != nil {
@@ -298,7 +308,7 @@ func (s *PaymentService) CreateIntent(merchantID int, itemName string, valor flo
 	metaBytes, _ := json.Marshal(metadata)
 	
 	// Registro Automático de Produto
-	_ = s.prodRepo.EnsureExists(merchantID, itemName, valor, "uma_vez")
+	_ = s.prodRepo.EnsureExists(merchantID, itemName, valor, "uma_vez", isSandbox)
 	
 	return s.txRepo.Create(merchantID, itemName, valor, valor-taxa, taxa, "N/A", isSandbox, metaBytes)
 }

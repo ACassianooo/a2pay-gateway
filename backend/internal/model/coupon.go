@@ -11,5 +11,6 @@ type Coupon struct {
 	MaxUses       int       `json:"max_uses"`
 	UsedCount     int       `json:"used_count"`
 	Status        string    `json:"status"` // "ativo", "desativado"
+	IsTest        bool      `json:"is_test"`
 	CreatedAt     time.Time `json:"created_at"`
 }

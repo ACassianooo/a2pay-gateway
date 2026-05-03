@@ -7,5 +7,6 @@ type Anticipation struct {
 	FeeAmount       float64 `json:"fee_amount"`
 	NetAmount       float64 `json:"net_amount"`
 	Status          string  `json:"status"`
+	IsTest          bool    `json:"is_test"`
 	CreatedAt       string  `json:"created_at"`
 }

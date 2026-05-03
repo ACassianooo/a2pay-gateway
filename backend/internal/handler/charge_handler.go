@@ -30,7 +30,7 @@ func (h *ChargeHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := h.repo.Create(user.MerchantID, req.CustomerEmail, req.Amount, req.DueDate, req.Description)
+	_, err := h.repo.Create(user.MerchantID, req.CustomerEmail, req.Amount, req.DueDate, req.Description, user.IsSandbox)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to create charge"})
 		return
@@ -42,7 +42,7 @@ func (h *ChargeHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *ChargeHandler) List(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value("user").(model.UserContext)
 
-	charges, err := h.repo.GetByMerchant(user.MerchantID)
+	charges, err := h.repo.GetByMerchant(user.MerchantID, user.IsSandbox)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to fetch charges"})
 		return

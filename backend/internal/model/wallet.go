@@ -23,6 +23,7 @@ type FraudResult struct {
 type Wallet struct {
 	MerchantID int     `json:"merchant_id"`
 	Balance    float64 `json:"balance"`
+	IsTest     bool    `json:"is_test"`
 	UpdatedAt  string  `json:"updated_at"`
 }
 
@@ -33,6 +34,7 @@ type Withdrawal struct {
 	Amount     float64 `json:"amount"`
 	PixKey     string  `json:"pix_key"`
 	Status     string  `json:"status"`
+	IsTest     bool    `json:"is_test"`
 	CreatedAt  string  `json:"created_at"`
 	UpdatedAt  string  `json:"updated_at"`
 }
@@ -45,5 +47,6 @@ type LedgerEntry struct {
 	Amount      float64 `json:"amount"`
 	Reference   string  `json:"reference"`
 	Description string  `json:"description"`
+	IsTest      bool    `json:"is_test"`
 	CreatedAt   string  `json:"created_at"`
 }

@@ -25,7 +25,7 @@ func (s *SubscriptionService) CreateSubscription(merchantID int, req dto.CreateS
 
 	// Aplicar Cupom se existir
 	if req.Cupom != "" {
-		c, err := s.couponRepo.GetByCode(merchantID, req.Cupom)
+		c, err := s.couponRepo.GetByCode(merchantID, req.Cupom, isSandbox)
 		if err == nil && c.Status == "ativo" {
 			if c.DiscountType == "percentual" {
 				valorFinal = req.Valor * (1 - c.DiscountValue/100)
@@ -39,7 +39,7 @@ func (s *SubscriptionService) CreateSubscription(merchantID int, req dto.CreateS
 	}
 
 	// Registro Automático de Produto (Plano)
-	_ = s.prodRepo.EnsureExists(merchantID, req.PlanoNome, valorFinal, "recorrente")
+	_ = s.prodRepo.EnsureExists(merchantID, req.PlanoNome, valorFinal, "recorrente", isSandbox)
 
 	// 1. O próximo vencimento será calculado inteligentemente
 	var nextBilling time.Time
@@ -73,7 +73,7 @@ func (s *SubscriptionService) CreateSubscription(merchantID int, req dto.CreateS
 	}
 
 	// 3. Salvar a assinatura no banco de dados
-	subID, err := s.repo.Create(merchantID, req, valorFinal, nextBilling, pixResult.ChargeID)
+	subID, err := s.repo.Create(merchantID, req, valorFinal, nextBilling, pixResult.ChargeID, isSandbox)
 	if err != nil {
 		return nil, nil, fmt.Errorf("erro ao salvar assinatura no banco: %w", err)
 	}
@@ -91,6 +91,7 @@ func (s *SubscriptionService) CreateSubscription(merchantID int, req dto.CreateS
 		CurrentChargeTxID: pixResult.ChargeID,
 		PixCopyPaste:      pixResult.CopaCola,
 		PixQRCode:         pixResult.QRCode,
+		IsTest:            isSandbox,
 		CreatedAt:         time.Now(),
 	}
 
@@ -102,8 +103,8 @@ func (s *SubscriptionService) CreateSubscription(merchantID int, req dto.CreateS
 }
 
 // ListSubscriptions retorna todas as assinaturas de um lojista
-func (s *SubscriptionService) ListSubscriptions(merchantID int) ([]dto.SubscriptionResponse, error) {
-	return s.repo.GetByMerchant(merchantID)
+func (s *SubscriptionService) ListSubscriptions(merchantID int, isTest bool) ([]dto.SubscriptionResponse, error) {
+	return s.repo.GetByMerchant(merchantID, isTest)
 }
 
 // ProcessDueSubscriptions é chamado pelo Worker para gerar novas cobranças PIX para assinaturas vencidas

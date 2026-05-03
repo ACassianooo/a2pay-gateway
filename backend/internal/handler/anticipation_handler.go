@@ -37,7 +37,7 @@ func (h *AnticipationHandler) Create(w http.ResponseWriter, r *http.Request) {
 	fee := req.Amount * 0.0299
 	net := req.Amount - fee
 
-	antID, err := h.repo.Create(user.MerchantID, req.Amount, fee, net)
+	antID, err := h.repo.Create(user.MerchantID, req.Amount, fee, net, user.IsSandbox)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to create anticipation"})
 		return
@@ -45,7 +45,7 @@ func (h *AnticipationHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	// Processa os saldos (100% funcional): líquido para loja, taxa para o admin
 	ref := "anticipation_fee"
-	err = h.walletRepo.ProcessAnticipation(user.MerchantID, net, fee, ref)
+	err = h.walletRepo.ProcessAnticipation(user.MerchantID, net, fee, ref, user.IsSandbox)
 	if err != nil {
 		h.repo.UpdateStatus(antID, "negada")
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to process wallet balances"})
@@ -61,7 +61,7 @@ func (h *AnticipationHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *AnticipationHandler) List(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value("user").(model.UserContext)
 
-	ants, err := h.repo.GetByMerchant(user.MerchantID)
+	ants, err := h.repo.GetByMerchant(user.MerchantID, user.IsSandbox)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to fetch anticipations"})
 		return

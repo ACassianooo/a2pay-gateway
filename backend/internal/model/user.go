@@ -28,5 +28,6 @@ type Customer struct {
 	Email      string `json:"email"`
 	CPF        string `json:"cpf"`
 	Phone      string `json:"phone,omitempty"`
+	IsTest     bool   `json:"is_test"`
 	CreatedAt  string `json:"created_at"`
 }

@@ -10,5 +10,6 @@ type Product struct {
 	Price       float64   `json:"price"`
 	Cycle       string    `json:"cycle"` // "uma_vez" ou "recorrente"
 	ImageURL    string    `json:"image_url,omitempty"`
+	IsTest      bool      `json:"is_test"`
 	CreatedAt   time.Time `json:"created_at"`
 }

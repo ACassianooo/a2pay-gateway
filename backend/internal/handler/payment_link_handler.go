@@ -46,7 +46,7 @@ func (h *PaymentLinkHandler) Create(w http.ResponseWriter, r *http.Request) {
 	hash := fmt.Sprintf("%x", rand.Int63())[:8]
 	url := fmt.Sprintf("https://a2pay.com.br/pay/%d-%s", user.MerchantID, hash)
 
-	id, err := h.repo.Create(user.MerchantID, req.Name, req.Amount, url)
+	id, err := h.repo.Create(user.MerchantID, req.Name, req.Amount, url, user.IsSandbox)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to create payment link"})
 		return
@@ -66,7 +66,7 @@ func (h *PaymentLinkHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	links, err := h.repo.ListByMerchant(user.MerchantID)
+	links, err := h.repo.ListByMerchant(user.MerchantID, user.IsSandbox)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to list links"})
 		return

@@ -31,7 +31,7 @@ func NewMerchantHandler(userRepo *repository.UserRepository, walRepo *repository
 func (h *MerchantHandler) GetProducts(w http.ResponseWriter, r *http.Request) {
 	user := GetUserFromContext(r)
 	
-	products, err := h.prodRepo.List(user.MerchantID)
+	products, err := h.prodRepo.List(user.MerchantID, user.IsSandbox)
 	if err != nil {
 		log.Printf("[MerchantHandler] Erro ao listar produtos para %d: %v", user.MerchantID, err)
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro interno ao buscar produtos"})
@@ -56,7 +56,7 @@ func (h *MerchantHandler) CreateProduct(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	id, err := h.prodRepo.Create(user.MerchantID, req.Name, req.Description, req.Price, req.Cycle, req.ImageURL)
+	id, err := h.prodRepo.Create(user.MerchantID, req.Name, req.Description, req.Price, req.Cycle, req.ImageURL, user.IsSandbox)
 	if err != nil {
 		log.Printf("[MerchantHandler] Erro ao criar produto: %v", err)
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao criar produto"})
@@ -114,7 +114,7 @@ func (h *MerchantHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) 
 // GetCoupons — GET /api/merchants/coupons
 func (h *MerchantHandler) GetCoupons(w http.ResponseWriter, r *http.Request) {
 	user := GetUserFromContext(r)
-	list, err := h.couRepo.List(user.MerchantID)
+	list, err := h.couRepo.List(user.MerchantID, user.IsSandbox)
 	if err != nil {
 		log.Printf("[MerchantHandler] Erro ao listar cupons: %v", err)
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao buscar cupons"})
@@ -137,7 +137,7 @@ func (h *MerchantHandler) CreateCoupon(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.couRepo.Create(user.MerchantID, req.Code, req.DiscountType, req.DiscountValue, req.MaxUses); err != nil {
+	if err := h.couRepo.Create(user.MerchantID, req.Code, req.DiscountType, req.DiscountValue, req.MaxUses, user.IsSandbox); err != nil {
 		log.Printf("[MerchantHandler] Erro ao criar cupom: %v", err)
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao criar cupom. Código já existe?"})
 		return
@@ -163,6 +163,48 @@ func (h *MerchantHandler) ToggleCouponStatus(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	respondJSON(w, http.StatusOK, map[string]string{"message": "Status atualizado com sucesso"})
+}
+
+// UpdateCoupon — PUT /api/merchants/coupons
+func (h *MerchantHandler) UpdateCoupon(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromContext(r)
+	var req struct {
+		ID           int     `json:"id"`
+		Code         string  `json:"code"`
+		DiscountType string  `json:"discount_type"`
+		DiscountValue float64 `json:"discount_value"`
+		MaxUses      int     `json:"max_uses"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "JSON inválido"})
+		return
+	}
+
+	if err := h.couRepo.Update(req.ID, user.MerchantID, req.Code, req.DiscountType, req.DiscountValue, req.MaxUses); err != nil {
+		log.Printf("[MerchantHandler] Erro ao atualizar cupom: %v", err)
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao atualizar cupom"})
+		return
+	}
+	respondJSON(w, http.StatusOK, map[string]string{"message": "Cupom atualizado com sucesso"})
+}
+
+// DeleteCoupon — DELETE /api/merchants/coupons/{id}
+func (h *MerchantHandler) DeleteCoupon(w http.ResponseWriter, r *http.Request) {
+	user := GetUserFromContext(r)
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "ID inválido"})
+		return
+	}
+
+	if err := h.couRepo.Delete(id, user.MerchantID); err != nil {
+		log.Printf("[MerchantHandler] Erro ao deletar cupom: %v", err)
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao deletar cupom"})
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]string{"message": "Cupom excluído com sucesso"})
 }
 
 
@@ -309,13 +351,13 @@ func (h *MerchantHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
 	defer tx.Rollback()
 
 	// 2. Debitar da wallet (já valida saldo e faz lock FOR UPDATE)
-	if err := h.walRepo.DebitWallet(tx, user.MerchantID, req.Amount, "withdraw_request", "Saque solicitado via Dashboard"); err != nil {
+	if err := h.walRepo.DebitWallet(tx, user.MerchantID, req.Amount, "withdraw_request", "Saque solicitado via Dashboard", user.IsSandbox); err != nil {
 		respondJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 
 	// 3. Criar registro de saque
-	withdrawID, err := h.walRepo.CreateWithdrawal(user.MerchantID, req.Amount, req.PixKey)
+	withdrawID, err := h.walRepo.CreateWithdrawal(user.MerchantID, req.Amount, req.PixKey, user.IsSandbox)
 	if err != nil {
 		log.Printf("[WITHDRAW] Erro ao criar registro de saque: %v", err)
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao salvar solicitação"})
@@ -346,7 +388,7 @@ func (h *MerchantHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
 // GetWithdrawals — GET /api/merchants/withdrawals
 func (h *MerchantHandler) GetWithdrawals(w http.ResponseWriter, r *http.Request) {
 	user := GetUserFromContext(r)
-	list, err := h.walRepo.GetWithdrawals(user.MerchantID)
+	list, err := h.walRepo.GetWithdrawals(user.MerchantID, user.IsSandbox)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return

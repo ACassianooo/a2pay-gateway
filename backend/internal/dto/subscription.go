@@ -25,5 +25,6 @@ type SubscriptionResponse struct {
 	CurrentChargeTxID string    `json:"current_charge_txid"`
 	PixCopyPaste      string    `json:"pix_copy_paste,omitempty"`
 	PixQRCode         string    `json:"pix_qr_code,omitempty"`
+	IsTest            bool      `json:"is_test"`
 	CreatedAt         time.Time `json:"created_at"`
 }

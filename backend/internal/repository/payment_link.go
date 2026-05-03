@@ -11,6 +11,7 @@ type PaymentLink struct {
 	Amount    *float64  `json:"amount"` // Usando ponteiro para permitir null
 	Status    string    `json:"status"`
 	URL       string    `json:"url"`
+	IsTest    bool      `json:"is_test"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -22,17 +23,17 @@ func NewPaymentLinkRepository(db *sql.DB) *PaymentLinkRepository {
 	return &PaymentLinkRepository{db: db}
 }
 
-func (r *PaymentLinkRepository) Create(merchantID int, name string, amount *float64, url string) (int64, error) {
+func (r *PaymentLinkRepository) Create(merchantID int, name string, amount *float64, url string, isTest bool) (int64, error) {
 	var id int64
 	err := r.db.QueryRow(
-		`INSERT INTO payment_links(merchant_id, name, amount, url) VALUES($1, $2, $3, $4) RETURNING id`,
-		merchantID, name, amount, url,
+		`INSERT INTO payment_links(merchant_id, name, amount, url, is_test) VALUES($1, $2, $3, $4, $5) RETURNING id`,
+		merchantID, name, amount, url, isTest,
 	).Scan(&id)
 	return id, err
 }
 
-func (r *PaymentLinkRepository) ListByMerchant(merchantID int) ([]PaymentLink, error) {
-	rows, err := r.db.Query(`SELECT id, name, amount, status, url, created_at FROM payment_links WHERE merchant_id = $1 ORDER BY id DESC`, merchantID)
+func (r *PaymentLinkRepository) ListByMerchant(merchantID int, isTest bool) ([]PaymentLink, error) {
+	rows, err := r.db.Query(`SELECT id, name, amount, status, url, is_test, created_at FROM payment_links WHERE merchant_id = $1 AND is_test = $2 ORDER BY id DESC`, merchantID, isTest)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +42,7 @@ func (r *PaymentLinkRepository) ListByMerchant(merchantID int) ([]PaymentLink, e
 	var links []PaymentLink
 	for rows.Next() {
 		var l PaymentLink
-		err := rows.Scan(&l.ID, &l.Name, &l.Amount, &l.Status, &l.URL, &l.CreatedAt)
+		err := rows.Scan(&l.ID, &l.Name, &l.Amount, &l.Status, &l.URL, &l.IsTest, &l.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -61,8 +62,8 @@ type PaymentLinkWithMerchant struct {
 
 func (r *PaymentLinkRepository) GetByURL(url string) (*PaymentLinkWithMerchant, error) {
 	var l PaymentLinkWithMerchant
-	err := r.db.QueryRow(`SELECT id, merchant_id, name, amount, status, url, created_at FROM payment_links WHERE url = $1`, url).
-		Scan(&l.ID, &l.MerchantID, &l.Name, &l.Amount, &l.Status, &l.URL, &l.CreatedAt)
+	err := r.db.QueryRow(`SELECT id, merchant_id, name, amount, status, url, is_test, created_at FROM payment_links WHERE url = $1`, url).
+		Scan(&l.ID, &l.MerchantID, &l.Name, &l.Amount, &l.Status, &l.URL, &l.IsTest, &l.CreatedAt)
 	if err != nil {
 		return nil, err
 	}

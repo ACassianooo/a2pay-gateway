@@ -8,5 +8,6 @@ type Charge struct {
 	DueDate       string  `json:"due_date"`
 	Description   string  `json:"description"`
 	Status        string  `json:"status"`
+	IsTest        bool    `json:"is_test"`
 	CreatedAt     string  `json:"created_at"`
 }

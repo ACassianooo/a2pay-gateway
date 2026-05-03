@@ -15,29 +15,29 @@ func NewProductRepository(db *sql.DB) *ProductRepository {
 }
 
 // EnsureExists inserts a new product if it doesn't already exist for this merchant
-func (r *ProductRepository) EnsureExists(merchantID int, name string, price float64, cycle string) error {
+func (r *ProductRepository) EnsureExists(merchantID int, name string, price float64, cycle string, isTest bool) error {
 	if name == "" {
 		name = "Produto sem nome"
 	}
 
 	query := `
-		INSERT INTO products (merchant_id, name, price, cycle)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO products (merchant_id, name, price, cycle, is_test)
+		VALUES ($1, $2, $3, $4, $5)
 		ON CONFLICT (merchant_id, name) DO NOTHING
 	`
-	_, err := r.db.Exec(query, merchantID, name, price, cycle)
+	_, err := r.db.Exec(query, merchantID, name, price, cycle, isTest)
 	return err
 }
 
 // Create insere um novo produto e retorna o ID gerado
-func (r *ProductRepository) Create(merchantID int, name, description string, price float64, cycle string, imageURL string) (int, error) {
+func (r *ProductRepository) Create(merchantID int, name, description string, price float64, cycle string, imageURL string, isTest bool) (int, error) {
 	var id int
 	query := `
-		INSERT INTO products (merchant_id, name, description, price, cycle, image_url)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO products (merchant_id, name, description, price, cycle, image_url, is_test)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id
 	`
-	err := r.db.QueryRow(query, merchantID, name, description, price, cycle, imageURL).Scan(&id)
+	err := r.db.QueryRow(query, merchantID, name, description, price, cycle, imageURL, isTest).Scan(&id)
 	return id, err
 }
 
@@ -60,14 +60,14 @@ func (r *ProductRepository) Delete(id, merchantID int) error {
 }
 
 // List returns all products for a given merchant
-func (r *ProductRepository) List(merchantID int) ([]model.Product, error) {
+func (r *ProductRepository) List(merchantID int, isTest bool) ([]model.Product, error) {
 	query := `
-		SELECT id, merchant_id, name, description, price, cycle, image_url, created_at
+		SELECT id, merchant_id, name, description, price, cycle, image_url, is_test, created_at
 		FROM products
-		WHERE merchant_id = $1
+		WHERE merchant_id = $1 AND is_test = $2
 		ORDER BY created_at DESC
 	`
-	rows, err := r.db.Query(query, merchantID)
+	rows, err := r.db.Query(query, merchantID, isTest)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (r *ProductRepository) List(merchantID int) ([]model.Product, error) {
 		var p model.Product
 		var desc, img sql.NullString
 
-		err := rows.Scan(&p.ID, &p.MerchantID, &p.Name, &desc, &p.Price, &p.Cycle, &img, &p.CreatedAt)
+		err := rows.Scan(&p.ID, &p.MerchantID, &p.Name, &desc, &p.Price, &p.Cycle, &img, &p.IsTest, &p.CreatedAt)
 		if err != nil {
 			return nil, err
 		}

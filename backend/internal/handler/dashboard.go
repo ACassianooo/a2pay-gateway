@@ -46,7 +46,7 @@ func (h *DashboardHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Saldo real vindo da wallet protegida
-	saldo, _ := h.walRepo.GetBalance(user.MerchantID)
+	saldo, _ := h.walRepo.GetBalance(user.MerchantID, isTest)
 	name, _ := h.userRepo.GetName(user.MerchantID)
 
 	respondJSON(w, http.StatusOK, map[string]interface{}{

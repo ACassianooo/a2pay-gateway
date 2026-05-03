@@ -167,6 +167,8 @@ func New(cfg *config.Config, db *database.DB) *Server {
 
 			r.Get("/merchants/coupons", merchantH.GetCoupons)
 			r.Post("/merchants/coupons", merchantH.CreateCoupon)
+			r.Put("/merchants/coupons", merchantH.UpdateCoupon)
+			r.Delete("/merchants/coupons/{id}", merchantH.DeleteCoupon)
 			r.Post("/merchants/coupons/toggle", merchantH.ToggleCouponStatus)
 
 			// Novas rotas de saque e auditoria financeira
@@ -174,6 +176,8 @@ func New(cfg *config.Config, db *database.DB) *Server {
 			r.Get("/merchants/withdrawals", merchantH.GetWithdrawals)
 			r.Get("/merchants/customers", custH.GetCustomers)
 			r.Post("/merchants/customers", custH.PostCreateCustomer)
+			r.Put("/merchants/customers", custH.Update)
+			r.Delete("/merchants/customers/{id}", custH.Delete)
 
 			// Rotas de Assinaturas
 			r.Post("/subscriptions", subH.Create)

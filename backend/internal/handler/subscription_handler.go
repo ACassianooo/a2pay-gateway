@@ -84,7 +84,7 @@ func (h *SubscriptionHandler) List(w http.ResponseWriter, r *http.Request) {
 	user := userVal.(model.UserContext)
 	merchantID := user.MerchantID
 
-	subs, err := h.subService.ListSubscriptions(merchantID)
+	subs, err := h.subService.ListSubscriptions(merchantID, user.IsSandbox)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)

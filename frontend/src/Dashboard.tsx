@@ -613,6 +613,10 @@ function ProdutosTab() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dropdownOpen, setDropdownOpen] = useState<number | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<number | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchProducts = () => {
     setLoading(true);
@@ -627,6 +631,33 @@ function ProdutosTab() {
       })
       .catch(err => console.error("Erro ao buscar produtos", err))
       .finally(() => setLoading(false));
+  };
+
+  const confirmDelete = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setProductToDelete(id);
+    setIsDeleteModalOpen(true);
+    setDropdownOpen(null);
+  };
+
+  const handleDelete = async () => {
+    if (!productToDelete) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/merchants/products/${productToDelete}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token()}` }
+      });
+      if (res.ok) {
+        setProducts(prev => prev.filter(p => p.id !== productToDelete));
+        setIsDeleteModalOpen(false);
+        setProductToDelete(null);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -720,9 +751,28 @@ function ProdutosTab() {
               position: 'relative',
               borderBottom: '1px solid #f1f5f9'
             }}>
-              {!p.image_url && <ImageIcon size={48} color="#8942FC" strokeWidth={1} />}
-              <div style={{ position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'grid', placeItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+               {!p.image_url && <ImageIcon size={48} color="#8942FC" strokeWidth={1} />}
+              <div 
+                onClick={(e) => { e.stopPropagation(); setDropdownOpen(dropdownOpen === p.id ? null : p.id); }}
+                style={{ position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'grid', placeItems: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', cursor: 'pointer', zIndex: 10 }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'none'}
+              >
                 <MoreHorizontal size={18} color="#64748b" />
+                
+                {dropdownOpen === p.id && (
+                  <>
+                    <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={(e) => { e.stopPropagation(); setDropdownOpen(null); }} />
+                    <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: '0.5rem', background: '#fff', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', border: '1px solid #f1f5f9', zIndex: 50, overflow: 'hidden', minWidth: '120px', textAlign: 'left' }}>
+                      <button onClick={(e) => { e.stopPropagation(); setEditingProduct(p); setDropdownOpen(null); }} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.75rem 1rem', background: 'none', border: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#475569', cursor: 'pointer', fontWeight: 500 }} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                        <Pencil size={14} /> Editar
+                      </button>
+                      <button onClick={(e) => confirmDelete(p.id, e)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.75rem 1rem', background: 'none', border: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#ef4444', cursor: 'pointer', fontWeight: 500 }} onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                        <Trash2 size={14} /> Excluir
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
             <div style={{ padding: '1.25rem' }}>
@@ -740,6 +790,15 @@ function ProdutosTab() {
           </Card>
         ))}
       </div>
+
+       <ConfirmModal 
+         isOpen={isDeleteModalOpen} 
+         title="Excluir Produto" 
+         message="Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita e pode afetar links de pagamento existentes."
+         loading={deleteLoading}
+         onConfirm={handleDelete} 
+         onCancel={() => setIsDeleteModalOpen(false)} 
+       />
     </div>
   );
 }
@@ -849,9 +908,15 @@ function ExtratoTab({ data }: { data: DashboardData }) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-function CreateCustomerModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: () => void }) {
+function CreateCustomerModal({ onClose, onSuccess, initialData }: { onClose: () => void, onSuccess: () => void, initialData?: Customer | null }) {
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', cpf: '', phone: '' });
+  const [formData, setFormData] = useState({ 
+    id: initialData?.id || '',
+    name: initialData?.name || '', 
+    email: initialData?.email || '', 
+    cpf: initialData?.cpf || '', 
+    phone: initialData?.phone || '' 
+  });
 
   const maskCPF = (v: string) => {
     v = v.replace(/\D/g, "").slice(0, 14);
@@ -878,26 +943,27 @@ function CreateCustomerModal({ onClose, onSuccess }: { onClose: () => void, onSu
   const handleSave = () => {
     if (!formData.name || !formData.email || !formData.cpf) return alert("Preencha os campos obrigatórios");
     setLoading(true);
+    const method = initialData ? 'PUT' : 'POST';
     fetch(`${API}/api/merchants/customers`, {
-      method: 'POST',
+      method,
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token()}` },
       body: JSON.stringify(formData)
     })
     .then(r => r.ok ? r.json() : r.json().then(e => { throw e; }))
     .then(() => { onSuccess(); onClose(); })
-    .catch(e => alert(e.error || 'Erro ao cadastrar cliente'))
+    .catch(e => alert(e.error || 'Erro ao salvar cliente'))
     .finally(() => setLoading(false));
   };
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(8px)', display: 'grid', placeItems: 'center', zIndex: 1000, animation: 'fadeIn 0.2s ease-out' }}>
-       <Card style={{ width: '100%', maxWidth: '480px', padding: 0, overflow: 'hidden', animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)', border: '1px solid #f1f5f9' }}>
+       <Card style={{ width: '100%', maxWidth: '480px', padding: 0, overflow: 'hidden', border: '1px solid #f1f5f9' }}>
           <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff' }}>
              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', padding: '0.5rem', borderRadius: '10px', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
                    <ArrowLeft size={20} />
                 </button>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>Cadastrar cliente</h3>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>{initialData ? 'Editar cliente' : 'Cadastrar cliente'}</h3>
              </div>
              <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '0.5rem', borderRadius: '10px', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.color = '#ef4444'; }}>
                 <XCircle size={22} />
@@ -930,7 +996,7 @@ function CreateCustomerModal({ onClose, onSuccess }: { onClose: () => void, onSu
                   onClick={handleSave}
                   disabled={loading}
                   style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 12, padding: '1rem 3rem', fontWeight: 800, fontSize: '0.95rem', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 14px rgba(137, 66, 252, 0.2)', transition: 'all 0.2s', opacity: loading ? 0.7 : 1 }} onMouseEnter={e => !loading && (e.currentTarget.style.transform = 'scale(1.02)')} onMouseLeave={e => !loading && (e.currentTarget.style.transform = 'none')}>
-                   {loading ? 'Cadastrando...' : 'Cadastrar'}
+                   {loading ? 'Salvando...' : (initialData ? 'Atualizar' : 'Cadastrar')}
                 </button>
              </div>
           </div>
@@ -1039,6 +1105,11 @@ function ClientesTab({ selectedCustomer, setSelectedCustomer }: { selectedCustom
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchClientes = () => {
     fetch(`${API}/api/merchants/customers`, {
@@ -1047,6 +1118,40 @@ function ClientesTab({ selectedCustomer, setSelectedCustomer }: { selectedCustom
     .then(r => r.json())
     .then(d => { setClientes(d || []); setLoading(false); })
     .catch(() => setLoading(false));
+  };
+
+  const openEdit = (c: Customer, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingCustomer(c);
+    setIsModalOpen(true);
+    setDropdownOpen(null);
+  };
+
+  const confirmDelete = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCustomerToDelete(id);
+    setIsDeleteModalOpen(true);
+    setDropdownOpen(null);
+  };
+
+  const handleDelete = async () => {
+    if (!customerToDelete) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`${API}/api/merchants/customers/${customerToDelete}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token()}` }
+      });
+      if (res.ok) {
+        setClientes(prev => prev.filter(c => c.id !== customerToDelete));
+        setIsDeleteModalOpen(false);
+        setCustomerToDelete(null);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -1098,13 +1203,14 @@ function ClientesTab({ selectedCustomer, setSelectedCustomer }: { selectedCustom
               <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>E-mail</th>
               <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>Telefone</th>
               <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700 }}>Data de Criação</th>
+              <th style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, textAlign: 'right' }}>Ações</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8', fontSize: '1rem' }}>Carregando clientes...</td></tr>
+              <tr><td colSpan={6} style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8', fontSize: '1rem' }}>Carregando clientes...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={5} style={{ padding: '8rem 2rem', textAlign: 'center', color: '#94a3b8', fontSize: '1rem', fontWeight: 500 }}>Nenhum cliente encontrado.</td></tr>
+              <tr><td colSpan={6} style={{ padding: '8rem 2rem', textAlign: 'center', color: '#94a3b8', fontSize: '1rem', fontWeight: 500 }}>Nenhum cliente encontrado.</td></tr>
             ) : filtered.map(c => (
               <tr 
                 key={c.id} 
@@ -1118,18 +1224,50 @@ function ClientesTab({ selectedCustomer, setSelectedCustomer }: { selectedCustom
                 <td style={{ padding: '1.2rem 1.5rem', color: '#475569', fontSize: '0.9rem' }}>{c.email}</td>
                 <td style={{ padding: '1.2rem 1.5rem', color: '#475569', fontSize: '0.9rem' }}>{c.phone || '-'}</td>
                 <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>{fmtDate(c.created_at)}</td>
+                <td style={{ padding: '1.2rem 1.5rem', textAlign: 'right', position: 'relative' }}>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setDropdownOpen(dropdownOpen === c.id ? null : c.id); }}
+                    style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '8px', borderRadius: '8px', transition: 'all 0.2s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                  >
+                    <MoreHorizontal size={18} />
+                  </button>
+
+                  {dropdownOpen === c.id && (
+                    <>
+                      <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={(e) => { e.stopPropagation(); setDropdownOpen(null); }} />
+                      <div style={{ position: 'absolute', right: '1.5rem', top: '3rem', background: '#fff', borderRadius: 12, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', border: '1px solid #f1f5f9', zIndex: 50, overflow: 'hidden', minWidth: '140px', textAlign: 'left' }}>
+                        <button onClick={(e) => openEdit(c, e)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%', padding: '0.85rem 1rem', background: 'none', border: 'none', textAlign: 'left', fontSize: '0.9rem', color: '#475569', cursor: 'pointer', fontWeight: 500 }} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                          <Pencil size={15} /> Editar
+                        </button>
+                        <button onClick={(e) => confirmDelete(c.id, e)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%', padding: '0.85rem 1rem', background: 'none', border: 'none', textAlign: 'left', fontSize: '0.9rem', color: '#ef4444', cursor: 'pointer', fontWeight: 500 }} onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                          <Trash2 size={15} /> Excluir
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </Card>
 
-      {isModalOpen && <CreateCustomerModal onClose={() => setIsModalOpen(false)} onSuccess={fetchClientes} />}
+      {isModalOpen && <CreateCustomerModal initialData={editingCustomer} onClose={() => { setIsModalOpen(false); setEditingCustomer(null); }} onSuccess={fetchClientes} />}
+       
+       <ConfirmModal 
+         isOpen={isDeleteModalOpen} 
+         title="Excluir Cliente" 
+         message="Tem certeza que deseja excluir este cliente? Esta ação removerá o histórico e não pode ser desfeita."
+         loading={deleteLoading}
+         onConfirm={handleDelete} 
+         onCancel={() => setIsDeleteModalOpen(false)} 
+       />
     </div>
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
 // TAB: FINANCEIRO
 // ══════════════════════════════════════════════════════════════════════════════
 function SaquesTab({ data }: { data: DashboardData }) {
@@ -1365,6 +1503,11 @@ function CuponsTab() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [dropdownOpen, setDropdownOpen] = useState<number | null>(null);
+  const [editingCoupon, setEditingCoupon] = useState<any>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [couponToDelete, setCouponToDelete] = useState<number | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchCoupons = async () => {
     try {
@@ -1383,6 +1526,38 @@ function CuponsTab() {
   };
 
   useEffect(() => { fetchCoupons(); }, []);
+
+  const openEdit = (c: any) => {
+    setEditingCoupon(c);
+    setIsModalOpen(true);
+    setDropdownOpen(null);
+  };
+
+  const confirmDelete = (id: number) => {
+    setCouponToDelete(id);
+    setIsDeleteModalOpen(true);
+    setDropdownOpen(null);
+  };
+
+  const handleDelete = async () => {
+    if (!couponToDelete) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/merchants/coupons/${couponToDelete}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token()}` }
+      });
+      if (res.ok) {
+        setCoupons(prev => prev.filter(c => c.id !== couponToDelete));
+        setIsDeleteModalOpen(false);
+        setCouponToDelete(null);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   const toggleStatus = async (id: number, currentStatus: string) => {
     const newStatus = currentStatus === 'ativo' ? 'desativado' : 'ativo';
@@ -1410,7 +1585,7 @@ function CuponsTab() {
        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
           <h1 style={{ fontSize: '2.2rem', fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.04em' }}>Cupons</h1>
           <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => { setEditingCoupon(null); setIsModalOpen(true); }}
             style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 12, padding: '0.85rem 1.8rem', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.6rem', boxShadow: '0 4px 14px rgba(137, 66, 252, 0.2)', transition: 'all 0.2s' }}
             onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.background = '#7c3aed'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(137, 66, 252, 0.3)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.background = '#8942FC'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(137, 66, 252, 0.2)'; }}
@@ -1455,7 +1630,7 @@ function CuponsTab() {
                   ) : filtered.map(c => (
                     <tr key={c.id} style={{ borderBottom: '1px solid #f8fafc', transition: 'background 0.2s' }}>
                       <td style={{ padding: '1.2rem 1.5rem', fontWeight: 600, color: '#111827' }}>{c.code}</td>
-                      <td style={{ padding: '1.2rem 1.5rem', color: '#475569' }}>{c.used_count}</td>
+                      <td style={{ padding: '1.2rem 1.5rem', color: '#475569' }}>{c.used_count || 0}</td>
                       <td style={{ padding: '1.2rem 1.5rem', color: '#475569' }}>{c.max_uses === 0 ? 'Ilimitado' : c.max_uses}</td>
                       <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontWeight: 600 }}>
                         {c.discount_type === 'percentual' ? `${c.discount_value}%` : c.discount_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
@@ -1474,21 +1649,46 @@ function CuponsTab() {
                           {c.status === 'ativo' ? 'Ativo' : 'Desativado'}
                         </div>
                       </td>
-                      <td style={{ padding: '1.2rem 1.5rem', textAlign: 'right' }}>
-                        <div 
-                          onClick={() => toggleStatus(c.id, c.status)}
-                          style={{ 
-                            width: '40px', height: '22px', background: c.status === 'ativo' ? '#8942FC' : '#e2e8f0', 
-                            borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s ease',
-                            display: 'inline-block', verticalAlign: 'middle'
-                          }}
-                        >
-                          <div style={{ 
-                            width: '16px', height: '16px', background: '#fff', borderRadius: '50%',
-                            position: 'absolute', top: '3px', left: c.status === 'ativo' ? '21px' : '3px',
-                            transition: 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                          }} />
+                      <td style={{ padding: '1.2rem 1.5rem', textAlign: 'right', position: 'relative' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                          <div 
+                            onClick={() => toggleStatus(c.id, c.status)}
+                            style={{ 
+                              width: '36px', height: '18px', background: c.status === 'ativo' ? '#8942FC' : '#e2e8f0', 
+                              borderRadius: '20px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s ease',
+                              display: 'inline-block', verticalAlign: 'middle'
+                            }}
+                          >
+                            <div style={{ 
+                              width: '12px', height: '12px', background: '#fff', borderRadius: '50%',
+                              position: 'absolute', top: '3px', left: c.status === 'ativo' ? '21px' : '3px',
+                              transition: 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                            }} />
+                          </div>
+
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setDropdownOpen(dropdownOpen === c.id ? null : c.id); }}
+                            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px', borderRadius: '4px' }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                          >
+                            <MoreHorizontal size={18} />
+                          </button>
+
+                          {dropdownOpen === c.id && (
+                            <>
+                              <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setDropdownOpen(null)} />
+                              <div style={{ position: 'absolute', right: '1.5rem', top: '3rem', background: '#fff', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', zIndex: 50, overflow: 'hidden', minWidth: '120px', textAlign: 'left' }}>
+                                <button onClick={() => openEdit(c)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.75rem 1rem', background: 'none', border: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#475569', cursor: 'pointer', fontWeight: 500 }} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                                  <Pencil size={14} /> Editar
+                                </button>
+                                <button onClick={() => confirmDelete(c.id)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.75rem 1rem', background: 'none', border: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#ef4444', cursor: 'pointer', fontWeight: 500 }} onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                                  <Trash2 size={14} /> Excluir
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -1498,16 +1698,26 @@ function CuponsTab() {
           </div>
        </Card>
 
-       {isModalOpen && <CreateCouponModal onClose={() => setIsModalOpen(false)} onSuccess={fetchCoupons} />}
+       {isModalOpen && <CreateCouponModal initialData={editingCoupon} onClose={() => { setIsModalOpen(false); setEditingCoupon(null); }} onSuccess={fetchCoupons} />}
+       
+       <ConfirmModal 
+         isOpen={isDeleteModalOpen} 
+         title="Excluir Cupom" 
+         message="Tem certeza que deseja excluir este cupom? Esta ação não pode ser desfeita."
+         loading={deleteLoading}
+         onConfirm={handleDelete} 
+         onCancel={() => setIsDeleteModalOpen(false)} 
+       />
     </div>
   );
 }
 
-function CreateCouponModal({ onClose, onSuccess }: { onClose: () => void, onSuccess?: () => void }) {
-  const [discountType, setDiscountType] = useState('Fixo');
-  const [discountValue, setDiscountValue] = useState('');
+function CreateCouponModal({ onClose, onSuccess, initialData }: { onClose: () => void, onSuccess?: () => void, initialData?: any }) {
+  const [discountType, setDiscountType] = useState(initialData ? (initialData.discount_type === 'percentual' ? 'Percentual' : 'Fixo') : 'Fixo');
+  const [discountValue, setDiscountValue] = useState(initialData ? (initialData.discount_type === 'percentual' ? `${initialData.discount_value}%` : initialData.discount_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })) : '');
   const [saving, setSaving] = useState(false);
-  const codeRef = useRef<HTMLInputElement>(null);
+  const [code, setCode] = useState(initialData ? initialData.code : '');
+  const [maxUses, setMaxUses] = useState(initialData ? initialData.max_uses : '');
   const maxUsesRef = useRef<HTMLInputElement>(null);
 
   const formatDiscount = (value: string, type: string) => {
@@ -1528,7 +1738,6 @@ function CreateCouponModal({ onClose, onSuccess }: { onClose: () => void, onSucc
   };
 
   const handleSave = async () => {
-    const code = codeRef.current?.value;
     if (!code || !discountValue) {
       alert("Código e valor do desconto são obrigatórios.");
       return;
@@ -1536,22 +1745,27 @@ function CreateCouponModal({ onClose, onSuccess }: { onClose: () => void, onSucc
 
     const digits = discountValue.replace(/\D/g, '');
     const numericValue = discountType === 'Percentual' ? Number(digits) : Number(digits) / 100;
-    const maxUses = Number(maxUsesRef.current?.value) || 0;
+    const maxUsesNum = Number(maxUsesRef.current?.value) || 0;
 
     setSaving(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/merchants/coupons`, {
-        method: 'POST',
+      const url = `${API_BASE_URL}/api/merchants/coupons`;
+      const method = initialData ? 'PUT' : 'POST';
+      const body: any = {
+        code,
+        discount_type: discountType.toLowerCase(),
+        discount_value: numericValue,
+        max_uses: maxUsesNum
+      };
+      if (initialData) body.id = initialData.id;
+
+      const res = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token()}`
         },
-        body: JSON.stringify({
-          code,
-          discount_type: discountType.toLowerCase(),
-          discount_value: numericValue,
-          max_uses: maxUses
-        })
+        body: JSON.stringify(body)
       });
 
       if (res.ok) {
@@ -1559,7 +1773,7 @@ function CreateCouponModal({ onClose, onSuccess }: { onClose: () => void, onSucc
         onClose();
       } else {
         const d = await res.json();
-        alert(d.error || "Erro ao criar cupom");
+        alert(d.error || "Erro ao salvar cupom");
       }
     } catch (error) {
       console.error(error);
@@ -1571,20 +1785,13 @@ function CreateCouponModal({ onClose, onSuccess }: { onClose: () => void, onSucc
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.3)', backdropFilter: 'blur(8px)', display: 'grid', placeItems: 'center', zIndex: 1000, animation: 'fadeIn 0.2s ease-out' }}>
-       <Card style={{ width: '100%', maxWidth: '520px', padding: 0, overflow: 'hidden', animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)', border: '1px solid #f1f5f9' }}>
-          <style>{`
-            @keyframes modalSlideUp { 
-              from { transform: translateY(30px) scale(0.98); opacity: 0; } 
-              to { transform: translateY(0) scale(1); opacity: 1; } 
-            }
-          `}</style>
-          
+       <Card style={{ width: '100%', maxWidth: '520px', padding: 0, overflow: 'hidden', border: '1px solid #f1f5f9' }}>
           <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff' }}>
              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', padding: '0.5rem', borderRadius: '10px', transition: 'background 0.2s', display: 'grid', placeItems: 'center' }} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
                    <ArrowLeft size={20} />
                 </button>
-                <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>Criar cupom</h3>
+                <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#111827', margin: 0, letterSpacing: '-0.02em' }}>{initialData ? 'Editar cupom' : 'Criar cupom'}</h3>
              </div>
              <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '0.5rem', borderRadius: '10px', transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.color = '#ef4444'; }}>
                 <XCircle size={22} />
@@ -1594,7 +1801,7 @@ function CreateCouponModal({ onClose, onSuccess }: { onClose: () => void, onSucc
           <div style={{ padding: '2.5rem 2rem', display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 <label style={{ display: 'block', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, marginLeft: '4px' }}>Código</label>
-                <input ref={codeRef} placeholder="Ex: VERAO20" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} />
+                <input value={code} onChange={e => setCode(e.target.value)} placeholder="Ex: VERAO20" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} />
              </div>
 
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
@@ -1605,30 +1812,31 @@ function CreateCouponModal({ onClose, onSuccess }: { onClose: () => void, onSucc
                     onChange={e => {
                         const newType = e.target.value;
                         setDiscountType(newType);
-                        setDiscountValue(''); // Reseta o valor ao trocar o tipo
+                        setDiscountValue('');
                     }}
                     style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', appearance: 'none', cursor: 'pointer', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'}>
                       <option>Fixo</option>
                       <option>Percentual</option>
                    </select>
-                   <ChevronDown size={18} color="#94a3b8" style={{ position: 'absolute', right: 18, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                   <ChevronDown size={18} style={{ position: 'absolute', right: 20, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#94a3b8' }} />
                 </div>
              </div>
 
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 <label style={{ display: 'block', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, marginLeft: '4px' }}>Desconto</label>
                 <input 
-                  value={discountValue}
-                  onChange={handleDiscountChange}
-                  placeholder={discountType === 'Percentual' ? '0%' : 'R$ 0,00'} 
+                  value={discountValue} 
+                  onChange={handleDiscountChange} 
+                  placeholder={discountType === 'Fixo' ? 'R$ 0,00' : '0%'} 
                   style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} 
-                  onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} 
+                  onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} 
+                  onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} 
                 />
              </div>
 
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 <label style={{ display: 'block', color: '#64748b', fontSize: '0.85rem', fontWeight: 700, marginLeft: '4px' }}>Quantidade máxima de utilizações</label>
-                <input ref={maxUsesRef} type="number" placeholder="Ex: 100" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} />
+                <input defaultValue={maxUses} ref={maxUsesRef} type="number" placeholder="Ex: 100" style={{ width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1rem 1.25rem', color: '#111827', fontSize: '0.95rem', outline: 'none', transition: 'all 0.2s' }} onFocus={e => e.currentTarget.style.borderColor = '#8942FC'} onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} />
              </div>
 
              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
@@ -2104,7 +2312,6 @@ function APITab() {
 					<tbody>
             {keyData && (
               <>
-                {/* Linha da Chave Live */}
                 {keyData.api_key && keyData.api_key !== '' && (
                   <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                     <td style={{ padding: '1.2rem 1.5rem', color: '#64748b', fontSize: '0.88rem', fontFamily: 'monospace' }}>
@@ -2725,6 +2932,25 @@ export default function Dashboard() {
           {activeTab === 'admin-access'       && <AdminAccessControl data={data} />}
         </div>
       </main>
+    </div>
+  );
+}
+
+function ConfirmModal({ isOpen, title, message, onConfirm, onCancel, loading }: any) {
+  if (!isOpen) return null;
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.3)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'grid', placeItems: 'center', padding: '1rem', animation: 'fadeIn 0.2s ease-out' }}>
+      <Card style={{ maxWidth: '400px', width: '100%', padding: '2.5rem 2rem', textAlign: 'center', animation: 'modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)', border: '1px solid #f1f5f9', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)' }}>
+        <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#fef2f2', color: '#ef4444', display: 'grid', placeItems: 'center', margin: '0 auto 1.5rem' }}>
+          <AlertTriangle size={32} />
+        </div>
+        <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#111827', marginBottom: '0.75rem', letterSpacing: '-0.02em' }}>{title}</h3>
+        <p style={{ color: '#64748b', fontSize: '1rem', marginBottom: '2.25rem', lineHeight: 1.6 }}>{message}</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <button onClick={onCancel} style={{ padding: '0.9rem', borderRadius: '14px', border: '1px solid #e2e8f0', background: '#fff', color: '#64748b', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.95rem' }} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}>Cancelar</button>
+          <button onClick={onConfirm} disabled={loading} style={{ padding: '0.9rem', borderRadius: '14px', border: 'none', background: '#ef4444', color: '#fff', fontWeight: 800, cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s', fontSize: '0.95rem', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)' }} onMouseEnter={e => !loading && (e.currentTarget.style.background = '#dc2626')}>{loading ? 'Processando...' : 'Confirmar'}</button>
+        </div>
+      </Card>
     </div>
   );
 }
