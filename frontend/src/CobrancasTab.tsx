@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { FileText, Plus, Search, MoreHorizontal, Copy, Trash2, ArrowLeft, CheckCircle2, Clock, XCircle, Info, Send } from 'lucide-react';
 
 interface Cobranca {
-  id: string;
-  cliente: string;
-  valor: number;
-  vencimento: string;
-  status: 'paga' | 'pendente' | 'vencida';
-  descricao: string;
+  id: string | number;
+  customer_email: string;
+  amount: number;
+  due_date: string;
+  status: 'paga' | 'pendente' | 'vencida' | string;
+  description: string;
 }
 
 function CreateCobrancaModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: () => void }) {

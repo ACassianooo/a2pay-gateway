@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { Zap, Clock, Banknote, HelpCircle, CheckCircle2, TrendingUp, AlertTriangle, ArrowLeft, XCircle, DollarSign, Wallet } from 'lucide-react';
 
 interface Solicitacao {
-  id: string;
-  data: string;
-  valorOriginal: number;
-  taxa: number;
-  valorLiquido: number;
-  status: 'aprovada' | 'pendente' | 'negada';
+  id: string | number;
+  created_at: string;
+  amount_requested: number;
+  fee_amount: number;
+  net_amount: number;
+  status: 'aprovada' | 'pendente' | 'negada' | string;
 }
 
 function SimulateAnticipationModal({ onClose, onSuccess, saldoDisponivel }: { onClose: () => void, onSuccess: () => void, saldoDisponivel: number }) {
