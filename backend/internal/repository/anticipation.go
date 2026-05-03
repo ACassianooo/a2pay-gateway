@@ -39,3 +39,8 @@ func (r *AnticipationRepository) GetByMerchant(merchantID int) ([]model.Anticipa
 	}
 	return ants, nil
 }
+
+func (r *AnticipationRepository) UpdateStatus(id int64, status string) error {
+	_, err := r.db.Exec(`UPDATE anticipations SET status = $1 WHERE id = $2`, status, id)
+	return err
+}

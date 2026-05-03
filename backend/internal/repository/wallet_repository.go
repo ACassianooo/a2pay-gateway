@@ -147,3 +147,31 @@ func (r *WalletRepository) CountBlockedByIP(ip string) int {
 	).Scan(&count)
 	return count
 }
+
+// ProcessAnticipation credita o líquido para o lojista e a taxa para o Master Admin
+func (r *WalletRepository) ProcessAnticipation(merchantID int, netAmount, feeAmount float64, reference string) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// 1. Credita o valor líquido para o lojista
+	err = r.CreditWallet(tx, merchantID, netAmount, reference, "Antecipação de recebíveis (Líquido)")
+	if err != nil {
+		return err
+	}
+
+	// 2. Localiza a conta 'master' para depositar a taxa (o lucro da plataforma)
+	var adminID int
+	err = tx.QueryRow("SELECT id FROM merchants WHERE role = 'master' LIMIT 1").Scan(&adminID)
+	if err == nil && adminID > 0 {
+		err = r.CreditWallet(tx, adminID, feeAmount, reference+"_fee", "Lucro sobre taxa de antecipação")
+		if err != nil {
+			return err
+		}
+	}
+
+	// 3. Efetiva a transação no banco de dados
+	return tx.Commit()
+}

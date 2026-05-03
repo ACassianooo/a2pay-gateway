@@ -37,15 +37,25 @@ func (h *AnticipationHandler) Create(w http.ResponseWriter, r *http.Request) {
 	fee := req.Amount * 0.0299
 	net := req.Amount - fee
 
-	_, err := h.repo.Create(user.MerchantID, req.Amount, fee, net)
+	antID, err := h.repo.Create(user.MerchantID, req.Amount, fee, net)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to create anticipation"})
 		return
 	}
 
-	// Em um ambiente real, você também chamaria o walletRepo para ajustar os saldos bloqueado -> disponível
+	// Processa os saldos (100% funcional): líquido para loja, taxa para o admin
+	ref := "anticipation_fee"
+	err = h.walletRepo.ProcessAnticipation(user.MerchantID, net, fee, ref)
+	if err != nil {
+		h.repo.UpdateStatus(antID, "negada")
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to process wallet balances"})
+		return
+	}
 
-	respondJSON(w, http.StatusCreated, map[string]string{"message": "Antecipação solicitada com sucesso!"})
+	// Atualiza status para aprovada
+	h.repo.UpdateStatus(antID, "aprovada")
+
+	respondJSON(w, http.StatusCreated, map[string]string{"message": "Antecipação creditada com sucesso no saldo disponível!"})
 }
 
 func (h *AnticipationHandler) List(w http.ResponseWriter, r *http.Request) {
