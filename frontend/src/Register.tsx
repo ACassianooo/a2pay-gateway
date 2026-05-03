@@ -131,7 +131,7 @@ export default function Register() {
       <div className="auth-form-container" style={{ overflowY: 'auto' }}>
         <div className="auth-form-card" style={{ padding: '2rem 0' }}>
           <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', marginBottom: '2rem' }}>
-            <img src="/logo.png" alt="A2Pay" style={{ height: '30px', objectFit: 'contain' }} />
+            <img src="/logo.png" alt="A2Pay" style={{ height: '60px', objectFit: 'contain' }} />
           </Link>
 
           <h2 style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>Criar sua conta</h2>
