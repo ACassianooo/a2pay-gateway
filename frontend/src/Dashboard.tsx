@@ -2010,7 +2010,7 @@ function PagamentosTab({ data }: { data: DashboardData }) {
 // ══════════════════════════════════════════════════════════════════════════════
 // TAB: ANTIFRAUDE
 // ══════════════════════════════════════════════════════════════════════════════
-function DisputasTab() {
+function DisputasTab({ isSandbox }: { isSandbox: boolean }) {
   const [disputes, setDisputes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDispute, setSelectedDispute] = useState<any>(null);
@@ -2020,7 +2020,7 @@ function DisputasTab() {
     fetch(`${API}/api/merchants/disputes`, { 
       headers: { 
         'Authorization': `Bearer ${token()}`,
-        'x-a2pay-env': isSandbox() ? 'test' : 'live'
+        'x-a2pay-env': isSandbox ? 'test' : 'live'
       } 
     })
     .then(r => r.json())
@@ -2180,7 +2180,7 @@ function DisputeDetailsModal({ dispute, onClose, onSuccess }: { dispute: any, on
       <Card style={{ width: '100%', maxWidth: '550px', padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: '1.5rem', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>Disputa #{dispute.id}</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><X size={20} /></button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><XCircle size={20} /></button>
         </div>
         <div style={{ padding: '1.5rem' }}>
           <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: 12, padding: '1rem', marginBottom: '1.5rem' }}>
@@ -2228,6 +2228,8 @@ function DisputeDetailsModal({ dispute, onClose, onSuccess }: { dispute: any, on
     </div>
   );
 }
+
+function AntifraudeTab({ data }: { data: DashboardData }) {
   const txs = data.transacoes || [];
   const suspeitas = txs.filter(t => t.status === 'bloqueado' || t.status === 'falhou');
   const [limitValor, setLimitValor] = useState('5000');
@@ -3131,7 +3133,7 @@ export default function Dashboard() {
           {activeTab === 'financeiro' && <SaquesTab data={data} />}
           {activeTab === 'pagamentos' && <PagamentosTab data={data} />}
           {activeTab === 'extrato'    && <ExtratoTab data={data} />}
-          {activeTab === 'disputas'   && <DisputasTab />}
+          {activeTab === 'disputas'   && <DisputasTab isSandbox={isSandbox} />}
           {activeTab === 'antifraude' && <AntifraudeTab data={data} />}
           {activeTab === 'api-keys'    && <APITab />}
           {activeTab === 'conta'      && <ContaTab data={data} />}
