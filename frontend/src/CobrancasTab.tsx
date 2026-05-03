@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, Plus, Search, MoreHorizontal, Copy, Trash2, ArrowLeft, CheckCircle2, Clock, XCircle, Info, Send } from 'lucide-react';
 
 interface Cobranca {
