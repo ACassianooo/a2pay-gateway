@@ -68,3 +68,13 @@ func (r *PaymentLinkRepository) GetByURL(url string) (*PaymentLinkWithMerchant, 
 	}
 	return &l, nil
 }
+
+func (r *PaymentLinkRepository) Update(id int64, merchantID int, name string, amount *float64) error {
+	_, err := r.db.Exec(`UPDATE payment_links SET name = $1, amount = $2 WHERE id = $3 AND merchant_id = $4`, name, amount, id, merchantID)
+	return err
+}
+
+func (r *PaymentLinkRepository) Delete(id int64, merchantID int) error {
+	_, err := r.db.Exec(`DELETE FROM payment_links WHERE id = $1 AND merchant_id = $2`, id, merchantID)
+	return err
+}

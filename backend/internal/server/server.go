@@ -188,6 +188,8 @@ func New(cfg *config.Config, db *database.DB) *Server {
 			// Links de Pagamento
 			r.Post("/merchants/payment-links", payLinkH.Create)
 			r.Get("/merchants/payment-links", payLinkH.List)
+			r.Put("/merchants/payment-links/{id}", payLinkH.Update)
+			r.Delete("/merchants/payment-links/{id}", payLinkH.Delete)
 		})
 
 		// Rotas exclusivas do Master Dashboard

@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"math/rand"
 
+	"strconv"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/gato-gateway/internal/model"
 	"github.com/gato-gateway/internal/repository"
@@ -91,4 +93,64 @@ func (h *PaymentLinkHandler) GetByHash(w http.ResponseWriter, r *http.Request) {
 		"amount": link.Amount,
 		"merchant_id": link.MerchantID,
 	})
+}
+
+func (h *PaymentLinkHandler) Update(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value("user").(model.UserContext)
+	if !ok {
+		respondJSON(w, http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
+		return
+	}
+
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid ID"})
+		return
+	}
+
+	var req struct {
+		Name   string   `json:"name"`
+		Amount *float64 `json:"amount"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid payload"})
+		return
+	}
+
+	if req.Name == "" {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "Name is required"})
+		return
+	}
+
+	err = h.repo.Update(id, user.MerchantID, req.Name, req.Amount)
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to update link"})
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]string{"message": "Link atualizado com sucesso"})
+}
+
+func (h *PaymentLinkHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value("user").(model.UserContext)
+	if !ok {
+		respondJSON(w, http.StatusUnauthorized, map[string]string{"error": "Unauthorized"})
+		return
+	}
+
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid ID"})
+		return
+	}
+
+	err = h.repo.Delete(id, user.MerchantID)
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to delete link"})
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]string{"message": "Link deletado com sucesso"})
 }

@@ -11,10 +11,10 @@ interface PaymentLink {
   url: string;
 }
 
-function CreatePaymentLinkModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: () => void }) {
-  const [nome, setNome] = useState('');
-  const [valorInput, setValorInput] = useState('');
-  const [tipoValor, setTipoValor] = useState<'fixo' | 'aberto'>('fixo');
+function CreatePaymentLinkModal({ onClose, onSuccess, initialData }: { onClose: () => void, onSuccess: () => void, initialData?: PaymentLink | null }) {
+  const [nome, setNome] = useState(initialData ? initialData.name : '');
+  const [valorInput, setValorInput] = useState(initialData && initialData.amount ? initialData.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '');
+  const [tipoValor, setTipoValor] = useState<'fixo' | 'aberto'>(initialData && initialData.amount ? 'fixo' : 'aberto');
   const [saving, setSaving] = useState(false);
 
   const formatCurrency = (value: string) => {
@@ -51,8 +51,16 @@ function CreatePaymentLinkModal({ onClose, onSuccess }: { onClose: () => void, o
         amount: tipoValor === 'fixo' ? numValue : null
       };
 
-      const res = await fetch(`${API_BASE_URL}/api/merchants/payment-links`, {
-        method: 'POST',
+      let url = `${API_BASE_URL}/api/merchants/payment-links`;
+      let method = 'POST';
+
+      if (initialData) {
+        url = `${API_BASE_URL}/api/merchants/payment-links/${initialData.id}`;
+        method = 'PUT';
+      }
+
+      const res = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(payload)
       });
@@ -73,7 +81,7 @@ function CreatePaymentLinkModal({ onClose, onSuccess }: { onClose: () => void, o
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(255, 255, 255, 0.4)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
       <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 500, boxShadow: '0 20px 40px rgba(0,0,0,0.1)', overflow: 'hidden', animation: 'scaleIn 0.2s ease-out', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.2rem 1.5rem', borderBottom: '1px solid #f1f5f9' }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#111827', margin: 0 }}>Criar Link de Pagamento</h2>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#111827', margin: 0 }}>{initialData ? 'Editar Link' : 'Criar Link de Pagamento'}</h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
             ✕
           </button>
@@ -116,7 +124,7 @@ function CreatePaymentLinkModal({ onClose, onSuccess }: { onClose: () => void, o
         <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', background: '#fff' }}>
           <button onClick={onClose} disabled={saving} style={{ background: '#fff', border: '1px solid #e2e8f0', color: '#475569', padding: '0.6rem 1.5rem', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', cursor: saving ? 'not-allowed' : 'pointer' }}>Cancelar</button>
           <button onClick={handleSave} disabled={saving} style={{ background: '#8942FC', color: '#fff', border: 'none', padding: '0.6rem 1.5rem', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', cursor: saving ? 'not-allowed' : 'pointer', transition: 'background 0.2s' }}>
-            {saving ? 'Criando...' : 'Gerar Link'}
+            {saving ? 'Salvando...' : (initialData ? 'Salvar Alterações' : 'Gerar Link')}
           </button>
         </div>
       </div>
@@ -127,6 +135,8 @@ function CreatePaymentLinkModal({ onClose, onSuccess }: { onClose: () => void, o
 export default function PaymentLinksTab() {
   const [links, setLinks] = useState<PaymentLink[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingLink, setEditingLink] = useState<PaymentLink | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState<string | number | null>(null);
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
 
   const loadData = () => {
@@ -148,12 +158,42 @@ export default function PaymentLinksTab() {
   const handleCopy = (url: string, id: string | number) => {
     navigator.clipboard.writeText(url);
     setCopiedId(id);
+    setDropdownOpen(null);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleDelete = async (id: string | number) => {
+    if (!window.confirm("Deseja realmente excluir este link?")) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE_URL}/api/merchants/payment-links/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        loadData();
+      } else {
+        alert("Falha ao excluir link");
+      }
+    } catch(err) {
+      alert("Erro de conexão");
+    }
+  };
+
+  const openEdit = (link: PaymentLink) => {
+    setEditingLink(link);
+    setIsModalOpen(true);
+    setDropdownOpen(null);
+  };
+
+  const handleOpenModal = () => {
+    setEditingLink(null);
+    setIsModalOpen(true);
   };
 
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
-      {isModalOpen && <CreatePaymentLinkModal onSuccess={loadData} onClose={() => setIsModalOpen(false)} />}
+      {isModalOpen && <CreatePaymentLinkModal initialData={editingLink} onSuccess={loadData} onClose={() => setIsModalOpen(false)} />}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
@@ -166,7 +206,7 @@ export default function PaymentLinksTab() {
           <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#111827', margin: 0 }}>Links de Pagamento</h1>
           <p style={{ color: '#64748b', fontSize: '0.95rem', marginTop: '0.3rem' }}>Crie links para receber pagamentos de forma rápida e fácil.</p>
         </div>
-        <button onClick={() => setIsModalOpen(true)} style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 10, padding: '0.6rem 1.2rem', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'background 0.2s', boxShadow: '0 4px 12px rgba(137, 66, 252, 0.2)' }} onMouseEnter={e => e.currentTarget.style.background = '#7c3aed'} onMouseLeave={e => e.currentTarget.style.background = '#8942FC'}>
+        <button onClick={handleOpenModal} style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 10, padding: '0.6rem 1.2rem', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'background 0.2s', boxShadow: '0 4px 12px rgba(137, 66, 252, 0.2)' }} onMouseEnter={e => e.currentTarget.style.background = '#7c3aed'} onMouseLeave={e => e.currentTarget.style.background = '#8942FC'}>
           <Plus size={16} /> Novo Link
         </button>
       </div>
@@ -202,10 +242,25 @@ export default function PaymentLinksTab() {
                     </span>
                   </td>
                   <td style={{ padding: '1rem 1.5rem', color: '#64748b', fontSize: '0.85rem' }}>{new Date(l.created_at).toLocaleDateString('pt-BR')}</td>
-                  <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
-                    <button style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.3rem', borderRadius: 6, transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.color = '#8942FC'; e.currentTarget.style.background = '#f1f5f9'; }} onMouseLeave={e => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = 'none'; }}>
+                  <td style={{ padding: '1rem 1.5rem', textAlign: 'right', position: 'relative' }}>
+                    <button 
+                      onClick={() => setDropdownOpen(dropdownOpen === l.id ? null : l.id)}
+                      style={{ background: dropdownOpen === l.id ? '#f1f5f9' : 'none', border: 'none', color: dropdownOpen === l.id ? '#8942FC' : '#94a3b8', cursor: 'pointer', padding: '0.3rem', borderRadius: 6, transition: 'all 0.2s' }} 
+                      onMouseEnter={e => { e.currentTarget.style.color = '#8942FC'; e.currentTarget.style.background = '#f1f5f9'; }} 
+                      onMouseLeave={e => { if (dropdownOpen !== l.id) { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = 'none'; } }}>
                       <MoreHorizontal size={18} />
                     </button>
+
+                    {dropdownOpen === l.id && (
+                      <div style={{ position: 'absolute', right: '1.5rem', top: '3rem', background: '#fff', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', zIndex: 50, overflow: 'hidden', minWidth: '120px', textAlign: 'left' }}>
+                        <button onClick={() => openEdit(l)} style={{ display: 'block', width: '100%', padding: '0.75rem 1rem', background: 'none', border: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#475569', cursor: 'pointer', fontWeight: 500 }} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                          Editar
+                        </button>
+                        <button onClick={() => handleDelete(l.id)} style={{ display: 'block', width: '100%', padding: '0.75rem 1rem', background: 'none', border: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#ef4444', cursor: 'pointer', fontWeight: 500 }} onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                          Excluir
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
