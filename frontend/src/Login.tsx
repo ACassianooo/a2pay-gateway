@@ -85,7 +85,7 @@ export default function Login() {
       <div className="auth-form-container">
         <div className="auth-form-card">
           <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', marginBottom: '3rem' }}>
-            <Logo height={32} />
+            <img src="/logo.png" alt="A2Pay" style={{ height: '110px', objectFit: 'contain', mixBlendMode: 'multiply' }} />
           </Link>
 
           <h2 style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>Bem-vindo de volta</h2>
