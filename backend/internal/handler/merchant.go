@@ -322,6 +322,14 @@ func (h *MerchantHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 3.5 Se for modo Sandbox, auto-aprovar o saque
+	msg := "Saque solicitado com sucesso. O valor foi reservado."
+	if user.IsSandbox {
+		if err := h.walRepo.UpdateWithdrawalStatus(withdrawID, "completed"); err == nil {
+			msg = "Saque concluído instantaneamente (Modo Sandbox)."
+		}
+	}
+
 	// 4. Commit
 	if err := tx.Commit(); err != nil {
 		log.Printf("[WITHDRAW] Erro ao commitar saque: %v", err)
@@ -331,7 +339,7 @@ func (h *MerchantHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
 
 	respondJSON(w, http.StatusCreated, map[string]interface{}{
 		"id":      withdrawID,
-		"message": "Saque solicitado com sucesso. O valor foi reservado.",
+		"message": msg,
 	})
 }
 

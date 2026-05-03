@@ -84,6 +84,12 @@ func (r *WalletRepository) CreateWithdrawal(merchantID int, amount float64, pixK
 	return id, err
 }
 
+// UpdateWithdrawalStatus atualiza o status de um saque (ex: pending -> completed)
+func (r *WalletRepository) UpdateWithdrawalStatus(id int64, status string) error {
+	_, err := r.db.Exec(`UPDATE withdrawals SET status = $1, updated_at = NOW() WHERE id = $2`, status, id)
+	return err
+}
+
 // GetWithdrawals lista os saques de um lojista
 func (r *WalletRepository) GetWithdrawals(merchantID int) ([]model.Withdrawal, error) {
 	rows, err := r.db.Query(`

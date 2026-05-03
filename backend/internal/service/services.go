@@ -98,6 +98,14 @@ func (s *PIXService) CreateCharge(intentID int, valor float64, itemName string, 
 	s.txRepo.UpdateToAguardandoPIX(intentID, taxa, liquido, chargeID)
 	log.Printf("[PIX] Cobrança criada (%s): %s | R$ %.2f", map[bool]string{true: "TEST", false: "LIVE"}[isSandbox], chargeID, valor)
 
+	if isSandbox {
+		go func() {
+			time.Sleep(3 * time.Second)
+			s.txRepo.ConfirmPIX(chargeID)
+			log.Printf("[SANDBOX MOCK] Pagamento PIX %s finalizado automaticamente.", chargeID)
+		}()
+	}
+
 	result := &PIXResult{ChargeID: chargeID, Valor: valor, Taxa: taxa, Liquido: liquido}
 	if qr, err := client.GetPixQRCode(chargeID); err == nil && qr != nil {
 		result.QRCode = qr.EncodedImage
