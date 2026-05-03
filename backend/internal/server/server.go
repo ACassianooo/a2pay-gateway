@@ -43,6 +43,7 @@ func New(cfg *config.Config, db *database.DB) *Server {
 	couRepo := repository.NewCouponRepository(db.Conn)
 	chargeRepo := repository.NewChargeRepository(db.Conn)
 	antRepo := repository.NewAnticipationRepository(db.Conn)
+	payLinkRepo := repository.NewPaymentLinkRepository(db.Conn)
 	// ── Serviços ─────────────────────────────────────────────────────────
 	cryptoSvc := service.MustNewCryptoService(fmt.Sprintf("%x", cfg.AESKey))
 
@@ -111,6 +112,7 @@ func New(cfg *config.Config, db *database.DB) *Server {
 	subH := handler.NewSubscriptionHandler(subSvc)
 	chargeH := handler.NewChargeHandler(chargeRepo)
 	antH := handler.NewAnticipationHandler(antRepo, walRepo)
+	payLinkH := handler.NewPaymentLinkHandler(payLinkRepo)
 
 	// ── Router ───────────────────────────────────────────────────────────
 	r := chi.NewRouter()
@@ -181,6 +183,10 @@ func New(cfg *config.Config, db *database.DB) *Server {
 			r.Get("/merchants/charges", chargeH.List)
 			r.Post("/merchants/anticipations", antH.Create)
 			r.Get("/merchants/anticipations", antH.List)
+
+			// Links de Pagamento
+			r.Post("/merchants/payment-links", payLinkH.Create)
+			r.Get("/merchants/payment-links", payLinkH.List)
 		})
 
 		// Rotas exclusivas do Master Dashboard

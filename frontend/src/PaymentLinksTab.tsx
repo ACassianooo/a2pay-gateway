@@ -2,20 +2,149 @@ import React, { useState } from 'react';
 import { Link as LinkIcon, Plus, Copy, MoreHorizontal, CheckCircle2, FileText, QrCode } from 'lucide-react';
 
 interface PaymentLink {
-  id: string;
+  id: string | number;
   name: string;
   amount: number | null; // null if amount is open
   created_at: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | string;
   url: string;
+}
+
+function CreatePaymentLinkModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: () => void }) {
+  const [nome, setNome] = useState('');
+  const [valorInput, setValorInput] = useState('');
+  const [tipoValor, setTipoValor] = useState<'fixo' | 'aberto'>('fixo');
+  const [saving, setSaving] = useState(false);
+
+  const formatCurrency = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    const amount = Number(digits) / 100;
+    return amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    if (raw === '') {
+      setValorInput('');
+      return;
+    }
+    setValorInput(formatCurrency(raw));
+  };
+
+  const handleSave = async () => {
+    if (!nome) {
+      alert('Dê um nome para o seu link.');
+      return;
+    }
+    const numValue = Number(valorInput.replace(/\D/g, '')) / 100;
+    if (tipoValor === 'fixo' && numValue <= 0) {
+      alert('Digite um valor maior que zero.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('token');
+      const payload = {
+        name: nome,
+        amount: tipoValor === 'fixo' ? numValue : null
+      };
+
+      const res = await fetch(`http://localhost:8080/api/merchants/payment-links`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        onSuccess();
+        onClose();
+      } else {
+        const err = await res.json();
+        alert('Erro: ' + (err.error || 'Falha ao criar link'));
+      }
+    } catch(err) {
+      alert('Erro de conexão');
+    }
+    setSaving(false);
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(255, 255, 255, 0.4)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 500, boxShadow: '0 20px 40px rgba(0,0,0,0.1)', overflow: 'hidden', animation: 'scaleIn 0.2s ease-out', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.2rem 1.5rem', borderBottom: '1px solid #f1f5f9' }}>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#111827', margin: 0 }}>Criar Link de Pagamento</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+            ✕
+          </button>
+        </div>
+
+        <div style={{ padding: '1.5rem', overflowY: 'auto' }}>
+          <div style={{ marginBottom: '1.2rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
+              Nome do Link <span style={{ color: '#ef4444' }}>*</span>
+            </label>
+            <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Curso de Marketing" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.9rem', color: '#111827' }} />
+          </div>
+
+          <div style={{ marginBottom: '1.2rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
+              Tipo do Valor
+            </label>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer' }}>
+                <input type="radio" name="tipo_valor" checked={tipoValor === 'fixo'} onChange={() => setTipoValor('fixo')} />
+                Valor Fixo
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer' }}>
+                <input type="radio" name="tipo_valor" checked={tipoValor === 'aberto'} onChange={() => setTipoValor('aberto')} />
+                Valor Aberto (Cliente decide)
+              </label>
+            </div>
+          </div>
+
+          {tipoValor === 'fixo' && (
+            <div style={{ marginBottom: '1.2rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
+                Valor (R$) <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <input value={valorInput} onChange={handlePriceChange} placeholder="R$ 0,00" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.9rem', color: '#111827' }} />
+            </div>
+          )}
+        </div>
+
+        <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', background: '#fff' }}>
+          <button onClick={onClose} disabled={saving} style={{ background: '#fff', border: '1px solid #e2e8f0', color: '#475569', padding: '0.6rem 1.5rem', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', cursor: saving ? 'not-allowed' : 'pointer' }}>Cancelar</button>
+          <button onClick={handleSave} disabled={saving} style={{ background: '#8942FC', color: '#fff', border: 'none', padding: '0.6rem 1.5rem', borderRadius: 8, fontWeight: 700, fontSize: '0.9rem', cursor: saving ? 'not-allowed' : 'pointer', transition: 'background 0.2s' }}>
+            {saving ? 'Criando...' : 'Gerar Link'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function PaymentLinksTab() {
   const [links, setLinks] = useState<PaymentLink[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | number | null>(null);
 
-  const handleCopy = (url: string, id: string) => {
+  const loadData = () => {
+    const token = localStorage.getItem('token');
+    fetch(`http://localhost:8080/api/merchants/payment-links`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if(Array.isArray(data)) setLinks(data);
+      })
+      .catch(console.error);
+  };
+
+  React.useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleCopy = (url: string, id: string | number) => {
     navigator.clipboard.writeText(url);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
@@ -23,6 +152,7 @@ export default function PaymentLinksTab() {
 
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+      {isModalOpen && <CreatePaymentLinkModal onSuccess={loadData} onClose={() => setIsModalOpen(false)} />}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
