@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { MasterApp } from './admin/MasterApp';
 import { API_BASE_URL } from './api';
+import Logo from './components/Logo';
 
 // Import Admin Tabs
 import { AdminOverview } from './admin/dashboard/AdminOverview';
@@ -2583,7 +2584,7 @@ export default function Dashboard() {
         
         {/* Sidebar Header */}
         <div style={{ padding: '1.5rem 1.5rem', display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-          <img src="/logo.png" alt="A2Pay" style={{ height: '55px', width: '200px', objectFit: 'contain', objectPosition: 'left center', mixBlendMode: 'multiply' }} />
+          <Logo height={32} />
         </div>
 
         {/* Navigation Groups */}

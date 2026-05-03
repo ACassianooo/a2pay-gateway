@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, Shield, CheckCircle2, ArrowRight } from 'lucide-react';
 import { API_BASE_URL } from './api';
+import Logo from './components/Logo';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -84,7 +85,7 @@ export default function Login() {
       <div className="auth-form-container">
         <div className="auth-form-card">
           <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', marginBottom: '3rem' }}>
-            <img src="/logo.png" alt="A2Pay" style={{ height: '55px', width: '200px', objectFit: 'contain', objectPosition: 'left center', mixBlendMode: 'multiply' }} />
+            <Logo height={32} />
           </Link>
 
           <h2 style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--text-main)', letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>Bem-vindo de volta</h2>
