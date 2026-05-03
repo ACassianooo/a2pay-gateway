@@ -10,8 +10,11 @@ interface Cobranca {
   descricao: string;
 }
 
-function CreateCobrancaModal({ onClose }: { onClose: () => void }) {
+function CreateCobrancaModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: () => void }) {
   const [valor, setValor] = useState('');
+  const [email, setEmail] = useState('');
+  const [vencimento, setVencimento] = useState('');
+  const [descricao, setDescricao] = useState('');
   const [saving, setSaving] = useState(false);
 
   const formatCurrency = (value: string) => {
@@ -29,13 +32,32 @@ function CreateCobrancaModal({ onClose }: { onClose: () => void }) {
     setValor(formatCurrency(raw));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    const numValue = Number(valor.replace(/\D/g, '')) / 100;
+    if (numValue <= 0 || !email || !vencimento) {
+      alert('Preencha os campos obrigatórios.');
+      return;
+    }
+    
     setSaving(true);
-    // Simular chamada API
-    setTimeout(() => {
-      setSaving(false);
-      onClose();
-    }, 1000);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:8080/api/merchants/charges`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ amount: numValue, customer_email: email, due_date: vencimento + "T00:00:00Z", description: descricao })
+      });
+      if (res.ok) {
+        onSuccess();
+        onClose();
+      } else {
+        const error = await res.json();
+        alert('Erro: ' + (error.error || 'Falha ao criar'));
+      }
+    } catch(err) {
+      alert('Erro de conexão');
+    }
+    setSaving(false);
   };
 
   return (
@@ -65,7 +87,7 @@ function CreateCobrancaModal({ onClose }: { onClose: () => void }) {
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
               E-mail do Cliente <span style={{ color: '#ef4444' }}>*</span>
             </label>
-            <input placeholder="cliente@email.com" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.9rem', color: '#111827' }} />
+            <input value={email} onChange={e => setEmail(e.target.value)} placeholder="cliente@email.com" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.9rem', color: '#111827' }} />
           </div>
 
           {/* Vencimento */}
@@ -73,7 +95,7 @@ function CreateCobrancaModal({ onClose }: { onClose: () => void }) {
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
               Data de Vencimento <span style={{ color: '#ef4444' }}>*</span>
             </label>
-            <input type="date" style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.9rem', color: '#111827' }} />
+            <input type="date" value={vencimento} onChange={e => setVencimento(e.target.value)} style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.9rem', color: '#111827' }} />
           </div>
 
           {/* Descrição */}
@@ -81,7 +103,7 @@ function CreateCobrancaModal({ onClose }: { onClose: () => void }) {
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: '0.5rem' }}>
               Descrição
             </label>
-            <textarea placeholder="Referente ao serviço prestado..." style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.9rem', color: '#111827', minHeight: '80px', resize: 'vertical' }} />
+            <textarea value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Referente ao serviço prestado..." style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.9rem', color: '#111827', minHeight: '80px', resize: 'vertical' }} />
           </div>
         </div>
 
@@ -100,12 +122,23 @@ export default function CobrancasTab() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState('');
 
-  // Mock de dados para a tela
-  const cobrancas: Cobranca[] = [
-    { id: 'cob_1', cliente: 'joao@empresa.com', valor: 450.00, vencimento: '2026-05-10', status: 'pendente', descricao: 'Consultoria Mensal' },
-    { id: 'cob_2', cliente: 'maria@tech.com', valor: 1250.00, vencimento: '2026-05-01', status: 'paga', descricao: 'Licença Software' },
-    { id: 'cob_3', cliente: 'carlos@design.com', valor: 800.00, vencimento: '2026-04-20', status: 'vencida', descricao: 'Criação de Website' }
-  ];
+  const [cobrancas, setCobrancas] = useState<Cobranca[]>([]);
+
+  const loadData = () => {
+    const token = localStorage.getItem('token');
+    fetch(`http://localhost:8080/api/merchants/charges`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if(Array.isArray(data)) setCobrancas(data);
+      })
+      .catch(console.error);
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -122,7 +155,7 @@ export default function CobrancasTab() {
 
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
-      {isModalOpen && <CreateCobrancaModal onClose={() => setIsModalOpen(false)} />}
+      {isModalOpen && <CreateCobrancaModal onSuccess={loadData} onClose={() => setIsModalOpen(false)} />}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
@@ -185,13 +218,13 @@ export default function CobrancasTab() {
                 <tr key={c.id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.2s' }}>
                   <td style={{ padding: '1rem 1.5rem' }}>
                     <div style={{ fontWeight: 700, color: '#111827', fontSize: '0.9rem' }}>{c.id}</div>
-                    <div style={{ color: '#64748b', fontSize: '0.8rem' }}>{c.descricao}</div>
+                    <div style={{ color: '#64748b', fontSize: '0.8rem' }}>{c.description}</div>
                   </td>
-                  <td style={{ padding: '1rem 1.5rem', color: '#334155', fontSize: '0.9rem', fontWeight: 500 }}>{c.cliente}</td>
-                  <td style={{ padding: '1rem 1.5rem', color: '#334155', fontSize: '0.9rem' }}>{new Date(c.vencimento + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+                  <td style={{ padding: '1rem 1.5rem', color: '#334155', fontSize: '0.9rem', fontWeight: 500 }}>{c.customer_email}</td>
+                  <td style={{ padding: '1rem 1.5rem', color: '#334155', fontSize: '0.9rem' }}>{new Date(c.due_date).toLocaleDateString('pt-BR')}</td>
                   <td style={{ padding: '1rem 1.5rem' }}>{getStatusBadge(c.status)}</td>
                   <td style={{ padding: '1rem 1.5rem', color: '#111827', fontWeight: 800, fontSize: '0.95rem', textAlign: 'right' }}>
-                    R$ {c.valor.toFixed(2).replace('.', ',')}
+                    R$ {c.amount.toFixed(2).replace('.', ',')}
                   </td>
                   <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
                     <button style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.3rem', borderRadius: 6, transition: 'all 0.2s' }} onMouseEnter={e => { e.currentTarget.style.color = '#8942FC'; e.currentTarget.style.background = '#f1f5f9'; }} onMouseLeave={e => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = 'none'; }}>

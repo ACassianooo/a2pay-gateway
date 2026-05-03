@@ -10,7 +10,7 @@ interface Solicitacao {
   status: 'aprovada' | 'pendente' | 'negada';
 }
 
-function SimulateAnticipationModal({ onClose, saldoDisponivel }: { onClose: () => void, saldoDisponivel: number }) {
+function SimulateAnticipationModal({ onClose, onSuccess, saldoDisponivel }: { onClose: () => void, onSuccess: () => void, saldoDisponivel: number }) {
   const [valorInput, setValorInput] = useState('');
   const [simulando, setSimulando] = useState(false);
   const taxaPercentual = 2.99;
@@ -34,14 +34,27 @@ function SimulateAnticipationModal({ onClose, saldoDisponivel }: { onClose: () =
   const valorDesconto = (valorRaw * taxaPercentual) / 100;
   const valorLiquido = valorRaw - valorDesconto;
 
-  const handleSolicitar = () => {
+  const handleSolicitar = async () => {
     if (valorRaw <= 0) return;
     setSimulando(true);
-    // Simular API
-    setTimeout(() => {
-      setSimulando(false);
-      onClose();
-    }, 1500);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:8080/api/merchants/anticipations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ amount: valorRaw })
+      });
+      if (res.ok) {
+        onSuccess();
+        onClose();
+      } else {
+        const err = await res.json();
+        alert('Erro: ' + (err.error || 'Falha ao antecipar'));
+      }
+    } catch(err) {
+      alert('Erro de conexão');
+    }
+    setSimulando(false);
   };
 
   return (
@@ -118,15 +131,27 @@ function SimulateAnticipationModal({ onClose, saldoDisponivel }: { onClose: () =
 
 export default function AntecipacoesTab() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
 
-  // Mock de dados
+  // Mock de dados (em um cenario real isso viria do backend do saldo disponível)
   const saldoBloqueado = 12450.00; 
   const saldoElegivel = 8900.00; // Valor que pode ser antecipado
 
-  const solicitacoes: Solicitacao[] = [
-    { id: 'ant_102', data: '2026-05-01', valorOriginal: 2500.00, taxa: 74.75, valorLiquido: 2425.25, status: 'aprovada' },
-    { id: 'ant_103', data: '2026-05-02', valorOriginal: 1200.00, taxa: 35.88, valorLiquido: 1164.12, status: 'pendente' }
-  ];
+  const loadData = () => {
+    const token = localStorage.getItem('token');
+    fetch(`http://localhost:8080/api/merchants/anticipations`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if(Array.isArray(data)) setSolicitacoes(data);
+      })
+      .catch(console.error);
+  };
+
+  React.useEffect(() => {
+    loadData();
+  }, []);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -143,7 +168,7 @@ export default function AntecipacoesTab() {
 
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
-      {isModalOpen && <SimulateAnticipationModal onClose={() => setIsModalOpen(false)} saldoDisponivel={saldoElegivel} />}
+      {isModalOpen && <SimulateAnticipationModal onSuccess={loadData} onClose={() => setIsModalOpen(false)} saldoDisponivel={saldoElegivel} />}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
@@ -213,14 +238,14 @@ export default function AntecipacoesTab() {
               </tr>
             </thead>
             <tbody>
-              {solicitacoes.map(s => (
+              {solicitacoes.map((s: any) => (
                 <tr key={s.id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.2s' }}>
-                  <td style={{ padding: '1.2rem 1.5rem', color: '#334155', fontSize: '0.9rem', fontWeight: 500 }}>{new Date(s.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
-                  <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.95rem', fontWeight: 600 }}>R$ {s.valorOriginal.toFixed(2).replace('.', ',')}</td>
-                  <td style={{ padding: '1.2rem 1.5rem', color: '#ef4444', fontSize: '0.9rem', fontWeight: 600 }}>- R$ {s.taxa.toFixed(2).replace('.', ',')}</td>
+                  <td style={{ padding: '1.2rem 1.5rem', color: '#334155', fontSize: '0.9rem', fontWeight: 500 }}>{new Date(s.created_at).toLocaleDateString('pt-BR')}</td>
+                  <td style={{ padding: '1.2rem 1.5rem', color: '#111827', fontSize: '0.95rem', fontWeight: 600 }}>R$ {s.amount_requested.toFixed(2).replace('.', ',')}</td>
+                  <td style={{ padding: '1.2rem 1.5rem', color: '#ef4444', fontSize: '0.9rem', fontWeight: 600 }}>- R$ {s.fee_amount.toFixed(2).replace('.', ',')}</td>
                   <td style={{ padding: '1.2rem 1.5rem' }}>{getStatusBadge(s.status)}</td>
                   <td style={{ padding: '1.2rem 1.5rem', color: '#22c55e', fontWeight: 800, fontSize: '1rem', textAlign: 'right' }}>
-                    R$ {s.valorLiquido.toFixed(2).replace('.', ',')}
+                    R$ {s.net_amount.toFixed(2).replace('.', ',')}
                   </td>
                 </tr>
               ))}

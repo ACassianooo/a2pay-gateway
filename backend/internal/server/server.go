@@ -41,7 +41,8 @@ func New(cfg *config.Config, db *database.DB) *Server {
 	subRepo := repository.NewSubscriptionRepository(db.Conn)
 	prodRepo := repository.NewProductRepository(db.Conn)
 	couRepo := repository.NewCouponRepository(db.Conn)
-
+	chargeRepo := repository.NewChargeRepository(db.Conn)
+	antRepo := repository.NewAnticipationRepository(db.Conn)
 	// ── Serviços ─────────────────────────────────────────────────────────
 	cryptoSvc := service.MustNewCryptoService(fmt.Sprintf("%x", cfg.AESKey))
 
@@ -108,6 +109,8 @@ func New(cfg *config.Config, db *database.DB) *Server {
 	adminH := handler.NewAdminHandler(adminRepo)
 	custH := handler.NewCustomerHandler(custRepo)
 	subH := handler.NewSubscriptionHandler(subSvc)
+	chargeH := handler.NewChargeHandler(chargeRepo)
+	antH := handler.NewAnticipationHandler(antRepo, walRepo)
 
 	// ── Router ───────────────────────────────────────────────────────────
 	r := chi.NewRouter()
@@ -172,6 +175,12 @@ func New(cfg *config.Config, db *database.DB) *Server {
 			// Rotas de Assinaturas
 			r.Post("/subscriptions", subH.Create)
 			r.Get("/subscriptions", subH.List)
+
+			// Cobranças e Antecipações
+			r.Post("/merchants/charges", chargeH.Create)
+			r.Get("/merchants/charges", chargeH.List)
+			r.Post("/merchants/anticipations", antH.Create)
+			r.Get("/merchants/anticipations", antH.List)
 		})
 
 		// Rotas exclusivas do Master Dashboard
