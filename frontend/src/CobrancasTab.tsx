@@ -153,6 +153,10 @@ export default function CobrancasTab() {
     }
   };
 
+  const aReceber = cobrancas.filter(c => c.status === 'pendente').reduce((acc, c) => acc + c.amount, 0);
+  const pagas = cobrancas.filter(c => c.status === 'paga').reduce((acc, c) => acc + c.amount, 0);
+  const inadimplencia = cobrancas.filter(c => c.status === 'vencida').reduce((acc, c) => acc + c.amount, 0);
+
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
       {isModalOpen && <CreateCobrancaModal onSuccess={loadData} onClose={() => setIsModalOpen(false)} />}
@@ -176,15 +180,15 @@ export default function CobrancasTab() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>A Receber</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#f59e0b' }}>R$ 450,00</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#f59e0b' }}>R$ {aReceber.toFixed(2).replace('.', ',')}</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Pagas (30 dias)</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#22c55e' }}>R$ 1.250,00</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#22c55e' }}>R$ {pagas.toFixed(2).replace('.', ',')}</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Inadimplência</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ef4444' }}>R$ 800,00</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ef4444' }}>R$ {inadimplencia.toFixed(2).replace('.', ',')}</div>
         </div>
       </div>
 

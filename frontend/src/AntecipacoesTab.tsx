@@ -133,9 +133,9 @@ export default function AntecipacoesTab() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
 
-  // Mock de dados (em um cenario real isso viria do backend do saldo disponível)
-  const saldoBloqueado = 12450.00; 
-  const saldoElegivel = 8900.00; // Valor que pode ser antecipado
+  // Em um cenário real com endpoint de Wallet, isso viria da API
+  const [saldoBloqueado, setSaldoBloqueado] = useState(0); 
+  const [saldoElegivel, setSaldoElegivel] = useState(0); 
 
   const loadData = () => {
     const token = localStorage.getItem('token');
