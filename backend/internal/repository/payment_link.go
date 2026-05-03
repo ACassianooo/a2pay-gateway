@@ -53,3 +53,18 @@ func (r *PaymentLinkRepository) ListByMerchant(merchantID int) ([]PaymentLink, e
 	}
 	return links, nil
 }
+
+type PaymentLinkWithMerchant struct {
+	PaymentLink
+	MerchantID int `json:"merchant_id"`
+}
+
+func (r *PaymentLinkRepository) GetByURL(url string) (*PaymentLinkWithMerchant, error) {
+	var l PaymentLinkWithMerchant
+	err := r.db.QueryRow(`SELECT id, merchant_id, name, amount, status, url, created_at FROM payment_links WHERE url = $1`, url).
+		Scan(&l.ID, &l.MerchantID, &l.Name, &l.Amount, &l.Status, &l.URL, &l.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &l, nil
+}

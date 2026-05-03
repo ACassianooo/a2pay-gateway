@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"math/rand"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/gato-gateway/internal/model"
 	"github.com/gato-gateway/internal/repository"
 )
@@ -70,4 +71,24 @@ func (h *PaymentLinkHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSON(w, http.StatusOK, links)
+}
+
+func (h *PaymentLinkHandler) GetByHash(w http.ResponseWriter, r *http.Request) {
+	hashStr := chi.URLParam(r, "id") // Expected format: {merchantID}-{hash}
+	
+	fullURL := "https://a2pay.com.br/pay/" + hashStr
+
+	link, err := h.repo.GetByURL(fullURL)
+	if err != nil {
+		respondJSON(w, http.StatusNotFound, map[string]string{"error": "Payment link not found"})
+		return
+	}
+
+	// We inject the merchantID manually so the UI knows where to send the payment Intent.
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"id": link.ID,
+		"name": link.Name,
+		"amount": link.Amount,
+		"merchant_id": link.MerchantID,
+	})
 }

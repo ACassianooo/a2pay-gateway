@@ -1,9 +1,10 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { API_BASE_URL } from './api';
-import { Shield, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import Dashboard from './Dashboard';
 import Checkout from './Checkout';
+import PaymentLinkCheckout from './PaymentLinkCheckout';
 import DemoStore from './DemoStore';
 import Login from './Login';
 import Register from './Register';
@@ -52,7 +53,7 @@ function NavLinks() {
 function AppContent() {
   const location = useLocation();
   const isDashboard = location.pathname.startsWith('/dashboard');
-  const isCheckout = location.pathname.startsWith('/checkout');
+  const isCheckout = location.pathname.startsWith('/checkout') || location.pathname.startsWith('/pay');
 
   // Ping invisível para acordar o servidor Render (Free Tier)
   React.useEffect(() => {
@@ -81,6 +82,7 @@ function AppContent() {
           <Route path="/register" element={<Register />} />
           <Route path="/demo-store" element={<DemoStore />} />
           <Route path="/checkout/:id" element={<Checkout />} />
+          <Route path="/pay/:id" element={<PaymentLinkCheckout />} />
           <Route path="/docs" element={<Docs />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
