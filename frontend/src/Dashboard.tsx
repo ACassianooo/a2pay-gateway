@@ -59,6 +59,7 @@ interface DashboardData {
   clientes?: Customer[];
   lucro_total?: number;
   empresas?: EmpresaInfo[];
+  saldo_real?: number;
   is_sandbox?: boolean;
   error?: string; // Adicionado campo de erro
 }
@@ -1270,7 +1271,7 @@ function ClientesTab({ selectedCustomer, setSelectedCustomer }: { selectedCustom
 
 // TAB: FINANCEIRO
 // ══════════════════════════════════════════════════════════════════════════════
-function SaquesTab({ data }: { data: DashboardData }) {
+function SaquesTab({ data, isSandbox }: { data: DashboardData, isSandbox: boolean }) {
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

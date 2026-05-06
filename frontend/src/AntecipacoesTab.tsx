@@ -129,7 +129,7 @@ function SimulateAnticipationModal({ onClose, onSuccess, saldoDisponivel }: { on
   );
 }
 
-export default function AntecipacoesTab() {
+export default function AntecipacoesTab({ isSandbox }: { isSandbox: boolean }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
 
