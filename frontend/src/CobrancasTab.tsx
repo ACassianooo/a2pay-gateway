@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Plus, Search, MoreHorizontal, Copy, Trash2, ArrowLeft, CheckCircle2, Clock, XCircle, Info, Send } from 'lucide-react';
+import { API_BASE_URL } from './api';
 
 interface Cobranca {
   id: string | number;
@@ -10,7 +11,7 @@ interface Cobranca {
   description: string;
 }
 
-function CreateCobrancaModal({ onClose, onSuccess }: { onClose: () => void, onSuccess: () => void }) {
+function CreateCobrancaModal({ onClose, onSuccess, isSandbox }: { onClose: () => void, onSuccess: () => void, isSandbox: boolean }) {
   const [valor, setValor] = useState('');
   const [email, setEmail] = useState('');
   const [vencimento, setVencimento] = useState('');
@@ -42,9 +43,13 @@ function CreateCobrancaModal({ onClose, onSuccess }: { onClose: () => void, onSu
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:8080/api/merchants/charges`, {
+      const res = await fetch(`${API_BASE_URL}/api/merchants/charges`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}`,
+          'x-a2pay-env': isSandbox ? 'test' : 'live'
+        },
         body: JSON.stringify({ amount: numValue, customer_email: email, due_date: vencimento + "T00:00:00Z", description: descricao })
       });
       if (res.ok) {
@@ -118,27 +123,30 @@ function CreateCobrancaModal({ onClose, onSuccess }: { onClose: () => void, onSu
   );
 }
 
-export default function CobrancasTab() {
+export default function CobrancasTab({ isSandbox }: { isSandbox: boolean }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState('');
 
   const [cobrancas, setCobrancas] = useState<Cobranca[]>([]);
 
-  const loadData = () => {
+  const loadData = React.useCallback(() => {
     const token = localStorage.getItem('token');
-    fetch(`http://localhost:8080/api/merchants/charges`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+    fetch(`${API_BASE_URL}/api/merchants/charges`, {
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'x-a2pay-env': isSandbox ? 'test' : 'live'
+      }
     })
       .then(res => res.json())
       .then(data => {
         if(Array.isArray(data)) setCobrancas(data);
       })
       .catch(console.error);
-  };
+  }, [isSandbox]);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -159,7 +167,7 @@ export default function CobrancasTab() {
 
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
-      {isModalOpen && <CreateCobrancaModal onSuccess={loadData} onClose={() => setIsModalOpen(false)} />}
+      {isModalOpen && <CreateCobrancaModal isSandbox={isSandbox} onSuccess={loadData} onClose={() => setIsModalOpen(false)} />}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }

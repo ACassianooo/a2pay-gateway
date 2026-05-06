@@ -11,7 +11,7 @@ interface PaymentLink {
   url: string;
 }
 
-function CreatePaymentLinkModal({ onClose, onSuccess, initialData }: { onClose: () => void, onSuccess: () => void, initialData?: PaymentLink | null }) {
+function CreatePaymentLinkModal({ onClose, onSuccess, initialData, isSandbox }: { onClose: () => void, onSuccess: () => void, isSandbox: boolean, initialData?: PaymentLink | null }) {
   const [nome, setNome] = useState(initialData ? initialData.name : '');
   const [valorInput, setValorInput] = useState(initialData && initialData.amount ? initialData.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '');
   const [tipoValor, setTipoValor] = useState<'fixo' | 'aberto'>(initialData && initialData.amount ? 'fixo' : 'aberto');
@@ -61,7 +61,11 @@ function CreatePaymentLinkModal({ onClose, onSuccess, initialData }: { onClose: 
 
       const res = await fetch(url, {
         method: method,
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}`,
+          'x-a2pay-env': isSandbox ? 'test' : 'live'
+        },
         body: JSON.stringify(payload)
       });
       if (res.ok) {
@@ -157,7 +161,7 @@ function ConfirmModal({ isOpen, title, message, onConfirm, onCancel, loading, er
   );
 }
 
-export default function PaymentLinksTab() {
+export default function PaymentLinksTab({ isSandbox }: { isSandbox: boolean }) {
   const [links, setLinks] = useState<PaymentLink[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<PaymentLink | null>(null);
@@ -168,17 +172,24 @@ export default function PaymentLinksTab() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const loadData = () => {
+  const loadData = React.useCallback(() => {
     const token = localStorage.getItem('token');
     fetch(`${API_BASE_URL}/api/merchants/payment-links`, {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'x-a2pay-env': isSandbox ? 'test' : 'live'
+      }
     })
       .then(res => res.json())
       .then(data => {
         if(Array.isArray(data)) setLinks(data);
       })
       .catch(console.error);
-  };
+  }, [isSandbox]);
+
+  React.useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   React.useEffect(() => {
     loadData();
@@ -206,7 +217,10 @@ export default function PaymentLinksTab() {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_BASE_URL}/api/merchants/payment-links/${linkToDelete}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'x-a2pay-env': isSandbox ? 'test' : 'live'
+        }
       });
       if (res.ok) {
         setDeleteModalOpen(false);
@@ -234,7 +248,7 @@ export default function PaymentLinksTab() {
 
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
-      {isModalOpen && <CreatePaymentLinkModal initialData={editingLink} onSuccess={loadData} onClose={() => setIsModalOpen(false)} />}
+      {isModalOpen && <CreatePaymentLinkModal initialData={editingLink} isSandbox={isSandbox} onSuccess={loadData} onClose={() => setIsModalOpen(false)} />}
       
       <ConfirmModal 
         isOpen={deleteModalOpen} 

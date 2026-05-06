@@ -3123,10 +3123,10 @@ export default function Dashboard() {
         <div style={{ padding: '2rem 2.5rem', maxWidth: '1400px' }}>
           {/* Merchant Tabs */}
           {activeTab === 'overview'   && <OverviewTab data={data} />}
-          {activeTab === 'assinaturas' && <AssinaturasTab onNavigateToClients={() => setActiveTab('clientes')} />}
-          {activeTab === 'cobrancas'   && <CobrancasTab />}
-          {activeTab === 'antecipacoes'&& <AntecipacoesTab />}
-          {activeTab === 'link-pagamentos' && <PaymentLinksTab />}
+          {activeTab === 'assinaturas' && <AssinaturasTab isSandbox={isSandbox} onNavigateToClients={() => setActiveTab('clientes')} />}
+          {activeTab === 'cobrancas'   && <CobrancasTab isSandbox={isSandbox} />}
+          {activeTab === 'antecipacoes'&& <AntecipacoesTab isSandbox={isSandbox} />}
+          {activeTab === 'link-pagamentos' && <PaymentLinksTab isSandbox={isSandbox} />}
           {activeTab === 'produtos'   && <ProdutosTab />}
           {activeTab === 'cupons'     && <CuponsTab />}
           {activeTab === 'clientes'   && <ClientesTab selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer} />}
