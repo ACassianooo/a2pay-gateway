@@ -144,7 +144,11 @@ export default function Checkout() {
                         <RefreshCw size={32} className="spin" color="#9d66ff" />
                     </div>
                 ) : pixData?.pix_qrcode ? (
-                    <img src={`data:image/png;base64,${pixData.pix_qrcode}`} alt="QR Code" style={{ width: '180px', height: '180px', display: 'block' }} />
+                    <img 
+                      src={pixData.pix_qrcode.startsWith('http') ? pixData.pix_qrcode : `data:image/png;base64,${pixData.pix_qrcode}`} 
+                      alt="QR Code" 
+                      style={{ width: '180px', height: '180px', display: 'block' }} 
+                    />
                 ) : (
                     <div style={{ width: '180px', height: '180px', display: 'grid', placeItems: 'center', color: '#94a3b8' }}>Gerando...</div>
                 )}

@@ -301,7 +301,8 @@ func NewPaymentService(txRepo *repository.TransactionRepository, prodRepo *repos
 }
 
 func (s *PaymentService) CreateIntent(merchantID int, itemName string, valor float64, isSandbox bool, metadata map[string]interface{}) (int64, error) {
-	if valor < 0.01 {
+	log.Printf("[DEBUG] CreateIntent: valor recebido = %.10f", valor)
+	if valor < 0.009 {
 		return 0, fmt.Errorf("valor mínimo: R$ 0.01")
 	}
 	taxa := valor * TaxaPIXPorc

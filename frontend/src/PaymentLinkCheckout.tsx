@@ -68,7 +68,12 @@ export default function PaymentLinkCheckout() {
 
     setProcessing(true);
     // Cria intent de pagamento
-    const numericAmount = Number(amount.replace(/\D/g, '')) / 100 || Number(amount);
+    let numericAmount = 0;
+    if (linkData.amount) {
+        numericAmount = linkData.amount;
+    } else {
+        numericAmount = Number(amount.replace(/\D/g, '')) / 100 || Number(amount.replace(',', '.'));
+    }
     
     fetch(`${API_BASE_URL}/api/pagamentos/intent`, {
         method: 'POST',
