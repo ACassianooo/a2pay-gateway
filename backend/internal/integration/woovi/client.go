@@ -103,7 +103,8 @@ func (c *Client) GetPixQRCode(chargeID string) (*pix.PixQRCode, error) {
 	}
 
 	if status != 200 {
-		return nil, fmt.Errorf("woovi GetCharge status %d: %s", status, string(body))
+		log.Printf("[ERROR] Woovi GetCharge failed: chargeID=%s, status=%d, body=%s", chargeID, status, string(body))
+		return nil, fmt.Errorf("woovi GetCharge status %d", status)
 	}
 
 	var resp ChargeResponse

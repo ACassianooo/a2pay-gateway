@@ -162,6 +162,29 @@ export default function Checkout() {
                    {formatTime(timeLeft)}
                 </div>
                 <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.5rem' }}>O código expira em 15 minutos.</p>
+                
+                {intent?.is_test && (
+                  <button 
+                    onClick={() => {
+                      fetch(`${API_BASE_URL}/api/pagamentos/simular-pago/${id}`, { method: 'POST' })
+                        .then(r => r.json())
+                        .then(() => setSuccess(true));
+                    }}
+                    style={{ 
+                      marginTop: '1rem', 
+                      background: '#fef2f2', 
+                      color: '#ef4444', 
+                      border: '1px solid #fee2e2', 
+                      padding: '0.5rem 1rem', 
+                      borderRadius: '8px', 
+                      fontSize: '0.85rem', 
+                      fontWeight: 700, 
+                      cursor: 'pointer' 
+                    }}
+                  >
+                    Confirmar Pagamento Simulado (Sandbox)
+                  </button>
+                )}
               </div>
             </div>
 

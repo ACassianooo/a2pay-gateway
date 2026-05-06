@@ -300,6 +300,10 @@ func NewPaymentService(txRepo *repository.TransactionRepository, prodRepo *repos
 	return &PaymentService{txRepo: txRepo, prodRepo: prodRepo, pix: pix, wallet: wallet, fraud: fraud}
 }
 
+func (s *PaymentService) GetTxRepo() *repository.TransactionRepository {
+	return s.txRepo
+}
+
 func (s *PaymentService) CreateIntent(merchantID int, itemName string, valor float64, isSandbox bool, metadata map[string]interface{}) (int64, error) {
 	log.Printf("[DEBUG] CreateIntent: valor recebido = %.10f", valor)
 	if valor < 0.009 {

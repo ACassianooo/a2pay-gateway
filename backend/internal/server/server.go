@@ -158,6 +158,7 @@ func New(cfg *config.Config, db *database.DB) *Server {
 		r.Get("/pagamentos/intent/{id}", payH.GetIntent)
 		r.Get("/pagamentos/link-info/{id}", payLinkH.GetByHash)
 		r.Post("/pagamentos/processar", payH.ProcessPayment)
+		r.Post("/pagamentos/simular-pago/{id}", payH.SimulatePayment)
 		r.Get("/pagamentos/pix/{charge_id}/qrcode", payH.GetPixQRCode)
 		r.Post("/vault/tokenize", payH.TokenizeCard)
 

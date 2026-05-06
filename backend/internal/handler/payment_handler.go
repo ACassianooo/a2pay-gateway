@@ -229,6 +229,34 @@ func (h *PaymentHandler) ExternalPixCharge(w http.ResponseWriter, r *http.Reques
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+func (h *PaymentHandler) SimulatePayment(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	var id int
+	fmt.Sscanf(idStr, "%d", &id)
+
+	if id == 0 {
+		respondErr(w, apierrors.InvalidInput("ID inválido"))
+		return
+	}
+
+	// Verifica se é sandbox antes de permitir simulação
+	valor, _, isSandbox, _, _, err := h.payment.GetTxRepo().GetByID(id)
+	if err != nil || !isSandbox {
+		respondErr(w, apierrors.Forbidden("Simulação permitida apenas em Sandbox"))
+		return
+	}
+
+	taxa := valor * service.TaxaPIXPorc
+	liquido := valor - taxa
+
+	if err := h.payment.GetTxRepo().UpdateToPago(id, "pix_mock", taxa, liquido); err != nil {
+		respondErr(w, apierrors.Internal("Erro ao atualizar status"))
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]string{"message": "Pagamento simulado com sucesso"})
+}
+
 func handlePaymentError(w http.ResponseWriter, err error) {
 	var fraudErr *service.FraudError
 	if errors.As(err, &fraudErr) {
