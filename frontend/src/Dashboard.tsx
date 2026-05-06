@@ -1277,20 +1277,23 @@ function SaquesTab({ data }: { data: DashboardData }) {
   const [statusFilter, setStatusFilter] = useState('todos');
   const [saqueModal, setSaqueModal] = useState(false);
 
-  const saldo = data.saldo_lojista || 0;
+  const saldo = isSandbox ? (data.saldo_real || 0) : (data.saldo_lojista || 0);
 
-  const fetchWithdrawals = () => {
+  const fetchWithdrawals = React.useCallback(() => {
     fetch(`${API}/api/merchants/withdrawals`, {
-      headers: { 'Authorization': `Bearer ${token()}` }
+      headers: { 
+        'Authorization': `Bearer ${token()}`,
+        'x-a2pay-env': 'live'
+      }
     })
     .then(r => r.json())
     .then(d => { setWithdrawals(d || []); setLoading(false); })
     .catch(() => setLoading(false));
-  };
+  }, []);
 
   useEffect(() => {
     fetchWithdrawals();
-  }, []);
+  }, [fetchWithdrawals]);
 
   const filtered = (withdrawals || []).filter(w => {
     const matchStatus = statusFilter === 'todos' || w.status === statusFilter;
@@ -1318,8 +1321,28 @@ function SaquesTab({ data }: { data: DashboardData }) {
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.2rem' }}>
                  <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#111827', letterSpacing: '-0.02em' }}>{fmt(saldo)}</div>
-                 <button onClick={() => setSaqueModal(true)} style={{ background: '#8942FC', color: '#fff', border: 'none', borderRadius: 12, padding: '0.7rem 1.4rem', fontWeight: 800, fontSize: '0.88rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = '#7c3aed'} onMouseLeave={e => e.currentTarget.style.background = '#8942FC'}>
-                    Sacar <ChevronRight size={18} strokeWidth={3} />
+                 <button 
+                    disabled={isSandbox}
+                    onClick={() => setSaqueModal(true)} 
+                    style={{ 
+                      background: isSandbox ? '#94a3b8' : '#8942FC', 
+                      color: '#fff', 
+                      border: 'none', 
+                      borderRadius: 12, 
+                      padding: '0.7rem 1.4rem', 
+                      fontWeight: 800, 
+                      fontSize: '0.88rem', 
+                      cursor: isSandbox ? 'not-allowed' : 'pointer', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '0.5rem', 
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)', 
+                      transition: 'background 0.2s' 
+                    }} 
+                    onMouseEnter={e => !isSandbox && (e.currentTarget.style.background = '#7c3aed')} 
+                    onMouseLeave={e => !isSandbox && (e.currentTarget.style.background = '#8942FC')}
+                 >
+                    {isSandbox ? 'Indisponível em Sandbox' : 'Sacar'} <ChevronRight size={18} strokeWidth={3} />
                  </button>
               </div>
 
@@ -3130,7 +3153,7 @@ export default function Dashboard() {
           {activeTab === 'produtos'   && <ProdutosTab />}
           {activeTab === 'cupons'     && <CuponsTab />}
           {activeTab === 'clientes'   && <ClientesTab selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer} />}
-          {activeTab === 'financeiro' && <SaquesTab data={data} />}
+          {activeTab === 'financeiro' && <SaquesTab data={data} isSandbox={isSandbox} />}
           {activeTab === 'pagamentos' && <PagamentosTab data={data} />}
           {activeTab === 'extrato'    && <ExtratoTab data={data} />}
           {activeTab === 'disputas'   && <DisputasTab isSandbox={isSandbox} />}

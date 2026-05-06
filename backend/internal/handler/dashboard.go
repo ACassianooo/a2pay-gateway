@@ -45,14 +45,18 @@ func (h *DashboardHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Saldo real vindo da wallet protegida
+	// Saldo do ambiente atual (Sandbox ou Live)
 	saldo, _ := h.walRepo.GetBalance(user.MerchantID, isTest)
+	
+	// Saldo sempre real para referência
+	saldoReal, _ := h.walRepo.GetBalance(user.MerchantID, false)
+	
 	name, _ := h.userRepo.GetName(user.MerchantID)
-
 	respondJSON(w, http.StatusOK, map[string]interface{}{
 		"role":          user.Role,
 		"name":          name,
 		"saldo_lojista": saldo,
+		"saldo_real":    saldoReal,
 		"transacoes":    txs,
 		"is_sandbox":    isTest,
 	})
