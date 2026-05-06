@@ -75,8 +75,8 @@ export default function PaymentLinkCheckout() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             merchant_id: linkData.merchant_id,
-            total_amount: numericAmount,
-            description: linkData.name,
+            valor_total: numericAmount,
+            item_name: linkData.name,
             customer_email: customerEmail,
             customer_document: customerDocument.replace(/\D/g, ''),
             customer_name: customerName,
@@ -86,8 +86,8 @@ export default function PaymentLinkCheckout() {
     })
     .then(r => r.json())
     .then(data => {
-        if (data.id) {
-            navigate(`/checkout/${data.id}`);
+        if (data.intent_id) {
+            navigate(`/checkout/${data.intent_id}`);
         } else {
             showAlert("Erro", data.error || "Não foi possível gerar a transação. Verifique os dados e tente novamente.", "error");
             setProcessing(false);
