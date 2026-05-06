@@ -62,7 +62,7 @@ type PaymentLinkWithMerchant struct {
 
 func (r *PaymentLinkRepository) GetByURL(url string) (*PaymentLinkWithMerchant, error) {
 	var l PaymentLinkWithMerchant
-	err := r.db.QueryRow(`SELECT id, merchant_id, name, amount, status, url, is_test, created_at FROM payment_links WHERE url = $1`, url).
+	err := r.db.QueryRow(`SELECT id, merchant_id, name, amount, status, url, is_test, created_at FROM payment_links WHERE url LIKE '%' || $1`, url).
 		Scan(&l.ID, &l.MerchantID, &l.Name, &l.Amount, &l.Status, &l.URL, &l.IsTest, &l.CreatedAt)
 	if err != nil {
 		return nil, err

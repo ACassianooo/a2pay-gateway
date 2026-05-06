@@ -80,9 +80,11 @@ func (h *PaymentLinkHandler) GetByHash(w http.ResponseWriter, r *http.Request) {
 	hashStr := chi.URLParam(r, "id") // Expected format: {merchantID}-{hash}
 	
 	fullURL := "https://a2pay.com.br/pay/" + hashStr
+	log.Printf("[DEBUG] Buscando link pela URL: %s", fullURL)
 
 	link, err := h.repo.GetByURL(fullURL)
 	if err != nil {
+		log.Printf("[ERROR] Link não encontrado para URL %s: %v", fullURL, err)
 		respondJSON(w, http.StatusNotFound, map[string]string{"error": "Payment link not found"})
 		return
 	}
