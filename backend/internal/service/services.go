@@ -101,7 +101,7 @@ func (s *PIXService) CreateCharge(intentID int, valor float64, itemName string, 
 
 	if isSandbox {
 		go func() {
-			time.Sleep(3 * time.Second)
+			time.Sleep(10 * time.Second)
 			s.txRepo.ConfirmPIX(chargeID)
 			log.Printf("[SANDBOX MOCK] Pagamento PIX %s finalizado automaticamente.", chargeID)
 		}()
