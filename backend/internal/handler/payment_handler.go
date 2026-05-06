@@ -46,6 +46,7 @@ func (h *PaymentHandler) CreateIntent(w http.ResponseWriter, r *http.Request) {
 
 	var req dto.CreateIntentRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("[DEBUG] CreateIntent: erro decode: %v", err)
 		respondErr(w, apierrors.InvalidInput(err.Error()))
 		return
 	}
@@ -57,6 +58,8 @@ func (h *PaymentHandler) CreateIntent(w http.ResponseWriter, r *http.Request) {
 	if user.MerchantID != 0 {
 		merchantID = user.MerchantID
 	}
+
+	log.Printf("[DEBUG] CreateIntent: merchantID=%d, valor=%.10f, sandbox=%v", merchantID, req.ValorTotal, isSandbox)
 
 	id, err := h.payment.CreateIntent(merchantID, req.ItemName, req.ValorTotal, isSandbox, req.Metadata)
 	if err != nil {

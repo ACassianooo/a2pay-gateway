@@ -68,19 +68,15 @@ export default function PaymentLinkCheckout() {
 
     setProcessing(true);
     // Cria intent de pagamento
-    let numericAmount = 0;
-    if (linkData.amount) {
-        numericAmount = linkData.amount;
-    } else {
-        numericAmount = Number(amount.replace(/\D/g, '')) / 100 || Number(amount.replace(',', '.'));
-    }
-    
+    const finalAmount = linkData.amount || Number(amount.replace(/\D/g, '')) / 100 || Number(amount.replace(',', '.'));
+    console.log("[DEBUG] Enviando intent:", { merchant_id: linkData.merchant_id, valor_total: finalAmount });
+
     fetch(`${API_BASE_URL}/api/pagamentos/intent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             merchant_id: linkData.merchant_id,
-            valor_total: numericAmount,
+            valor_total: finalAmount,
             item_name: linkData.name,
             customer_email: customerEmail,
             customer_document: customerDocument.replace(/\D/g, ''),
