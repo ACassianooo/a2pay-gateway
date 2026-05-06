@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"math/rand"
+	"time"
 
 	"github.com/gato-gateway/internal/config"
 	"github.com/gato-gateway/internal/database"
@@ -9,6 +11,7 @@ import (
 )
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("[FATAL] Config: %v", err)

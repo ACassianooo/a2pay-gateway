@@ -32,9 +32,17 @@ func RequireAuth(jwtSecret []byte) func(http.Handler) http.Handler {
 				return
 			}
 			claims := token.Claims.(jwt.MapClaims)
+			
+			// Detectar ambiente (Sandbox ou Live) via header
+			isSandbox := r.Header.Get("x-a2pay-env") == "test"
+			
+			merchantID := int(claims["merchant_id"].(float64))
+			log.Printf("[AUTH] MerchantID: %d | Sandbox: %v", merchantID, isSandbox)
+
 			ctx := context.WithValue(r.Context(), "user", model.UserContext{
-				MerchantID: int(claims["merchant_id"].(float64)),
+				MerchantID: merchantID,
 				Role:       claims["role"].(string),
+				IsSandbox:  isSandbox,
 			})
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

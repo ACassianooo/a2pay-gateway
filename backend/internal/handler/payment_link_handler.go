@@ -43,11 +43,12 @@ func (h *PaymentLinkHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Gerar URL do link (Ex: checkout customizado na plataforma)
-	hash := fmt.Sprintf("%x", rand.Int63())[:8]
+	hash := fmt.Sprintf("%08x", rand.Int63())[0:8]
 	url := fmt.Sprintf("https://a2pay.com.br/pay/%d-%s", user.MerchantID, hash)
 
 	id, err := h.repo.Create(user.MerchantID, req.Name, req.Amount, url, user.IsSandbox)
 	if err != nil {
+		fmt.Printf("[ERROR] Erro ao criar link de pagamento: %v\n", err)
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to create payment link"})
 		return
 	}
