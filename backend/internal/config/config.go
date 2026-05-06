@@ -26,6 +26,11 @@ type Config struct {
 	InterCertContent  string
 	InterKeyContent   string
 	InterPixKey       string
+	// Woovi
+	WooviAppIDLive    string
+	WooviAppIDTest    string
+	WooviBaseURLLive  string
+	WooviBaseURLTest  string
 }
 
 func Load() (*Config, error) {
@@ -89,6 +94,10 @@ func Load() (*Config, error) {
 		InterCertContent:  os.Getenv("INTER_CERT_CONTENT"),
 		InterKeyContent:   os.Getenv("INTER_KEY_CONTENT"),
 		InterPixKey:       os.Getenv("INTER_PIX_KEY"),
+		WooviAppIDLive:    os.Getenv("WOOVI_APP_ID_LIVE"),
+		WooviAppIDTest:    os.Getenv("WOOVI_APP_ID_TEST"),
+		WooviBaseURLLive:  os.Getenv("WOOVI_BASE_URL_LIVE"),
+		WooviBaseURLTest:  os.Getenv("WOOVI_BASE_URL_TEST"),
 	}, nil
 }
 

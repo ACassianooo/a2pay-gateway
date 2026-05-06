@@ -19,6 +19,7 @@ import (
 	"github.com/gato-gateway/internal/repository"
 	"github.com/gato-gateway/internal/service"
 	"github.com/gato-gateway/internal/integration/pix"
+	"github.com/gato-gateway/internal/integration/woovi"
 	"github.com/gato-gateway/internal/worker"
 )
 
@@ -73,10 +74,13 @@ func New(cfg *config.Config, db *database.DB) *Server {
 		)
 	}
 
-	// Adaptadores para o Service (Inter com Fallback para Asaas)
+	// Adaptadores para o Service (Inter -> Woovi -> Fallback Asaas)
 	var pixLive, pixTest *service.PixClientAdapter
 	if pixInterLive != nil {
 		pixLive = service.NewPixClientAdapter(pixInterLive)
+	} else if cfg.WooviAppIDLive != "" {
+		wooviLive := woovi.NewClient(cfg.WooviAppIDLive, cfg.WooviBaseURLLive)
+		pixLive = service.NewPixClientAdapter(wooviLive)
 	} else if cfg.AsaasAPIKeyLive != "" {
 		asaasLive := pix.NewClient(cfg.AsaasAPIKeyLive, cfg.AsaasBaseURLReal)
 		pixLive = service.NewPixClientAdapter(asaasLive)
@@ -84,6 +88,9 @@ func New(cfg *config.Config, db *database.DB) *Server {
 
 	if pixInterTest != nil {
 		pixTest = service.NewPixClientAdapter(pixInterTest)
+	} else if cfg.WooviAppIDTest != "" {
+		wooviTest := woovi.NewClient(cfg.WooviAppIDTest, cfg.WooviBaseURLTest)
+		pixTest = service.NewPixClientAdapter(wooviTest)
 	} else if cfg.AsaasAPIKeyTest != "" {
 		asaasTest := pix.NewClient(cfg.AsaasAPIKeyTest, cfg.AsaasBaseURLTest)
 		pixTest = service.NewPixClientAdapter(asaasTest)

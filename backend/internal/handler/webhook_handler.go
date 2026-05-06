@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"io"
 	"net/http"
 
 	"github.com/gato-gateway/internal/repository"
@@ -37,88 +38,108 @@ type AsaasEvent struct {
 	} `json:"payment"`
 }
 
-// Handle — POST /webhooks/asaas
-func (h *WebhookHandler) Handle(w http.ResponseWriter, r *http.Request) {
-	// Validar token de segurança do webhook
-	if h.secret != "" {
-		token := r.Header.Get("asaas-access-token")
-		if token != h.secret {
-			log.Printf("[WEBHOOK] Token inválido: %s", token)
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-	}
+// WooviEvent é o payload enviado pela Woovi (OpenPix) via webhook
+type WooviEvent struct {
+	Event       string `json:"event"`
+	Transaction struct {
+		ID            string  `json:"identifier"`
+		CorrelationID string  `json:"correlationID"`
+		Value         int     `json:"value"` // em centavos
+		Status        string  `json:"status"`
+		Charge        struct {
+			ID string `json:"identifier"`
+		} `json:"charge"`
+	} `json:"transaction"`
+}
 
-	var event AsaasEvent
-	if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
-		http.Error(w, "payload inválido", http.StatusBadRequest)
+// Handle — POST /webhooks/pix
+func (h *WebhookHandler) Handle(w http.ResponseWriter, r *http.Request) {
+	var bodyMap map[string]interface{}
+	bodyBytes, _ := io.ReadAll(r.Body)
+	json.Unmarshal(bodyBytes, &bodyMap)
+
+	// Identificar se o evento é do Asaas ou da Woovi
+	if _, isWoovi := bodyMap["transaction"]; isWoovi {
+		h.handleWoovi(w, bodyBytes)
+	} else {
+		h.handleAsaas(w, bodyBytes, r.Header.Get("asaas-access-token"))
+	}
+}
+
+func (h *WebhookHandler) handleAsaas(w http.ResponseWriter, body []byte, token string) {
+	if h.secret != "" && token != h.secret {
+		log.Printf("[WEBHOOK-ASAAS] Token inválido")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	log.Printf("[WEBHOOK] Evento recebido: %s | charge: %s", event.Event, event.Payment.ID)
+	var event AsaasEvent
+	json.Unmarshal(body, &event)
 
 	switch event.Event {
 	case "PAYMENT_RECEIVED", "PAYMENT_CONFIRMED":
-		// 1. Buscar detalhes da transação no nosso banco
-		merchantID, liquido, taxa, isTest, status, err := h.txRepo.GetInfoByChargeID(event.Payment.ID)
-		if err != nil {
-			log.Printf("[WEBHOOK] Transação %s não encontrada no gateway", event.Payment.ID)
-			w.WriteHeader(http.StatusOK) // Evita que o Asaas reenvie se não temos a transação
-			return
-		}
-
-		// Idempotência: se já estiver pago, ignorar
-		if status == "pago" {
-			log.Printf("[WEBHOOK] Transação %s já processada anteriormente", event.Payment.ID)
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
-		// 2. Iniciar Transação Atômica para Proteger o Dinheiro
-		tx, err := h.db.Begin()
-		if err != nil {
-			log.Printf("[WEBHOOK] Erro ao iniciar transação SQL: %v", err)
-			http.Error(w, "erro interno", http.StatusInternalServerError)
-			return
-		}
-		defer tx.Rollback()
-
-		// 3. Atualizar status para pago
-		if _, err := tx.Exec("UPDATE transactions SET status='pago' WHERE asaas_charge_id=$1", event.Payment.ID); err != nil {
-			log.Printf("[WEBHOOK] Erro ao atualizar status: %v", err)
-			return
-		}
-
-		// 4. Creditar na Wallet do lojista e registrar no Ledger
-		desc := "Pagamento via PIX"
-		if err := h.walRepo.CreditWallet(tx, merchantID, liquido, "pay_"+event.Payment.ID, desc, isTest); err != nil {
-			log.Printf("[WEBHOOK] Erro ao creditar wallet lojista: %v", err)
-			return
-		}
-
-		// 5. Creditar o LUCRO na conta MASTER (A2Pay)
-		if taxa > 0 {
-			descLucro := fmt.Sprintf("Taxa 0,99%% de pay_%s", event.Payment.ID)
-			if err := h.walRepo.CreditWallet(tx, 1, taxa, "fee_"+event.Payment.ID, descLucro, isTest); err != nil {
-				log.Printf("[WEBHOOK] Erro ao creditar lucro master: %v", err)
-				// Não paramos o processo se falhar o lucro, mas logamos o erro
-			}
-		}
-
-		// 6. Commit final
-		if err := tx.Commit(); err != nil {
-			log.Printf("[WEBHOOK] Erro ao commitar transação: %v", err)
-			return
-		}
-
-		log.Printf("[WEBHOOK] ✅ PIX confirmado e saldo creditado na wallet: %s (R$ %.2f)", event.Payment.ID, liquido)
-
-	case "TRANSFER_CONFIRMATION":
-		log.Printf("[WEBHOOK] 💸 Solicitação de saque recebida e APROVADA.")
-
+		h.processPaymentConfirmed(event.Payment.ID, w)
 	default:
-		log.Printf("[WEBHOOK] Evento ignorado: %s", event.Event)
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func (h *WebhookHandler) handleWoovi(w http.ResponseWriter, body []byte) {
+	var event WooviEvent
+	json.Unmarshal(body, &event)
+
+	log.Printf("[WEBHOOK-WOOVI] Evento recebido: %s | charge: %s", event.Event, event.Transaction.Charge.ID)
+
+	if event.Event == "OPENPIX:TRANSACTION_RECEIVED" || event.Transaction.Status == "APPROVED" {
+		h.processPaymentConfirmed(event.Transaction.Charge.ID, w)
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func (h *WebhookHandler) processPaymentConfirmed(chargeID string, w http.ResponseWriter) {
+	// 1. Buscar detalhes da transação no nosso banco
+	merchantID, liquido, taxa, isTest, status, err := h.txRepo.GetInfoByChargeID(chargeID)
+	if err != nil {
+		log.Printf("[WEBHOOK] Transação %s não encontrada no gateway", chargeID)
+		w.WriteHeader(http.StatusOK)
+		return
 	}
 
+	if status == "pago" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	// 2. Iniciar Transação Atômica
+	tx, err := h.db.Begin()
+	if err != nil {
+		http.Error(w, "erro interno", http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
+
+	// 3. Atualizar status
+	if _, err := tx.Exec("UPDATE transactions SET status='pago' WHERE asaas_charge_id=$1", chargeID); err != nil {
+		return
+	}
+
+	// 4. Creditar Wallet lojista
+	desc := "Pagamento via PIX"
+	if err := h.walRepo.CreditWallet(tx, merchantID, liquido, "pay_"+chargeID, desc, isTest); err != nil {
+		return
+	}
+
+	// 5. Creditar lucro master
+	if taxa > 0 {
+		descLucro := fmt.Sprintf("Taxa 0,99%% de pay_%s", chargeID)
+		h.walRepo.CreditWallet(tx, 1, taxa, "fee_"+chargeID, descLucro, isTest)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return
+	}
+
+	log.Printf("[WEBHOOK] ✅ Pagamento confirmado: %s", chargeID)
 	w.WriteHeader(http.StatusOK)
 }

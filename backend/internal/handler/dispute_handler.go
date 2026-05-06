@@ -1,14 +1,13 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/gato-gateway/internal/model"
 	"github.com/gato-gateway/internal/repository"
+	"github.com/go-chi/chi/v5"
 )
 
 type DisputeHandler struct {
@@ -26,26 +25,26 @@ func (h *DisputeHandler) GetDisputes(w http.ResponseWriter, r *http.Request) {
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	
+
 	// Mock: Se for sandbox e não houver disputas, cria duas para teste
 	if user.IsSandbox && len(disputes) == 0 {
 		deadline := time.Now().AddDate(0, 0, 7)
 		h.repo.CreateMock(model.Dispute{
-			TransactionID: 1,
-			MerchantID:    user.MerchantID,
-			Amount:         150.00,
-			Reason:         "Produto não recebido",
-			Status:         "aberta",
+			TransactionID:    1,
+			MerchantID:       user.MerchantID,
+			Amount:           150.00,
+			Reason:           "Produto não recebido",
+			Status:           "aberta",
 			EvidenceDeadline: &deadline,
-			IsTest:         true,
+			IsTest:           true,
 		})
 		h.repo.CreateMock(model.Dispute{
 			TransactionID: 2,
 			MerchantID:    user.MerchantID,
-			Amount:         299.90,
-			Reason:         "Transação não reconhecida",
-			Status:         "ganha",
-			IsTest:         true,
+			Amount:        299.90,
+			Reason:        "Transação não reconhecida",
+			Status:        "ganha",
+			IsTest:        true,
 		})
 		disputes, _ = h.repo.List(user.MerchantID, user.IsSandbox)
 	}
