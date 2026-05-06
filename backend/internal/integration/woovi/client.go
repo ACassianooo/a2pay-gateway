@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"time"
 
@@ -61,7 +62,7 @@ func (c *Client) CreatePixCharge(customerID string, valor float64, descricao str
 	correlationID := fmt.Sprintf("gato_%d", time.Now().UnixNano())
 	payload := ChargeRequest{
 		CorrelationID: correlationID,
-		Value:         int(valor * 100), // Converte para centavos
+		Value:         int(math.Round(valor * 100)), // Converte para centavos com precisão
 		Comment:       descricao,
 		Customer: &WooviCustomer{
 			Name:  "Cliente A2Pay Gateway",
