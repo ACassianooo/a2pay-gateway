@@ -2,7 +2,7 @@ import type { DashboardData } from '../types';
 import { SectionHeader, Card, fmt, StatusBadge } from '../AdminComponents';
 import { List, Zap } from 'lucide-react';
 
-export function AdminTransactions({ data }: { data: DashboardData }) {
+export function AdminTransactions({ data, showToast, askConfirm }: { data: DashboardData, showToast: any, askConfirm: any }) {
   return (
     <div>
       <SectionHeader icon={<List size={22} />} title="Controle de Transações (CORE)" sub="Monitore, filtre e aja sobre o registro global de transações." />

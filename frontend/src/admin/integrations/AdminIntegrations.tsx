@@ -2,7 +2,7 @@ import type { DashboardData } from '../types';
 import { SectionHeader, Card } from '../AdminComponents';
 import { Terminal, Activity, Zap, PlayCircle } from 'lucide-react';
 
-export function AdminIntegrations({ data }: { data: DashboardData }) {
+export function AdminIntegrations({ data, showToast, askConfirm }: { data: DashboardData, showToast: any, askConfirm: any }) {
   return (
     <div>
       <SectionHeader icon={<Zap size={22} />} title="Integrações Externas & Dev" sub="Monitoramento de APIs do BaaS, Webhooks e Ferramentas de QA Internas." />

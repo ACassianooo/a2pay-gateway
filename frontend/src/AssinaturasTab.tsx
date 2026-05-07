@@ -8,7 +8,7 @@ const Card = ({ children, style = {} }: any) => (
   </div>
 );
 
-export default function AssinaturasTab({ onNavigateToClients, isSandbox }: { onNavigateToClients?: () => void, isSandbox: boolean }) {
+export default function AssinaturasTab({ onNavigateToClients, isSandbox, showToast, askConfirm }: { onNavigateToClients?: () => void, isSandbox: boolean, showToast: any, askConfirm: any }) {
   const [activeSubTab, setActiveSubTab] = useState<'assinaturas' | 'checkouts'>('assinaturas');
   const [assinaturas, setAssinaturas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

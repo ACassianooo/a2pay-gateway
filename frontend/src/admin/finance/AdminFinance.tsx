@@ -3,7 +3,7 @@ import type { DashboardData } from '../types';
 import { SectionHeader, MetricCard, Card, fmt } from '../AdminComponents';
 import { Banknote, DollarSign, Activity, TrendingUp, AlertTriangle, RefreshCw, Lock, Unlock } from 'lucide-react';
 
-export function AdminFinance({ data }: { data: DashboardData }) {
+export function AdminFinance({ data, showToast, askConfirm }: { data: DashboardData, showToast: any, askConfirm: any }) {
   const lucroTotal = data?.lucro_total || 0;
 
   return (

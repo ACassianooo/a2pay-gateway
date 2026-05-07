@@ -5,7 +5,7 @@ import { Download, AlertTriangle, Check, X } from 'lucide-react';
 
 const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:8080' : '';
 
-export function AdminWithdrawals({ data }: { data: DashboardData }) {
+export function AdminWithdrawals({ data, showToast, askConfirm }: { data: DashboardData, showToast: any, askConfirm: any }) {
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,23 +28,31 @@ export function AdminWithdrawals({ data }: { data: DashboardData }) {
   }, []);
 
   const handleDecision = async (id: number, status: string) => {
-    if (!window.confirm(`Deseja marcar este saque como ${status === 'pago' ? 'PAGO' : 'REJEITADO'}?`)) return;
-    
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/withdrawals/approve`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` 
-        },
-        body: JSON.stringify({ id, status })
-      });
-      if (res.ok) {
-        fetchWithdrawals();
-      }
-    } catch (err) {
-      alert("Erro ao atualizar saque");
-    }
+    askConfirm(
+      status === 'pago' ? "Aprovar Saque" : "Rejeitar Saque",
+      `Deseja marcar este saque como ${status === 'pago' ? 'PAGO' : 'REJEITADO'}?`,
+      async () => {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/admin/withdrawals/approve`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}` 
+            },
+            body: JSON.stringify({ id, status })
+          });
+          if (res.ok) {
+            showToast(`Saque ${status === 'pago' ? 'aprovado' : 'rejeitado'} com sucesso.`);
+            fetchWithdrawals();
+          } else {
+            showToast("Erro ao processar decisão de saque.", 'error');
+          }
+        } catch (err) {
+          showToast("Erro de conexão ao atualizar saque.", 'error');
+        }
+      },
+      status !== 'pago' // danger if rejecting
+    );
   };
 
   const pendingCount = withdrawals.filter(w => w.status === 'pending' || w.status === 'pendente').length;

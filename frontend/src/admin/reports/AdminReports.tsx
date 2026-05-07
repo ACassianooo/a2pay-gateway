@@ -2,7 +2,7 @@ import type { DashboardData } from '../types';
 import { SectionHeader, Card } from '../AdminComponents';
 import { PieChart, Download } from 'lucide-react';
 
-export function AdminReports({ data }: { data: DashboardData }) {
+export function AdminReports({ data, showToast, askConfirm }: { data: DashboardData, showToast: any, askConfirm: any }) {
   return (
     <div>
       <SectionHeader icon={<PieChart size={22} />} title="Relatórios Analíticos" sub="Geração unificada de dados de negócio." />

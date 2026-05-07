@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ShoppingBag } from 'lucide-react';
 import { API_BASE_URL } from './api';
 
-export default function DemoStore() {
+export default function DemoStore({ showToast, askConfirm }: { showToast: any, askConfirm: any }) {
   const [itemName, setItemName] = useState('Teclado Mecânico RGB');
   const [valorStr, setValorStr] = useState('250.00');
   const [loading, setLoading] = useState(false);

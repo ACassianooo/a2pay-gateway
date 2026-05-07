@@ -161,7 +161,7 @@ function ConfirmModal({ isOpen, title, message, onConfirm, onCancel, loading, er
   );
 }
 
-export default function PaymentLinksTab({ isSandbox }: { isSandbox: boolean }) {
+export default function PaymentLinksTab({ isSandbox, showToast, askConfirm }: { isSandbox: boolean, showToast: any, askConfirm: any }) {
   const [links, setLinks] = useState<PaymentLink[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<PaymentLink | null>(null);

@@ -5,7 +5,7 @@ import { User, Lock, AlertTriangle, Activity, DollarSign, ShieldAlert } from 'lu
 
 import { API_BASE_URL } from '../../api';
 
-export function AdminUsers({ data }: { data: DashboardData }) {
+export function AdminUsers({ data, showToast, askConfirm }: { data: DashboardData, showToast: any, askConfirm: any }) {
   const [selectedUser, setSelectedUser] = useState<EmpresaInfo | any | null>(null);
   const [users, setUsers] = useState<any[]>([]);
 

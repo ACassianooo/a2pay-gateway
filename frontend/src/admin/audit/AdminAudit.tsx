@@ -3,7 +3,7 @@ import type { DashboardData } from '../types';
 import { SectionHeader, Card } from '../AdminComponents';
 import { History, Copy } from 'lucide-react';
 
-export function AdminAudit({ data }: { data: DashboardData }) {
+export function AdminAudit({ data, showToast, askConfirm }: { data: DashboardData, showToast: any, askConfirm: any }) {
   return (
     <div>
       <SectionHeader icon={<History size={22} />} title="Auditoria (OBRIGATÓRIO)" sub="Registro estrito de Logs de Admin para compliance e evitar fraudes internas." />

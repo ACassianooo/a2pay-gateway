@@ -2,7 +2,7 @@ import type { DashboardData } from '../types';
 import { SectionHeader, Card } from '../AdminComponents';
 import { Lock, ShieldAlert, FileText, Banknote } from 'lucide-react';
 
-export function AdminAccessControl({ data }: { data: DashboardData }) {
+export function AdminAccessControl({ data, showToast, askConfirm }: { data: DashboardData, showToast: any, askConfirm: any }) {
   return (
     <div>
       <SectionHeader icon={<Lock size={22} />} title="Controle de Acesso (ADMIN)" sub="Arquitetura de Roles: Nem todo administrador pode tudo." />

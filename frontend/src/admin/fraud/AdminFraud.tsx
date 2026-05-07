@@ -2,7 +2,7 @@ import type { DashboardData } from '../types';
 import { SectionHeader, Card } from '../AdminComponents';
 import { ShieldAlert, Activity, Globe, AlertTriangle } from 'lucide-react';
 
-export function AdminFraud({ data }: { data: DashboardData }) {
+export function AdminFraud({ data, showToast, askConfirm }: { data: DashboardData, showToast: any, askConfirm: any }) {
   return (
     <div>
       <SectionHeader icon={<ShieldAlert size={22} />} title="Antifraude (Núcleo de Risco)" sub="Ferramentas globais de proteção e análise comportamental em tempo real." />

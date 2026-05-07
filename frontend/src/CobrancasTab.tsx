@@ -123,7 +123,7 @@ function CreateCobrancaModal({ onClose, onSuccess, isSandbox }: { onClose: () =>
   );
 }
 
-export default function CobrancasTab({ isSandbox }: { isSandbox: boolean }) {
+export default function CobrancasTab({ isSandbox, showToast, askConfirm }: { isSandbox: boolean, showToast: any, askConfirm: any }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState('');
 

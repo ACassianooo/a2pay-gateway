@@ -61,7 +61,61 @@ interface DashboardData {
   empresas?: EmpresaInfo[];
   saldo_real?: number;
   is_sandbox?: boolean;
-  error?: string; // Adicionado campo de erro
+  error?: string;
+}
+
+// ── Custom Toast Component ───────────────────────────────────────────────────
+function Toast({ message, type, onClose }: { message: string, type: 'success' | 'error' | 'info', onClose: () => void }) {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 4000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const bgColor = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6';
+  const Icon = type === 'success' ? CheckCircle2 : type === 'error' ? XCircle : Info;
+
+  return (
+    <div style={{
+      position: 'fixed', top: '1.5rem', left: '50%', transform: 'translateX(-50%)',
+      zIndex: 10000, display: 'flex', alignItems: 'center', gap: '0.75rem',
+      padding: '0.75rem 1.25rem', borderRadius: '12px', background: '#fff',
+      boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+      border: `1px solid ${type === 'success' ? '#dcfce7' : type === 'error' ? '#fee2e2' : '#dbeafe'}`,
+      animation: 'slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+      minWidth: '300px'
+    }}>
+      <div style={{ color: bgColor }}><Icon size={20} /></div>
+      <div style={{ color: '#1f2937', fontSize: '0.9rem', fontWeight: 600, flex: 1 }}>{message}</div>
+      <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.25rem' }}>
+        <X size={16} />
+      </button>
+      <style>{`
+        @keyframes slideDown {
+          from { transform: translate(-50%, -100%); opacity: 0; }
+          to { transform: translate(-50%, 0); opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ── Global Confirm Modal ─────────────────────────────────────────────────────
+function GlobalConfirmModal({ isOpen, title, message, onConfirm, onCancel, confirmLabel = "Confirmar", cancelLabel = "Cancelar", danger = false }: any) {
+  if (!isOpen) return null;
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', animation: 'fadeIn 0.2s ease-out' }}>
+      <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 400, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden', animation: 'scaleIn 0.2s ease-out' }}>
+        <div style={{ padding: '1.5rem' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111827', margin: '0 0 0.5rem 0' }}>{title}</h2>
+          <p style={{ color: '#475569', fontSize: '0.95rem', lineHeight: 1.5, margin: 0 }}>{message}</p>
+        </div>
+        <div style={{ padding: '1.25rem 1.5rem', background: '#f8fafc', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+          <button onClick={onCancel} style={{ background: '#fff', border: '1px solid #e2e8f0', color: '#475569', padding: '0.6rem 1.2rem', borderRadius: 10, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}>{cancelLabel}</button>
+          <button onClick={onConfirm} style={{ background: danger ? '#ef4444' : '#8942FC', color: '#fff', border: 'none', padding: '0.6rem 1.2rem', borderRadius: 10, fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', boxShadow: danger ? '0 4px 12px rgba(239,68,68,0.2)' : '0 4px 12px rgba(137,66,252,0.2)' }}>{confirmLabel}</button>
+        </div>
+      </div>
+    </div>
+  );
 }
 interface APIKeyData { 
   api_key: string; 
@@ -368,7 +422,7 @@ function OverviewTab({ data }: { data: DashboardData }) {
 // TAB: CLIENTES
 
 // ══════════════════════════════════════════════════════════════════════════════
-function CreateProductModal({ onClose, initialData, onSuccess }: { onClose: () => void, initialData?: any, onSuccess?: () => void }) {
+function CreateProductModal({ onClose, initialData, onSuccess, showToast, askConfirm }: { onClose: () => void, initialData?: any, onSuccess?: () => void, showToast: any, askConfirm: any }) {
   const isEditing = !!initialData;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -464,30 +518,36 @@ function CreateProductModal({ onClose, initialData, onSuccess }: { onClose: () =
 
   const handleDelete = async () => {
     if (!initialData?.id) return;
-    if (!confirm("Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.")) return;
+    askConfirm(
+      "Excluir Produto",
+      "Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.",
+      async () => {
+        setSaving(true);
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/merchants/products/${initialData.id}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token()}`
+            }
+          });
 
-    setSaving(true);
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/merchants/products/${initialData.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token()}`
+          if (res.ok) {
+            if (onSuccess) onSuccess();
+            onClose();
+            showToast("Produto excluído com sucesso.");
+          } else {
+            const errData = await res.json();
+            showToast(`Erro ao excluir: ${errData.error || 'Erro desconhecido'}`, 'error');
+          }
+        } catch (error) {
+          console.error(error);
+          showToast("Erro de conexão com o servidor.", 'error');
+        } finally {
+          setSaving(false);
         }
-      });
-
-      if (res.ok) {
-        if (onSuccess) onSuccess();
-        onClose();
-      } else {
-        const errData = await res.json();
-        alert(`Erro ao excluir: ${errData.error || 'Erro desconhecido'}`);
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Erro de conexão com o servidor.");
-    } finally {
-      setSaving(false);
-    }
+      },
+      true // danger
+    );
   };
 
   return (
@@ -606,7 +666,7 @@ function CreateProductModal({ onClose, initialData, onSuccess }: { onClose: () =
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-function ProdutosTab() {
+function ProdutosTab({ showToast, askConfirm }: { showToast: any, askConfirm: any }) {
   const [currentSubTab, setCurrentSubTab] = useState('todos');
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -676,7 +736,7 @@ function ProdutosTab() {
 
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
-      {(isCreateModalOpen || editingProduct) && <CreateProductModal initialData={editingProduct} onSuccess={fetchProducts} onClose={() => { setIsCreateModalOpen(false); setEditingProduct(null); }} />}
+      {(isCreateModalOpen || editingProduct) && <CreateProductModal initialData={editingProduct} onSuccess={fetchProducts} onClose={() => { setIsCreateModalOpen(false); setEditingProduct(null); }} showToast={showToast} askConfirm={askConfirm} />}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
@@ -1101,7 +1161,7 @@ function StatStat({ title, value }: { title: string, value: string | number }) {
   );
 }
 
-function ClientesTab({ selectedCustomer, setSelectedCustomer }: { selectedCustomer: Customer | null, setSelectedCustomer: (c: Customer | null) => void }) {
+function ClientesTab({ selectedCustomer, setSelectedCustomer, showToast, askConfirm }: { selectedCustomer: Customer | null, setSelectedCustomer: (c: Customer | null) => void, showToast: any, askConfirm: any }) {
   const [clientes, setClientes] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -1271,7 +1331,7 @@ function ClientesTab({ selectedCustomer, setSelectedCustomer }: { selectedCustom
 
 // TAB: FINANCEIRO
 // ══════════════════════════════════════════════════════════════════════════════
-function SaquesTab({ data, isSandbox }: { data: DashboardData, isSandbox: boolean }) {
+function SaquesTab({ data, isSandbox, showToast, askConfirm }: { data: DashboardData, isSandbox: boolean, showToast: any, askConfirm: any }) {
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -1522,7 +1582,7 @@ function SaqueModal({ onClose, saldo, onSucess }: { onClose: () => void; saldo: 
 // ══════════════════════════════════════════════════════════════════════════════
 // TAB: CUPONS
 // ══════════════════════════════════════════════════════════════════════════════
-function CuponsTab() {
+function CuponsTab({ showToast, askConfirm }: { showToast: any, askConfirm: any }) {
   const [coupons, setCoupons] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -1880,7 +1940,7 @@ function CreateCouponModal({ onClose, onSuccess, initialData }: { onClose: () =>
 // ══════════════════════════════════════════════════════════════════════════════
 // TAB: PAGAMENTOS
 // ══════════════════════════════════════════════════════════════════════════════
-function PagamentosTab({ data }: { data: DashboardData }) {
+function PagamentosTab({ data, showToast, askConfirm }: { data: DashboardData, showToast: any, askConfirm: any }) {
   const txs = data.transacoes || [];
   const [selected, setSelected] = useState<Transaction | null>(null);
   const [pixResult, setPixResult] = useState<{ qrcode: string; copia: string; expira: string; charge_id: string } | null>(null);
@@ -2034,7 +2094,7 @@ function PagamentosTab({ data }: { data: DashboardData }) {
 // ══════════════════════════════════════════════════════════════════════════════
 // TAB: ANTIFRAUDE
 // ══════════════════════════════════════════════════════════════════════════════
-function DisputasTab({ isSandbox }: { isSandbox: boolean }) {
+function DisputasTab({ isSandbox, showToast, askConfirm }: { isSandbox: boolean, showToast: any, askConfirm: any }) {
   const [disputes, setDisputes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDispute, setSelectedDispute] = useState<any>(null);
@@ -2253,7 +2313,7 @@ function DisputeDetailsModal({ dispute, onClose, onSuccess }: { dispute: any, on
   );
 }
 
-function AntifraudeTab({ data }: { data: DashboardData }) {
+function AntifraudeTab({ data, showToast, askConfirm }: { data: DashboardData, showToast: any, askConfirm: any }) {
   const txs = data.transacoes || [];
   const suspeitas = txs.filter(t => t.status === 'bloqueado' || t.status === 'falhou');
   const [limitValor, setLimitValor] = useState('5000');
@@ -2458,7 +2518,7 @@ function ActionMenu({ env, onDelete }: { env: 'live' | 'test', onDelete: (env: '
   );
 }
 
-function APITab() {
+function APITab({ showToast, askConfirm }: { showToast: any, askConfirm: any }) {
 	const [keyData, setKeyData] = useState<APIKeyData | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [isModalOpen, setIsModalOpen] = useState(false);
@@ -2470,24 +2530,29 @@ function APITab() {
 	useEffect(() => { fetchKey(); }, []);
 
   const handleDeleteKey = async (env: 'live' | 'test') => {
-    if (!window.confirm(`Tem certeza que deseja excluir sua chave de ${env === 'live' ? 'Produção' : 'Testes'}? Integrações usando essa chave vão parar de funcionar.`)) return;
-    
-    try {
-      const res = await fetch(`${API}/api/merchants/apikey`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token()}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ environment: env })
-      });
-      if (res.ok) {
-        alert("Chave excluída com sucesso.");
-        fetchKey();
-      } else {
-        const error = await res.json();
-        alert("Erro ao excluir chave: " + error.error);
-      }
-    } catch (err) {
-      alert("Erro de conexão ao excluir chave.");
-    }
+    askConfirm(
+      "Excluir chave de API",
+      `Tem certeza que deseja excluir sua chave de ${env === 'live' ? 'Produção' : 'Testes'}? Integrações usando essa chave vão parar de funcionar.`,
+      async () => {
+        try {
+          const res = await fetch(`${API}/api/merchants/apikey`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token()}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ environment: env })
+          });
+          if (res.ok) {
+            showToast("Chave excluída com sucesso.");
+            fetchKey();
+          } else {
+            const error = await res.json();
+            showToast("Erro ao excluir chave: " + error.error, 'error');
+          }
+        } catch (err) {
+          showToast("Erro de conexão ao excluir chave.", 'error');
+        }
+      },
+      true // danger mode
+    );
   };
 
 	if (loading) return <div style={{ textAlign: 'center', padding: '4rem', color: '#94a3b8' }}>Carregando dados da API...</div>;
@@ -2722,7 +2787,7 @@ function CreateApiKeyModal({ onClose, onSuccess }: { onClose: () => void; onSucc
 // ══════════════════════════════════════════════════════════════════════════════
 // TAB: CONTA / KYC
 // ══════════════════════════════════════════════════════════════════════════════
-function ContaTab({ data }: { data: any }) {
+function ContaTab({ data, showToast, askConfirm }: { data: any, showToast: any, askConfirm: any }) {
   return (
     <div>
       <SectionHeader icon={<User size={22} />} title="Minha Conta" sub="Gerencie seu perfil, verifique sua empresa (KYC) e configure taxas." />
@@ -2842,6 +2907,19 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [isSandbox, setIsSandbox] = useState(() => localStorage.getItem('a2pay_env') === 'test');
   const [expandedGroups, setExpandedGroups] = useState<string[]>(['PRINCIPAL', 'SUA LOJA', 'INTEGRAÇÃO', 'CONTA', 'GESTÃO', 'FINANCEIRO', 'SEGURANÇA', 'SISTEMA']);
+  
+  // Notificações
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info' } | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean, title: string, message: string, onConfirm: () => void, danger?: boolean } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToast({ message, type });
+  };
+
+  const askConfirm = (title: string, message: string, onConfirm: () => void, danger = false) => {
+    setConfirmModal({ isOpen: true, title, message, onConfirm, danger });
+  };
+
   const toggleGroup = (group: string) => {
     setExpandedGroups(prev => prev.includes(group) ? prev.filter(g => g !== group) : [...prev, group]);
   };
@@ -2871,6 +2949,7 @@ export default function Dashboard() {
         console.error("[Dashboard] Error:", err);
         setData({ role: 'error', error: err.message } as any);
         setLoading(false);
+        showToast("Erro ao conectar com o servidor. Verifique sua conexão.", 'error');
       });
   };
 
@@ -2878,15 +2957,12 @@ export default function Dashboard() {
   const isMaster = data ? (data.role === 'master' || data.role === 'admin') : false;
 
   useEffect(() => {
-    fetchData(isSandbox);
+    window.alert = (msg: string) => showToast(msg, 'info');
     
-    // Atualização automática a cada 30 segundos (Silenciosa)
-    const interval = setInterval(() => {
-      fetchData(isSandbox, true);
-    }, 30000);
-
+    fetchData(isSandbox);
+    const interval = setInterval(() => fetchData(isSandbox, true), 30000);
     return () => clearInterval(interval);
-  }, [navigate, isSandbox]);
+  }, [isSandbox]);
 
   // Inicializa a tab ativa para admin (DEVE ficar antes dos early returns)
   useEffect(() => {
@@ -3147,35 +3223,47 @@ export default function Dashboard() {
         <div style={{ padding: '2rem 2.5rem', maxWidth: '1400px' }}>
           {/* Merchant Tabs */}
           {activeTab === 'overview'   && <OverviewTab data={data} />}
-          {activeTab === 'assinaturas' && <AssinaturasTab isSandbox={isSandbox} onNavigateToClients={() => setActiveTab('clientes')} />}
-          {activeTab === 'cobrancas'   && <CobrancasTab isSandbox={isSandbox} />}
-          {activeTab === 'antecipacoes'&& <AntecipacoesTab isSandbox={isSandbox} />}
-          {activeTab === 'link-pagamentos' && <PaymentLinksTab isSandbox={isSandbox} />}
-          {activeTab === 'produtos'   && <ProdutosTab />}
-          {activeTab === 'cupons'     && <CuponsTab />}
-          {activeTab === 'clientes'   && <ClientesTab selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer} />}
-          {activeTab === 'financeiro' && <SaquesTab data={data} isSandbox={isSandbox} />}
-          {activeTab === 'pagamentos' && <PagamentosTab data={data} />}
-          {activeTab === 'extrato'    && <ExtratoTab data={data} />}
-          {activeTab === 'disputas'   && <DisputasTab isSandbox={isSandbox} />}
-          {activeTab === 'antifraude' && <AntifraudeTab data={data} />}
-          {activeTab === 'api-keys'    && <APITab />}
-          {activeTab === 'conta'      && <ContaTab data={data} />}
+          {activeTab === 'assinaturas' && <AssinaturasTab isSandbox={isSandbox} onNavigateToClients={() => setActiveTab('clientes')} showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'cobrancas'   && <CobrancasTab isSandbox={isSandbox} showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'antecipacoes'&& <AntecipacoesTab isSandbox={isSandbox} showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'link-pagamentos' && <PaymentLinksTab isSandbox={isSandbox} showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'produtos'   && <ProdutosTab showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'cupons'     && <CuponsTab showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'clientes'   && <ClientesTab selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer} showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'financeiro' && <SaquesTab data={data} isSandbox={isSandbox} showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'pagamentos' && <PagamentosTab data={data} showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'extrato'    && <ExtratoTab data={data} showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'disputas'   && <DisputasTab isSandbox={isSandbox} showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'antifraude' && <AntifraudeTab data={data} showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'api-keys'    && <APITab showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'conta'      && <ContaTab data={data} showToast={showToast} askConfirm={askConfirm} />}
 
           {/* Admin Tabs */}
           {activeTab === 'admin-overview'     && <AdminOverview data={data} />}
-          {activeTab === 'admin-users'        && <AdminUsers data={data} />}
-          {activeTab === 'admin-transactions' && <AdminTransactions data={data} />}
-          {activeTab === 'admin-finance'      && <AdminFinance data={data} />}
-          {activeTab === 'admin-withdrawals'  && <AdminWithdrawals data={data} />}
-          {activeTab === 'admin-fraud'        && <AdminFraud data={data} />}
-          {activeTab === 'admin-audit'        && <AdminAudit data={data} />}
-          {activeTab === 'admin-integrations' && <AdminIntegrations data={data} />}
-          {activeTab === 'admin-demo'         && <DemoStore />}
-          {activeTab === 'admin-reports'      && <AdminReports data={data} />}
-          {activeTab === 'admin-access'       && <AdminAccessControl data={data} />}
+          {activeTab === 'admin-users'        && <AdminUsers data={data} showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'admin-transactions' && <AdminTransactions data={data} showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'admin-finance'      && <AdminFinance data={data} showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'admin-withdrawals'  && <AdminWithdrawals data={data} showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'admin-fraud'        && <AdminFraud data={data} showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'admin-audit'        && <AdminAudit data={data} showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'admin-integrations' && <AdminIntegrations data={data} showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'admin-demo'         && <DemoStore showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'admin-reports'      && <AdminReports data={data} showToast={showToast} askConfirm={askConfirm} />}
+          {activeTab === 'admin-access'       && <AdminAccessControl data={data} showToast={showToast} askConfirm={askConfirm} />}
         </div>
       </main>
+
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {confirmModal && (
+        <GlobalConfirmModal 
+          isOpen={confirmModal.isOpen} 
+          title={confirmModal.title} 
+          message={confirmModal.message} 
+          onConfirm={() => { confirmModal.onConfirm(); setConfirmModal(null); }} 
+          onCancel={() => setConfirmModal(null)}
+          danger={confirmModal.danger}
+        />
+      )}
     </div>
   );
 }
