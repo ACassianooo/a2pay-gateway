@@ -277,7 +277,7 @@ export default function PaymentLinksTab({ isSandbox }: { isSandbox: boolean }) {
         </button>
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.05)', paddingBottom: dropdownOpen ? '100px' : '0', transition: 'padding-bottom 0.2s' }}>
+      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
         <div style={{ overflow: 'visible' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
@@ -318,7 +318,7 @@ export default function PaymentLinksTab({ isSandbox }: { isSandbox: boolean }) {
                     </button>
 
                     {dropdownOpen === l.id && (
-                      <div style={{ position: 'absolute', right: '1.5rem', top: '3rem', background: '#fff', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', zIndex: 50, overflow: 'hidden', minWidth: '120px', textAlign: 'left' }}>
+                      <div style={{ position: 'absolute', right: '1.5rem', bottom: '2.5rem', background: '#fff', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', zIndex: 50, overflow: 'hidden', minWidth: '120px', textAlign: 'left', animation: 'scaleIn 0.1s ease-out' }}>
                         <button onClick={() => openEdit(l)} style={{ display: 'block', width: '100%', padding: '0.75rem 1rem', background: 'none', border: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#475569', cursor: 'pointer', fontWeight: 500 }} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
                           Editar
                         </button>

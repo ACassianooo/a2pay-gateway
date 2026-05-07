@@ -1618,7 +1618,7 @@ function CuponsTab() {
           </button>
        </div>
 
-       <Card style={{ padding: '2rem', border: '1px solid #f1f5f9', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.02)' }}>
+       <Card style={{ padding: '2rem', border: '1px solid #f1f5f9', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.02)', overflow: 'visible' }}>
           <div style={{ position: 'relative', width: '420px', marginBottom: '2.5rem' }}>
              <Search size={18} style={{ position: 'absolute', left: 18, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
              <input 
@@ -1703,7 +1703,7 @@ function CuponsTab() {
                           {dropdownOpen === c.id && (
                             <>
                               <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setDropdownOpen(null)} />
-                              <div style={{ position: 'absolute', right: '1.5rem', top: '3rem', background: '#fff', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', zIndex: 50, overflow: 'hidden', minWidth: '120px', textAlign: 'left' }}>
+                              <div style={{ position: 'absolute', right: '1.5rem', bottom: '2.5rem', background: '#fff', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', zIndex: 50, overflow: 'hidden', minWidth: '120px', textAlign: 'left', animation: 'scaleIn 0.1s ease-out' }}>
                                 <button onClick={() => openEdit(c)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.75rem 1rem', background: 'none', border: 'none', textAlign: 'left', fontSize: '0.85rem', color: '#475569', cursor: 'pointer', fontWeight: 500 }} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
                                   <Pencil size={14} /> Editar
                                 </button>
