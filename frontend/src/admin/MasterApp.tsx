@@ -18,7 +18,7 @@ import { AdminAccessControl } from './settings/AdminAccessControl';
 import DemoStore from '../DemoStore';
 import { ShoppingBag } from 'lucide-react';
 
-export function MasterApp({ data }: { data: DashboardData }) {
+export function MasterApp({ data, showToast, askConfirm }: { data: DashboardData, showToast: any, askConfirm: any }) {
   const [activeTab, setActiveTab] = useState<string>('overview');
 
   const tabs = [
@@ -51,17 +51,17 @@ export function MasterApp({ data }: { data: DashboardData }) {
         ))}
       </div>
 
-      {activeTab === 'overview' && <AdminOverview data={data} />}
-      {activeTab === 'users'    && <AdminUsers data={data} />}
-      {activeTab === 'transactions' && <AdminTransactions data={data} />}
-      {activeTab === 'finance'  && <AdminFinance data={data} />}
-      {activeTab === 'withdrawals' && <AdminWithdrawals data={data} />}
-      {activeTab === 'fraud'    && <AdminFraud data={data} />}
-      {activeTab === 'audit'    && <AdminAudit data={data} />}
-      {activeTab === 'integrations' && <AdminIntegrations data={data} />}
-      {activeTab === 'demo'     && <DemoStore />}
-      {activeTab === 'reports'  && <AdminReports data={data} />}
-      {activeTab === 'access'   && <AdminAccessControl data={data} />}
+      {activeTab === 'overview' && <AdminOverview data={data} showToast={showToast} askConfirm={askConfirm} />}
+      {activeTab === 'users'    && <AdminUsers data={data} showToast={showToast} askConfirm={askConfirm} />}
+      {activeTab === 'transactions' && <AdminTransactions data={data} showToast={showToast} askConfirm={askConfirm} />}
+      {activeTab === 'finance'  && <AdminFinance data={data} showToast={showToast} askConfirm={askConfirm} />}
+      {activeTab === 'withdrawals' && <AdminWithdrawals data={data} showToast={showToast} askConfirm={askConfirm} />}
+      {activeTab === 'fraud'    && <AdminFraud data={data} showToast={showToast} askConfirm={askConfirm} />}
+      {activeTab === 'audit'    && <AdminAudit data={data} showToast={showToast} askConfirm={askConfirm} />}
+      {activeTab === 'integrations' && <AdminIntegrations data={data} showToast={showToast} askConfirm={askConfirm} />}
+      {activeTab === 'demo'     && <DemoStore showToast={showToast} askConfirm={askConfirm} />}
+      {activeTab === 'reports'  && <AdminReports data={data} showToast={showToast} askConfirm={askConfirm} />}
+      {activeTab === 'access'   && <AdminAccessControl data={data} showToast={showToast} askConfirm={askConfirm} />}
     </div>
   );
 }

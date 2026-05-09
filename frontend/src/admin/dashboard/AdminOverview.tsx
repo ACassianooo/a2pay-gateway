@@ -32,7 +32,7 @@ function ProgressBar({ value, max, color }: { value: number; max: number; color:
   );
 }
 
-export function AdminOverview({ data }: { data: DashboardData }) {
+export function AdminOverview({ data, showToast, askConfirm }: { data: DashboardData, showToast: any, askConfirm: any }) {
   const [period, setPeriod] = useState('Hoje');
   const empresas = data.empresas || [];
   const txs = data.transacoes || [];

@@ -7,7 +7,7 @@ import {
   ShieldCheck, Users, History, Lock, ShoppingBag, Clock, XCircle, Copy, Globe,
   AlertTriangle, Upload, Settings, Banknote, QrCode, Wallet, Plus, Info, ArrowRight,
   Ticket, Repeat, FileText, Link as LinkIcon, Undo2, BookOpen, Key, Radio, Puzzle, Layers, SlidersHorizontal,
-  Pencil, LayoutGrid, ListFilter, Image as ImageIcon, MoreHorizontal, ArrowLeft, Folder, Store, Trash2
+  Pencil, LayoutGrid, ListFilter, Image as ImageIcon, MoreHorizontal, ArrowLeft, Folder, Store, Trash2, X
 } from 'lucide-react';
 import { MasterApp } from './admin/MasterApp';
 import { API_BASE_URL } from './api';
@@ -231,7 +231,7 @@ function Card({ children, style = {}, onClick }: { children: React.ReactNode; st
 // ══════════════════════════════════════════════════════════════════════════════
 // TAB: OVERVIEW
 // ══════════════════════════════════════════════════════════════════════════════
-function OverviewTab({ data }: { data: DashboardData }) {
+function OverviewTab({ data, showToast, askConfirm }: { data: DashboardData, showToast: any, askConfirm: any }) {
   const [period, setPeriod] = useState('Hoje');
   const txs = data.transacoes || [];
 
@@ -865,7 +865,7 @@ function ProdutosTab({ showToast, askConfirm }: { showToast: any, askConfirm: an
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-function ExtratoTab({ data }: { data: DashboardData }) {
+function ExtratoTab({ data, showToast, askConfirm }: { data: DashboardData, showToast: any, askConfirm: any }) {
   const txs = data.transacoes || [];
   
   // Filter only completed transactions
@@ -3222,7 +3222,7 @@ export default function Dashboard() {
         {/* PAGE CONTENT */}
         <div style={{ padding: '2rem 2.5rem', maxWidth: '1400px' }}>
           {/* Merchant Tabs */}
-          {activeTab === 'overview'   && <OverviewTab data={data} />}
+          {activeTab === 'overview'   && <OverviewTab data={data} showToast={showToast} askConfirm={askConfirm} />}
           {activeTab === 'assinaturas' && <AssinaturasTab isSandbox={isSandbox} onNavigateToClients={() => setActiveTab('clientes')} showToast={showToast} askConfirm={askConfirm} />}
           {activeTab === 'cobrancas'   && <CobrancasTab isSandbox={isSandbox} showToast={showToast} askConfirm={askConfirm} />}
           {activeTab === 'antecipacoes'&& <AntecipacoesTab isSandbox={isSandbox} showToast={showToast} askConfirm={askConfirm} />}
@@ -3239,7 +3239,7 @@ export default function Dashboard() {
           {activeTab === 'conta'      && <ContaTab data={data} showToast={showToast} askConfirm={askConfirm} />}
 
           {/* Admin Tabs */}
-          {activeTab === 'admin-overview'     && <AdminOverview data={data} />}
+          {activeTab === 'admin-overview'     && <AdminOverview data={data} showToast={showToast} askConfirm={askConfirm} />}
           {activeTab === 'admin-users'        && <AdminUsers data={data} showToast={showToast} askConfirm={askConfirm} />}
           {activeTab === 'admin-transactions' && <AdminTransactions data={data} showToast={showToast} askConfirm={askConfirm} />}
           {activeTab === 'admin-finance'      && <AdminFinance data={data} showToast={showToast} askConfirm={askConfirm} />}
